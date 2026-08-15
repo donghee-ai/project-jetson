@@ -1,0 +1,974 @@
+[
+ {
+  "repo": "open-multi-agent/open-multi-agent",
+  "stars": "6.8k",
+  "desc": "TypeScript AI agent orchestration framework with dynamic workflows. Describe the goal, not the graph: a coordinator plans the task DAG at…",
+  "raw": "open-multi-agent/open-multi-agent | TypeScript AI agent orchestration framework with dynamic workflows. Describe the goal, not the graph: a coordinator plans the task DAG at… | nodejs | typescript | mcp | multi-agent",
+  "cats": [
+   "agent",
+   "serving"
+  ],
+  "hits": 2
+ },
+ {
+  "repo": "pguso/agents-from-scratch",
+  "stars": "957",
+  "desc": "Build AI agents from first principles using a local LLM - no frameworks, no cloud APIs, no hidden reasoning.",
+  "raw": "pguso/agents-from-scratch | Build AI agents from first principles using a local LLM - no frameworks, no cloud APIs, no hidden reasoning. | python | machine-learning | artificial-intelligence | llama",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "rohitg00/awesome-ai-apps",
+  "stars": "817",
+  "desc": "A curated collection of awesome AI Agents and LLM Apps built with multiple tech stacks, showcasing real-world implementations using OpenA…",
+  "raw": "rohitg00/awesome-ai-apps | A curated collection of awesome AI Agents and LLM Apps built with multiple tech stacks, showcasing real-world implementations using OpenA… | automation | framework | ai | apps",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "henrydaum/second-brain",
+  "stars": "599",
+  "desc": "Second Brain is an agentic framework that acts as an operating system, using local file intelligence, workflow automation, and LLMs to co…",
+  "raw": "henrydaum/second-brain | Second Brain is an agentic framework that acts as an operating system, using local file intelligence, workflow automation, and LLMs to co… | python | open-source | data-science | database",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "winstonkoh87/Athena-Public",
+  "stars": "572",
+  "desc": "Athena is a local-first agentic PKM that helps you make better decisions with your own context — persistent memory, structured reasoning,…",
+  "raw": "winstonkoh87/Athena-Public | Athena is a local-first agentic PKM that helps you make better decisions with your own context — persistent memory, structured reasoning,… | python | open-source | automation | framework",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ghost-in-the-droid/android-agent",
+  "stars": "308",
+  "desc": "Open-source framework to drive a real phone with AI agents: Android over ADB, iPhone over WebDriverAgent, 62 MCP tools, Python skills, a …",
+  "raw": "ghost-in-the-droid/android-agent | Open-source framework to drive a real phone with AI agents: Android over ADB, iPhone over WebDriverAgent, 62 MCP tools, Python skills, a … | android | python | open-source | ios",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "kstevica/captain-claw",
+  "stars": "162",
+  "desc": "Self-hosted framework for orchestrating fleets of specialist AI agents — ensemble reasoning and a full agentic coding pipeline, model-agn…",
+  "raw": "kstevica/captain-claw | Self-hosted framework for orchestrating fleets of specialist AI agents — ensemble reasoning and a full agentic coding pipeline, model-agn… | python | cli | self-hosted | multi-agent",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "sqliteai/adam",
+  "stars": "114",
+  "desc": "An embeddable cross-platform AI agent library written in C. Cloud and local LLMs, tool calling, long-term memory, voice, sessions, resear…",
+  "raw": "sqliteai/adam | An embeddable cross-platform AI agent library written in C. Cloud and local LLMs, tool calling, long-term memory, voice, sessions, resear… | C | · | 114 | ·",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "multimindlab/multimind-sdk",
+  "stars": "93",
+  "desc": "Your SDK solves all of this. One interface. Unified logic. Local + hosted models. Fine-tuning. Agent tools. Enterprise-ready. Hybrid RAG.…",
+  "raw": "multimindlab/multimind-sdk | Your SDK solves all of this. One interface. Unified logic. Local + hosted models. Fine-tuning. Agent tools. Enterprise-ready. Hybrid RAG.… | framework | sdk | ai | deep-learning",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mstrYoda/llm-agents-example",
+  "stars": "40",
+  "desc": "An example repository to use HuggingFace smolagents, Phidata and CrewAI frameworks with local LLMs",
+  "raw": "mstrYoda/llm-agents-example | An example repository to use HuggingFace smolagents, Phidata and CrewAI frameworks with local LLMs | ai | agents | huggingface | llm",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "zoyluoblue/mc_aiplayer",
+  "stars": "185",
+  "desc": "Autonomous AI agent that plays Minecraft on its own — a server-side Fabric mod (MC 1.21.3) where a DeepSeek / OpenAI-compatible LLM drive…",
+  "raw": "zoyluoblue/mc_aiplayer | Autonomous AI agent that plays Minecraft on its own — a server-side Fabric mod (MC 1.21.3) where a DeepSeek / OpenAI-compatible LLM drive… | java | agent | minecraft | ai",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "teddytennant/wizard",
+  "stars": "68",
+  "desc": "Self-extending autonomous agent in one Rust binary. One-line install, any provider (OpenAI-compatible, Anthropic, xAI) or fully local via…",
+  "raw": "teddytennant/wizard | Self-extending autonomous agent in one Rust binary. One-line install, any provider (OpenAI-compatible, Anthropic, xAI) or fully local via… | Rust | · | 68 | ·",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ashokvarmamatta/ZeroClawAndroid",
+  "stars": "12",
+  "desc": "",
+  "raw": "ashokvarmamatta/ZeroClawAndroid | 24/7 AI agent daemon for Android — 11 messaging channels, 30 opt-in AI tools, 25+ autonomous agent templates, OpenAI-compatible API serve… | android | kotlin | ai | telegram-bot",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "nugget/thane-ai-agent",
+  "stars": "10",
+  "desc": "Autonomous AI agent for Home Assistant with multi-model routing, persistent memory, and an OpenAI-compatible API",
+  "raw": "nugget/thane-ai-agent | Autonomous AI agent for Home Assistant with multi-model routing, persistent memory, and an OpenAI-compatible API | go | golang | home-automation | iot",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "strikersam/autonomous-ai-agency",
+  "stars": "7",
+  "desc": "Autonomous AI Agent Infrastructure Platform — OpenAI-compatible AI gateway with MCP support, multi-agent orchestration, tool calling, obs…",
+  "raw": "strikersam/autonomous-ai-agency | Autonomous AI Agent Infrastructure Platform — OpenAI-compatible AI gateway with MCP support, multi-agent orchestration, tool calling, obs… | mcp | multi-agent | observability | autonomous-agents",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ForceMultiplierAI/AgentWorker",
+  "stars": "6",
+  "desc": "Autonomous OpenAI compatible LLM Asynchronous Worker Queue Agent",
+  "raw": "ForceMultiplierAI/AgentWorker | Public archive | Autonomous OpenAI compatible LLM Asynchronous Worker Queue Agent | Python | · | 6",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "JoaoHenriqueBarbosa/agent-42",
+  "stars": "4",
+  "desc": "Minimal autonomous coding agent. Simple tool-use loop over LLM API — no frameworks, no magic. Bash runs in Docker sandbox. Supports Anthr…",
+  "raw": "JoaoHenriqueBarbosa/agent-42 | Minimal autonomous coding agent. Simple tool-use loop over LLM API — no frameworks, no magic. Bash runs in Docker sandbox. Supports Anthr… | python | agent | docker | cli",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "abdur75648/simple-agi",
+  "stars": "3",
+  "desc": "SimpleAGI: A versatile autonomous agent compatible with advanced language models, designed for automating tasks, creating art, analyzing …",
+  "raw": "abdur75648/simple-agi | SimpleAGI: A versatile autonomous agent compatible with advanced language models, designed for automating tasks, creating art, analyzing … | automation | agi | openai | artificial",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "KhanUzeb/SIFT",
+  "stars": "3",
+  "desc": "SIFT is an autonomous AI research agent using LLM tool calling, web search, and a dynamic reasoning loop. Built with FastAPI, Streamlit, …",
+  "raw": "KhanUzeb/SIFT | SIFT is an autonomous AI research agent using LLM tool calling, web search, and a dynamic reasoning loop. Built with FastAPI, Streamlit, … | Python | · | 3 | ·",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "vventirozos/AgentGhost",
+  "stars": "2",
+  "desc": "An autonomous FastAPI service that wraps an OpenAI-compatible LLM with multi-tier memory, Docker-isolated tool execution, swarm inference…",
+  "raw": "vventirozos/AgentGhost | An autonomous FastAPI service that wraps an OpenAI-compatible LLM with multi-tier memory, Docker-isolated tool execution, swarm inference… | Python | · | 2 | ·",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "microsoft/autogen",
+  "stars": "60.4k",
+  "desc": "A programming framework for agentic AI",
+  "raw": "microsoft/autogen | A programming framework for agentic AI | framework | ai | agents | autogen",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "2noise/ChatTTS",
+  "stars": "39.8k",
+  "desc": "A generative speech model for daily dialogue.",
+  "raw": "2noise/ChatTTS | A generative speech model for daily dialogue. | python | chat | agent | text-to-speech",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "agentscope-ai/agentscope",
+  "stars": "29k",
+  "desc": "Build and run agents you can see, understand and trust.",
+  "raw": "agentscope-ai/agentscope | Build and run agents you can see, understand and trust. | agent | mcp | chatbot | multi-agent",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "letta-ai/letta",
+  "stars": "24.2k",
+  "desc": "Platform for stateful agents: AI with advanced memory that can learn and self-improve over time.",
+  "raw": "letta-ai/letta | Platform for stateful agents: AI with advanced memory that can learn and self-improve over time. | ai | ai-agents | llm | llm-agent",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HKUDS/DeepCode",
+  "stars": "16.4k",
+  "desc": "\"DeepCode: Open Agentic Coding ((Agent Harness & Loop Engineering & Multi-Agent Orchestration)\"",
+  "raw": "HKUDS/DeepCode | \"DeepCode: Open Agentic Coding ((Agent Harness & Loop Engineering & Multi-Agent Orchestration)\" | llm-agent | agentic-coding | harness-engineering | Python",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "lsdefine/GenericAgent",
+  "stars": "13.8k",
+  "desc": "Self-evolving agent: grows skill tree from 3.3K-line seed, achieving full system control with 6x less token consumption",
+  "raw": "lsdefine/GenericAgent | Self-evolving agent: grows skill tree from 3.3K-line seed, achieving full system control with 6x less token consumption | python | lightweight | automation | gemini",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "The-Pocket/PocketFlow-Tutorial-Codebase-Knowledge",
+  "stars": "12.6k",
+  "desc": "Pocket Flow: Codebase to Tutorial",
+  "raw": "The-Pocket/PocketFlow-Tutorial-Codebase-Knowledge | Pocket Flow: Codebase to Tutorial | coding | large-language-models | llm | llms",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "The-Pocket/PocketFlow",
+  "stars": "11.1k",
+  "desc": "Pocket Flow: 100-line LLM framework. Let Agents build Agents!",
+  "raw": "The-Pocket/PocketFlow | Pocket Flow: 100-line LLM framework. Let Agents build Agents! | workflow | artificial-intelligence | flow-based-programming | agents",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "EvoMap/evolver",
+  "stars": "9k",
+  "desc": "The GEP-powered self-evolving engine for AI agents. Auditable evolution with Genes, Capsules, and Events. | evomap.ai",
+  "raw": "EvoMap/evolver | The GEP-powered self-evolving engine for AI agents. Auditable evolution with Genes, Capsules, and Events. | evomap.ai | nodejs | cli | skills | mcp",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "strands-agents/harness-sdk",
+  "stars": "6.9k",
+  "desc": "Build an agent harness and control it end-to-end. Open-source SDK for production AI agents in Python & TypeScript - any model, any cloud.",
+  "raw": "strands-agents/harness-sdk | Build an agent harness and control it end-to-end. Open-source SDK for production AI agents in Python & TypeScript - any model, any cloud. | python | typescript | sdk | ai",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Significant-Gravitas/AutoGPT",
+  "stars": "187k",
+  "desc": "AutoGPT is the vision of accessible AI for everyone, to use and to build on. Our mission is to provide the tools, so that you can focus o…",
+  "raw": "Significant-Gravitas/AutoGPT | AutoGPT is the vision of accessible AI for everyone, to use and to build on. Our mission is to provide the tools, so that you can focus o… | python | ai | artificial-intelligence | openai",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "langgenius/dify",
+  "stars": "152k",
+  "desc": "Build Agentic workflows, RAG pipelines, with rich AI model and tool support on one collaborative workspace. Deploy on cloud, VPC, or self…",
+  "raw": "langgenius/dify | Build Agentic workflows, RAG pipelines, with rich AI model and tool support on one collaborative workspace. Deploy on cloud, VPC, or self… | python | agent | workflow | automation",
+  "cats": [
+   "agent",
+   "rag"
+  ],
+  "hits": 2
+ },
+ {
+  "repo": "infiniflow/ragflow",
+  "stars": "88.4k",
+  "desc": "RAGFlow is a leading open-source Retrieval-Augmented Generation (RAG) engine that fuses cutting-edge RAG with Agent capabilities to creat…",
+  "raw": "infiniflow/ragflow | RAGFlow is a leading open-source Retrieval-Augmented Generation (RAG) engine that fuses cutting-edge RAG with Agent capabilities to creat… | ai | ai-agents | knowledge-compilation | rag",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "microsoft/ai-agents-for-beginners",
+  "stars": "72.2k",
+  "desc": "",
+  "raw": "microsoft/ai-agents-for-beginners | 18 Lessons to Get Started Building AI Agents | foundry | ai-agents | autogen | generative-ai",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ruvnet/ruflo",
+  "stars": "67.9k",
+  "desc": "🌊 The original agent meta-harness. Deploy intelligent multi-player swarms, coordinate autonomous workflows, and build conversational AI s…",
+  "raw": "ruvnet/ruflo | 🌊 The original agent meta-harness. Deploy intelligent multi-player swarms, coordinate autonomous workflows, and build conversational AI s… | npm | typescript | skills | multi-agent",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Mintplex-Labs/anything-llm",
+  "stars": "64.7k",
+  "desc": "Stop renting your intelligence. Own it with AnythingLLM. Everything you need for a powerful local-first agent experience",
+  "raw": "Mintplex-Labs/anything-llm | Stop renting your intelligence. Own it with AnythingLLM. Everything you need for a powerful local-first agent experience | no-code | ai-agents | multimodal | rag",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "shanraisshan/claude-code-best-practice",
+  "stars": "64.5k",
+  "desc": "from vibe coding to agentic engineering - practice makes claude perfect",
+  "raw": "shanraisshan/claude-code-best-practice | from vibe coding to agentic engineering - practice makes claude perfect | ai | best-practices | pakistan | ai-agents",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "FlowiseAI/Flowise",
+  "stars": "55.4k",
+  "desc": "Build AI Agents, Visually",
+  "raw": "FlowiseAI/Flowise | Public archive | Build AI Agents, Visually | react | javascript | typescript",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "calesthio/OpenMontage",
+  "stars": "48.1k",
+  "desc": "World's first open-source, agentic video production system. 12 production pipelines, 100+ tools, 700+ agent skill and production-knowledg…",
+  "raw": "calesthio/OpenMontage | World's first open-source, agentic video production system. 12 production pipelines, 100+ tools, 700+ agent skill and production-knowledg… | python | agent | flux | open-source",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "siyuan-note/siyuan",
+  "stars": "45.8k",
+  "desc": "An open-source, privacy-first, self-hosted knowledge workspace where humans and AI agents work together 开源、隐私优先、自托管的知识工作空间，让人与智能体在此协作",
+  "raw": "siyuan-note/siyuan | An open-source, privacy-first, self-hosted knowledge workspace where humans and AI agents work together 开源、隐私优先、自托管的知识工作空间，让人与智能体在此协作 | electron | markdown | pdf | wiki",
+  "cats": [
+   "agent"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HKUDS/nanobot",
+  "stars": "47k",
+  "desc": "Ultra-lightweight, open-source, self-hosted personal AI agent framework in Python with WebUI, tools, memory, MCP, multi-agent workflows, …",
+  "raw": "HKUDS/nanobot | Ultra-lightweight, open-source, self-hosted personal AI agent framework in Python with WebUI, tools, memory, MCP, multi-agent workflows, … | python | chatops | mcp | chatbot",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mozilla-ai/llamafile",
+  "stars": "25.6k",
+  "desc": "Distribute and run LLMs with a single file.",
+  "raw": "mozilla-ai/llamafile | Distribute and run LLMs with a single file. | cross-platform | speech-to-text | local-inference | llama-cpp",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "LearningCircuit/local-deep-research",
+  "stars": "8.9k",
+  "desc": "~95% on SimpleQA (e.g. Qwen3.6-27B on a 3090). Supports all local and cloud LLMs (llama.cpp, Ollama, Google, ...). 10+ search engines - …",
+  "raw": "LearningCircuit/local-deep-research | ~95% on SimpleQA (e.g. Qwen3.6-27B on a 3090). Supports all local and cloud LLMs (llama.cpp, Ollama, Google, ...). 10+ search engines - … | home-automation | encryption | research | local",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Andyyyy64/whichllm",
+  "stars": "6.3k",
+  "desc": "Find the local LLM that actually runs and performs best on your hardware. Ranked by real, recency-aware benchmarks, not parameter count. …",
+  "raw": "Andyyyy64/whichllm | Find the local LLM that actually runs and performs best on your hardware. Ranked by real, recency-aware benchmarks, not parameter count. … | python | cli | ai | gpu",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "dograh-hq/dograh",
+  "stars": "5.3k",
+  "desc": "Open source voice AI platform. Self-hosted alternative to Vapi and Retell. On Prem, BYOK across Speech to Speech or LLM/STT/TTS, with a v…",
+  "raw": "dograh-hq/dograh | Open source voice AI platform. Self-hosted alternative to Vapi and Retell. On Prem, BYOK across Speech to Speech or LLM/STT/TTS, with a v… | python | open-source | text-to-speech | self-hosted",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "maziyarpanahi/openmed",
+  "stars": "5k",
+  "desc": "Local-first healthcare AI: clinical NER & HIPAA PII de-identification that runs 100% on-device. 2,200+ medical models, 21 languages, Appl…",
+  "raw": "maziyarpanahi/openmed | Local-first healthcare AI: clinical NER & HIPAA PII de-identification that runs 100% on-device. 2,200+ medical models, 21 languages, Appl… | javascript | android | python | nlp",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "langroid/langroid",
+  "stars": "4.1k",
+  "desc": "Harness LLMs with Multi-Agent Programming",
+  "raw": "langroid/langroid | Harness LLMs with Multi-Agent Programming | information-retrieval | ai | llama | gpt",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "deta/surf",
+  "stars": "3.5k",
+  "desc": "Personal AI Notebooks. Organize files & webpages and generate notes from them. Open source, local & open data, open model choice (incl. l…",
+  "raw": "deta/surf | Personal AI Notebooks. Organize files & webpages and generate notes from them. Open source, local & open data, open model choice (incl. l… | rust | productivity | typescript | local",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "raullenchai/Rapid-MLX",
+  "stars": "3.5k",
+  "desc": "The fastest local AI engine for Apple Silicon. 4.2x faster than Ollama, 0.08s cached TTFT, 100% tool calling. 17 tool parsers, prompt cac…",
+  "raw": "raullenchai/Rapid-MLX | The fastest local AI engine for Apple Silicon. 4.2x faster than Ollama, 0.08s cached TTFT, 100% tool calling. 17 tool parsers, prompt cac… | python | macos | inference | cursor",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Changroro/llmux",
+  "stars": "22",
+  "desc": "Run and manage both vLLM and llama.cpp model servers from one terminal UI + CLI — shared Docker Compose profiles, live tok/s, and cross-b…",
+  "raw": "Changroro/llmux | Run and manage both vLLM and llama.cpp model servers from one terminal UI + CLI — shared Docker Compose profiles, live tok/s, and cross-b… | cli | docker-compose | gpu | inference",
+  "cats": [
+   "serving"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "implyinfer/jetson-orin-nano-field-kit",
+  "stars": "53",
+  "desc": "Start running LLMs, vision models, and camera pipelines in under an hour. This fully-configured single board computer comes with a bootab…",
+  "raw": "implyinfer/jetson-orin-nano-field-kit | Start running LLMs, vision models, and camera pipelines in under an hour. This fully-configured single board computer comes with a bootab… | jetpack | edge-computing | jetson-orin-nano | Python",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "KaXuan1135/Orin-Nano-VLM-Deploy",
+  "stars": "2",
+  "desc": "VLM (InternVL3) inference on Jetson Orin Nano (8GB) using TensorRT-LLM.",
+  "raw": "KaXuan1135/Orin-Nano-VLM-Deploy | VLM (InternVL3) inference on Jetson Orin Nano (8GB) using TensorRT-LLM. | vlm | edge-ai | nvidia-jetpack | model-quantization",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "jolinesikora/LLM_Inference_on_Edge",
+  "stars": "2",
+  "desc": "This project evaluates the deployment of Sheared LLaMa and Open LLaMa on NVIDIA's Jetson AGX Orin, using GPT-2 as a baseline. It assesses…",
+  "raw": "jolinesikora/LLM_Inference_on_Edge | This project evaluates the deployment of Sheared LLaMa and Open LLaMa on NVIDIA's Jetson AGX Orin, using GPT-2 as a baseline. It assesses… | Python | · | 2 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Victor-Alen/UnionSparse",
+  "stars": "2",
+  "desc": "UnionSparse is a sparse low-bit LLM inference framework optimized for small-batch edge GPU deployment on platforms such as Jetson AGX Orin …",
+  "raw": "Victor-Alen/UnionSparse | UnionSparse is a sparse low-bit LLM inference framework optimized for small-batch edge GPU deployment on platforms such as Jetson AGX Orin … | Python | · | 2 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "utkarshrai2811/vanta",
+  "stars": "2",
+  "desc": "Autonomous red team agent powered by local LLM inference. Maps a network, reasons about the attack surface, validates exploits in sandbox…",
+  "raw": "utkarshrai2811/vanta | Autonomous red team agent powered by local LLM inference. Maps a network, reasons about the attack surface, validates exploits in sandbox… | Python | · | 2 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "GeniePod/genie-ai-runtime",
+  "stars": "1",
+  "desc": "Jetson Orin-tuned LLM inference runtime for gemma 4, qwen 3.5 — memory-first, power-aware, zero-allocation. C++17 + CUDA.",
+  "raw": "GeniePod/genie-ai-runtime | Jetson Orin-tuned LLM inference runtime for gemma 4, qwen 3.5 — memory-first, power-aware, zero-allocation. C++17 + CUDA. | ai | inference-engine | inference-optimization | jetson-orin-nano",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "amadeobonde/jetson-inference",
+  "stars": "1",
+  "desc": "NVMe-PowerInfer: SSD-accelerated LLM inference engine for Jetson Orin Nano",
+  "raw": "amadeobonde/jetson-inference | NVMe-PowerInfer: SSD-accelerated LLM inference engine for Jetson Orin Nano | C++ | · | 1 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "123-code/nano-inference",
+  "stars": "1",
+  "desc": "llm inference engine for the Jetson orin nano",
+  "raw": "123-code/nano-inference | llm inference engine for the Jetson orin nano | Cuda | · | 1 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "2oby/llama-cpp-jetson",
+  "stars": "1",
+  "desc": "Pre-compiled llama.cpp binaries optimized for NVIDIA Jetson Orin. Custom-built specifically to add Qwen3 model support, which was not ava…",
+  "raw": "2oby/llama-cpp-jetson | Pre-compiled llama.cpp binaries optimized for NVIDIA Jetson Orin. Custom-built specifically to add Qwen3 model support, which was not ava… | 1 | · | Updated 16 days ago | Star",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ivanwwl123-oss/NOETRONYX-Robot-Dog-Journey",
+  "stars": "1",
+  "desc": "End-to-end portfolio project for an AI-powered quadruped robot (Robot Dog). Integrating Python, ESP32, OpenCV, YOLOv8, ROS2, Jetson Orin …",
+  "raw": "ivanwwl123-oss/NOETRONYX-Robot-Dog-Journey | End-to-end portfolio project for an AI-powered quadruped robot (Robot Dog). Integrating Python, ESP32, OpenCV, YOLOv8, ROS2, Jetson Orin … | 1 | · | Updated 13 days ago | Star",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Advantech-Containers/Advantech-YOLO-Vision-Applications",
+  "stars": "5",
+  "desc": "A toolkit for deploying optimized YOLOv8 vision applications container on Advantech edge AI devices with hardware acceleration. Designed …",
+  "raw": "Advantech-Containers/Advantech-YOLO-Vision-Applications | A toolkit for deploying optimized YOLOv8 vision applications container on Advantech edge AI devices with hardware acceleration. Designed … | advantech | ultralytics-yolo | wise-edge | edgeai-container",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "FabioCavaleti/edge-ai-lab",
+  "stars": "2",
+  "desc": "Practical notes and experiments for learning Edge AI on NVIDIA Jetson Orin Nano, covering setup, Linux, Docker, NVIDIA runtime, GPU conta…",
+  "raw": "FabioCavaleti/edge-ai-lab | Practical notes and experiments for learning Edge AI on NVIDIA Jetson Orin Nano, covering setup, Linux, Docker, NVIDIA runtime, GPU conta… | Jupyter Notebook | · | 2 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "agentculture/jetson",
+  "stars": "1",
+  "desc": "Agent and CLI for NVIDIA Jetson edge-AI ops — device setup, container builds, and on-device deployment for Jetson Thor / AGX Orin.",
+  "raw": "agentculture/jetson | Agent and CLI for NVIDIA Jetson edge-AI ops — device setup, container builds, and on-device deployment for Jetson Thor / AGX Orin. | Shell | · | 1 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "redyuan43/jetson-containers",
+  "stars": "0",
+  "desc": "NVIDIA jetson-containers - Modular container build system for Jetson platforms with AI/ML packages",
+  "raw": "redyuan43/jetson-containers | NVIDIA jetson-containers - Modular container build system for Jetson platforms with AI/ML packages | Jupyter Notebook | · | 0 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "xxnuo/docker-for-jetson",
+  "stars": "0",
+  "desc": "Machine Learning Containers for LazyCat Cloud AI Pod, NVIDIA Jetson and JetPack-L4T",
+  "raw": "xxnuo/docker-for-jetson | Machine Learning Containers for LazyCat Cloud AI Pod, NVIDIA Jetson and JetPack-L4T | Python | · | 0 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "teja-gitcode/jetson-nx-aiml-docker",
+  "stars": "0",
+  "desc": "This repo contains docker files for nvidia dustynv and node-red containers with requirements.txt file for pip modules.",
+  "raw": "teja-gitcode/jetson-nx-aiml-docker | This repo contains docker files for nvidia dustynv and node-red containers with requirements.txt file for pip modules. | Python | · | 0 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "chuangivan/jetson-ros2-speech-vision-dockerfile",
+  "stars": "0",
+  "desc": "An out-of-the-box edge AI development environment for NVIDIA Jetson devices, featuring ROS 2 Humble, PyTorch, Whisper, Vosk, and YOLO in …",
+  "raw": "chuangivan/jetson-ros2-speech-vision-dockerfile | An out-of-the-box edge AI development environment for NVIDIA Jetson devices, featuring ROS 2 Humble, PyTorch, Whisper, Vosk, and YOLO in … | 0 | · | Updated on Apr 29 | Star",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Advantech-COE/Advantech-L2-02-AI-Development-Container",
+  "stars": "0",
+  "desc": "Comprehensive hardware-accelerated AI development container for Advantech EPC-7300 L2-02 with NVIDIA Jetson Orin NX, optimized for vision…",
+  "raw": "Advantech-COE/Advantech-L2-02-AI-Development-Container | Comprehensive hardware-accelerated AI development container for Advantech EPC-7300 L2-02 with NVIDIA Jetson Orin NX, optimized for vision… | Shell | · | 0 | ·",
+  "cats": [
+   "jetson"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CogStack/OpenGPT",
+  "stars": "368",
+  "desc": "A framework for creating grounded instruction based datasets and training conversational domain expert Large Language Models (LLMs).",
+  "raw": "CogStack/OpenGPT | A framework for creating grounded instruction based datasets and training conversational domain expert Large Language Models (LLMs). | nlp | medicine | health | healthcare",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hikariming/pindata",
+  "stars": "43",
+  "desc": "PinData is a modern, open-source dataset management platform designed specifically for large language model (LLM) training workflows",
+  "raw": "hikariming/pindata | PinData is a modern, open-source dataset management platform designed specifically for large language model (LLM) training workflows | dataset | llm | TypeScript | ·",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "amao0o0/awesome-AI-Math-Datasets",
+  "stars": "33",
+  "desc": "A collection of recent open-source math datasets for training and evaluating Math LLMs",
+  "raw": "amao0o0/awesome-AI-Math-Datasets | A collection of recent open-source math datasets for training and evaluating Math LLMs | math | mathematics | llm | ai4math",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Brand24-AI/mms_benchmark",
+  "stars": "17",
+  "desc": "The most extensive open massively multilingual corpus of datasets for training sentiment models. The corpus consists of 79 manually selec…",
+  "raw": "Brand24-AI/mms_benchmark | The most extensive open massively multilingual corpus of datasets for training sentiment models. The corpus consists of 79 manually selec… | nlp | benchmarking | sentiment-analysis | leaderboard",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "eosphoros-ai/Text2SQL-Eval",
+  "stars": "15",
+  "desc": "Text2SQL-Eval is a Text-to-SQL evaluating component for LLM trained on an open-source training dataset.",
+  "raw": "eosphoros-ai/Text2SQL-Eval | Text2SQL-Eval is a Text-to-SQL evaluating component for LLM trained on an open-source training dataset. | Python | · | 15 | ·",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ShirleyHuang11/howto",
+  "stars": "12",
+  "desc": "An open library of everyday procedural knowledge: structured how-to recipes for training agents and robots. 1137 recipes across 12 domain…",
+  "raw": "ShirleyHuang11/howto | An open library of everyday procedural knowledge: structured how-to recipes for training agents and robots. 1137 recipes across 12 domain… | reinforcement-learning | robotics | dataset | awesome-list",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "christian-machine-intelligence/christian-tokens",
+  "stars": "7",
+  "desc": "Quantifying religious content in LLM pretraining data — corpus analysis measuring Christian and other religious traditions in open-source t…",
+  "raw": "christian-machine-intelligence/christian-tokens | Quantifying religious content in LLM pretraining data — corpus analysis measuring Christian and other religious traditions in open-source t… | Python | · | 7 | ·",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mwatkins1970/Leilan-dataset",
+  "stars": "6",
+  "desc": "Open Leilan dataset: normalized GPT-3 transcripts + Claude-family Q/A transmissions, published as JSON/JSONL for future LLM training and …",
+  "raw": "mwatkins1970/Leilan-dataset | Open Leilan dataset: normalized GPT-3 transcripts + Claude-family Q/A transmissions, published as JSON/JSONL for future LLM training and … | Python | · | 6 | ·",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "OpenAxo-ai/openaxo",
+  "stars": "5",
+  "desc": "OpenAxo Open-Source Dataset: A structured Chinese news corpus for LLM training and RAG, providing real-time Chinese news articles coverin…",
+  "raw": "OpenAxo-ai/openaxo | OpenAxo Open-Source Dataset: A structured Chinese news corpus for LLM training and RAG, providing real-time Chinese news articles coverin… | 5 | · | Updated on Jun 4 | Star",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Shekswess/open-corpus-registry",
+  "stars": "3",
+  "desc": "Open catalog of datasets used to train and align LLMs across pretraining, mid-training, and post-training.",
+  "raw": "Shekswess/open-corpus-registry | Open catalog of datasets used to train and align LLMs across pretraining, mid-training, and post-training. | data | datasets | datahub | post-training",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "brightmart/nlp_chinese_corpus",
+  "stars": "9.9k",
+  "desc": "大规模中文自然语言处理语料 Large Scale Chinese Corpus for NLP",
+  "raw": "brightmart/nlp_chinese_corpus | 大规模中文自然语言处理语料 Large Scale Chinese Corpus for NLP | nlp | news | wiki | text-classification",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CLUEbenchmark/CLUE",
+  "stars": "4.3k",
+  "desc": "中文语言理解测评基准 Chinese Language Understanding Evaluation Benchmark: datasets, baselines, pre-trained models, corpus and leaderboard",
+  "raw": "CLUEbenchmark/CLUE | 中文语言理解测评基准 Chinese Language Understanding Evaluation Benchmark: datasets, baselines, pre-trained models, corpus and leaderboard | benchmark | tensorflow | nlu | glue",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pytorch/text",
+  "stars": "3.6k",
+  "desc": "Models, data loaders and abstractions for language processing, powered by PyTorch",
+  "raw": "pytorch/text | Public archive | Models, data loaders and abstractions for language processing, powered by PyTorch | nlp | deep-learning | models",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "xid32/SoundMind",
+  "stars": "1.1k",
+  "desc": "We introduce the Audio Logical Reasoning (ALR) dataset, consisting of 6,446 text-audio annotated samples specifically designed for comple…",
+  "raw": "xid32/SoundMind | We introduce the Audio Logical Reasoning (ALR) dataset, consisting of 6,446 text-audio annotated samples specifically designed for comple… | reinforcement-learning | dataset | audio-reasoning | audio-language-model",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "OpenBioLink/ThoughtSource",
+  "stars": "1k",
+  "desc": "A central, open resource for data and tools related to chain-of-thought reasoning in large language models. Developed @ Samwald research …",
+  "raw": "OpenBioLink/ThoughtSource | A central, open resource for data and tools related to chain-of-thought reasoning in large language models. Developed @ Samwald research … | machine-learning | natural-language-processing | dataset | question-answering",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "google-deepmind/long-form-factuality",
+  "stars": "692",
+  "desc": "Benchmarking long-form factuality in large language models. Original code for our paper \"Long-form factuality in large language models\".",
+  "raw": "google-deepmind/long-form-factuality | Benchmarking long-form factuality in large language models. Original code for our paper \"Long-form factuality in large language models\". | language | benchmark | metrics | evaluation",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HowieHwong/TrustLLM",
+  "stars": "630",
+  "desc": "[ICML 2024] TrustLLM: Trustworthiness in Large Language Models",
+  "raw": "HowieHwong/TrustLLM | [ICML 2024] TrustLLM: Trustworthiness in Large Language Models | nlp | benchmark | natural-language-processing | ai",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "salesforce/DialogStudio",
+  "stars": "527",
+  "desc": "DialogStudio: Towards Richest and Most Diverse Unified Dataset Collection and Instruction-Aware Models for Conversational AI",
+  "raw": "salesforce/DialogStudio | DialogStudio: Towards Richest and Most Diverse Unified Dataset Collection and Instruction-Aware Models for Conversational AI | open-source | dialog | dataset | question-answering",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "MAGICS-LAB/DNABERT_2",
+  "stars": "510",
+  "desc": "[ICLR 2024] DNABERT-2: Efficient Foundation Model and Benchmark for Multi-Species Genome",
+  "raw": "MAGICS-LAB/DNABERT_2 | [ICLR 2024] DNABERT-2: Efficient Foundation Model and Benchmark for Multi-Species Genome | transcription-factors | genome | splice | dna",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HeegyuKim/open-korean-instructions",
+  "stars": "472",
+  "desc": "언어모델을 학습하기 위한 공개 한국어 instruction dataset들을 모아두었습니다.",
+  "raw": "HeegyuKim/open-korean-instructions | 언어모델을 학습하기 위한 공개 한국어 instruction dataset들을 모아두었습니다. | instructions | dataset | dataset-generation | language-model",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "open-webui/open-webui",
+  "stars": "149k",
+  "desc": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)",
+  "raw": "open-webui/open-webui | User-friendly AI Interface (Supports Ollama, OpenAI API, ...) | ui | ai | mcp | openapi",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "khoj-ai/khoj",
+  "stars": "36.5k",
+  "desc": "Your AI second brain. Self-hostable. Get answers from the web or your docs. Build custom agents, schedule automations, do deep research. …",
+  "raw": "khoj-ai/khoj | Your AI second brain. Self-hostable. Get answers from the web or your docs. Build custom agents, schedule automations, do deep research. … | chat | agent | productivity | research",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "onyx-dot-app/onyx",
+  "stars": "31.6k",
+  "desc": "Open Source AI Platform - AI Chat with advanced features that works with every LLM",
+  "raw": "onyx-dot-app/onyx | Open Source AI Platform - AI Chat with advanced features that works with every LLM | python | information-retrieval | ai | nextjs",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "MemTensor/MemOS",
+  "stars": "10.7k",
+  "desc": "Self-evolving memory OS for LLM & AI Agents: ultra-persistent memory, hybrid-retrieval, and cross-task skill reuse, with 35.24% token sav…",
+  "raw": "MemTensor/MemOS | Self-evolving memory OS for LLM & AI Agents: ultra-persistent memory, hybrid-retrieval, and cross-task skill reuse, with 35.24% token sav… | python | agent | ai | skills",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Osmantic/ODS",
+  "stars": "4.2k",
+  "desc": "Turn your PC, Mac, or Linux box into an AI server. LLM inference, chat UI, voice, agents, workflows, RAG, and image generation.",
+  "raw": "Osmantic/ODS | Turn your PC, Mac, or Linux box into an AI server. LLM inference, chat UI, voice, agents, workflows, RAG, and image generation. | docker | text-to-speech | amd | self-hosted",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "smallcloudai/refact",
+  "stars": "3.5k",
+  "desc": "AI Agent that handles engineering tasks end-to-end: integrates with developers’ tools, plans, executes, and iterates until it achieves a …",
+  "raw": "smallcloudai/refact | Public archive | AI Agent that handles engineering tasks end-to-end: integrates with developers’ tools, plans, executes, and iterates until it achieves a … | open-source | enterprise | vscode",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "0xMassi/webclaw",
+  "stars": "2.2k",
+  "desc": "Fast, local-first web content extraction for LLMs. Scrape, crawl, extract structured data — all from Rust. CLI, REST API, and MCP server.",
+  "raw": "0xMassi/webclaw | Fast, local-first web content extraction for LLMs. Scrape, crawl, extract structured data — all from Rust. CLI, REST API, and MCP server. | markdown | rust | cli | crawler",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "alexpinel/Dot",
+  "stars": "1.9k",
+  "desc": "Text-To-Speech, RAG, and LLMs. All local!",
+  "raw": "alexpinel/Dot | Text-To-Speech, RAG, and LLMs. All local! | local | standalone | self-hosted | embeddings",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "future-agi/future-agi",
+  "stars": "1.7k",
+  "desc": "Open-source, end-to-end platform for evaluating, observing, and improving LLM and AI agent applications. Tracing · Evals · Simulations · …",
+  "raw": "future-agi/future-agi | Open-source, end-to-end platform for evaluating, observing, and improving LLM and AI agent applications. Tracing · Evals · Simulations · … | simulation | telemetry | tracing | observability",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ }
+]
