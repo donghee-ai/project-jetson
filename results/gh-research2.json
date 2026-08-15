@@ -1,0 +1,1091 @@
+[
+ {
+  "repo": "langgenius/dify",
+  "stars": "152k",
+  "lang": "TypeScript",
+  "updated": "Updated 1 hour ago",
+  "desc": "Build Agentic workflows, RAG pipelines, with rich AI model and tool support on one collaborative workspace. Deploy on cloud, VPC, or self-h…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HKUDS/nanobot",
+  "stars": "47k",
+  "lang": "Python",
+  "updated": "Updated 11 hours ago",
+  "desc": "Ultra-lightweight, open-source, self-hosted personal AI agent framework in Python with WebUI, tools, memory, MCP, multi-agent workflows, …",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 2
+ },
+ {
+  "repo": "ToolJet/ToolJet",
+  "stars": "39.1k",
+  "lang": "JavaScript",
+  "updated": "Updated 12 hours ago",
+  "desc": "ToolJet is the open-source foundation of ToolJet AI - the enterprise app generation platform for building internal tools, dashboard, busi…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "SigNoz/signoz",
+  "stars": "31.8k",
+  "lang": "TypeScript",
+  "updated": "Updated 7 hours ago",
+  "desc": "SigNoz is an open-source, OpenTelemetry-native observability platform for your team and their AI agents. Get logs, metrics, and traces in…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "raga-ai-hub/RagaAI-Catalyst",
+  "stars": "16.2k",
+  "lang": "Python",
+  "updated": "Updated on Feb 11",
+  "desc": "Python SDK for Agent AI Observability, Monitoring and Evaluation Framework. Includes features like agent, llm and tools tracing, debuggin…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "iflytek/astron-rpa",
+  "stars": "5.8k",
+  "lang": "Java",
+  "updated": "Updated 2 days ago",
+  "desc": "Agent-ready RPA suite with out-of-the-box automation tools. Built for individuals and enterprises.",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "smallcloudai/refact",
+  "stars": "3.5k",
+  "lang": "Rust",
+  "updated": "Updated on May 30",
+  "desc": "AI Agent that handles engineering tasks end-to-end: integrates with developers’ tools, plans, executes, and iterates until it achieves a …",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Kritt-ai/open-kritt",
+  "stars": "1.7k",
+  "lang": "JavaScript",
+  "updated": "Updated 2 days ago",
+  "desc": "Open-source, self-hosted AI vulnerability research tool that orchestrates agents to find and validate security issues in code.",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Lynpoint/CyberVerse",
+  "stars": "1.6k",
+  "lang": "Python",
+  "updated": "Updated 9 days ago",
+  "desc": "Self hosted, real-time digital human agent platform. Build voice-first AI agents with WebRTC, persona memory, tools, RAG, and optional di…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "relaticle/relaticle",
+  "stars": "1.5k",
+  "lang": "",
+  "updated": "Updated 5 minutes ago",
+  "desc": "Open-source CRM with native AI agent support. 30 MCP tools, REST API, self-hosted. Built with Laravel & Filament",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "NousResearch/hermes-agent",
+  "stars": "231k",
+  "lang": "Python",
+  "updated": "Updated 7 minutes ago",
+  "desc": "The agent that grows with you",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "shareAI-lab/learn-claude-code",
+  "stars": "74.3k",
+  "lang": "Python",
+  "updated": "Updated 10 hours ago",
+  "desc": "Bash is all you need - A nano claude code–like 「agent harness」, built from 0 to 1",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "thedaviddias/Front-End-Checklist",
+  "stars": "73.5k",
+  "lang": "",
+  "updated": "Updated 20 hours ago",
+  "desc": "🗂 The essential checklist for modern web development, for humans and AI agents",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Panniantong/Agent-Reach",
+  "stars": "71.8k",
+  "lang": "Python",
+  "updated": "Updated 2 days ago",
+  "desc": "Give your AI agent eyes to see the entire internet. Read & search Twitter, Reddit, YouTube, GitHub, Bilibili, XiaoHongShu — one CLI, zero…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "santifer/career-ops",
+  "stars": "63.9k",
+  "lang": "JavaScript",
+  "updated": "Updated 4 hours ago",
+  "desc": "Open-source AI job search: scan job portals, evaluate listings with a structured A-F rubric into a 1.0-5.0 score, tailor your CV, track a…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ZhuLinsen/daily_stock_analysis",
+  "stars": "62.9k",
+  "lang": "Python",
+  "updated": "Updated 12 hours ago",
+  "desc": "LLM 驱动的多市场股票智能分析系统：多源行情、实时新闻、决策看板与自动推送，支持零成本定时运行。 LLM-powered multi-market stock analysis system with multi-source market data, real-time…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CherryHQ/cherry-studio",
+  "stars": "50.5k",
+  "lang": "TypeScript",
+  "updated": "Updated 2 hours ago",
+  "desc": "AI productivity studio with smart chat, autonomous agents, and 300+ assistants. Unified access to frontier LLMs",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hugohe3/ppt-master",
+  "stars": "46.9k",
+  "lang": "Python",
+  "updated": "Updated 1 hour ago",
+  "desc": "AI turns documents or topics into real, native PowerPoint decks—with native shapes, transitions and animations, data-backed charts and ta…",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "zhayujie/CowAgent",
+  "stars": "46.5k",
+  "lang": "Python",
+  "updated": "Updated 19 hours ago",
+  "desc": "Open-source super AI assistant & Agent Harness. Plans tasks, runs tools and skills, self-evolves with memory and knowledge. Multi-model, …",
+  "cats": [
+   "agent-fw"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mohitj2401/realtime-object-detection",
+  "stars": "15",
+  "lang": "HTML",
+  "updated": "Updated on Jul 5, 2025",
+  "desc": "Welcome to our cutting-edge Real-Time Object Detection app, built using Flutter and TensorFlow Lite (TFLite). This application is designe…",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Intelligence08/Realtime-Video-Detection",
+  "stars": "2",
+  "lang": "Python",
+  "updated": "Updated on Jun 23",
+  "desc": "Real-time outdoor video object detection and instance segmentation. ONNX-exportable models for edge/NPU deployment (e.g. Rockchip RK3576).",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Colonel-ROSS/realtime-cv-edge-deployment",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on Mar 8",
+  "desc": "Real-time multi-person face recognition and object detection deployed on Raspberry Pi 4 using YOLOv5n and dlib. Optimised from 5–8 FPS to…",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "jinno-ai/realtime-edge-detection",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Jan 31",
+  "desc": "Low-latency object detection optimized for edge devices",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Witattly2/realtime-object-detection",
+  "stars": "0",
+  "lang": "C++",
+  "updated": "Updated on Mar 29",
+  "desc": "Real-time object detection system using YOLOv8 and OpenCV, optimized for edge devices.",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HarshitAISC/SaansSafeAI",
+  "stars": "0",
+  "lang": "TypeScript",
+  "updated": "Updated on Jun 11",
+  "desc": "SaansSafe AI is an AI-powered urban monitoring platform designed to detect open fires, smoke, and localized pollution sources in real tim…",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hmy88cc/VLM-Multimodal-Applications-Video-Understanding-Insurance-AI",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on May 18",
+  "desc": "This project showcases practical applications of cutting-edge open-source multimodal large models (e.g., Qwen-VL, InternVL) in video deep…",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mohamed-abo-taha/local-vision-agent",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Jun 23",
+  "desc": "Fully-local multimodal scene-understanding agent: YOLO perception + Moondream VLM + Llama-3.2 reasoning over a video timeline (summary + …",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Rokibul1022/scene_understanding_benchmark-gemma4-qwen-2.5vl",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated 8 days ago",
+  "desc": "Benchmark vision-language models on scene understanding via local Ollama. Samples frames from videos, gets free-text scene descriptions f…",
+  "cats": [
+   "vision"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "affjljoo3581/langumo-ko",
+  "stars": "7",
+  "lang": "Python",
+  "updated": "Updated on Oct 7, 2020",
+  "desc": "한국어 말뭉치용 langumo parser 모음",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "meta-llama/synthetic-data-kit",
+  "stars": "1.6k",
+  "lang": "Python",
+  "updated": "Updated on Oct 29, 2025",
+  "desc": "Tool for generating high quality Synthetic datasets",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "wasiahmad/Awesome-LLM-Synthetic-Data",
+  "stars": "1.5k",
+  "lang": "",
+  "updated": "Updated on Jun 6, 2025",
+  "desc": "A reading list on LLM based Synthetic Data Generation 🔥",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "InternScience/GraphGen",
+  "stars": "1.2k",
+  "lang": "Python",
+  "updated": "Updated on May 19",
+  "desc": "GraphGen: Enhancing Supervised Fine-Tuning for LLMs with Knowledge-Driven Synthetic Data Generation",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "magpie-align/magpie",
+  "stars": "876",
+  "lang": "Python",
+  "updated": "Updated on Mar 18, 2025",
+  "desc": "[ICLR 2025] Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing. Your efficient and high-quality synthetic data g…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CHATS-lab/verbalized-sampling",
+  "stars": "795",
+  "lang": "Python",
+  "updated": "Updated on Jan 4",
+  "desc": "Verbalized Sampling, a training-free prompting strategy to mitigate mode collapse in LLMs by requesting responses with probabilities. Ach…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "stephenleo/llm-structured-output-benchmarks",
+  "stars": "190",
+  "lang": "Python",
+  "updated": "Updated on Sep 23, 2024",
+  "desc": "Benchmark various LLM Structured Output frameworks: Instructor, Mirascope, Langchain, LlamaIndex, Fructose, Marvin, Outlines, etc on task…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Red-Hat-AI-Innovation-Team/sdg_hub",
+  "stars": "156",
+  "lang": "Python",
+  "updated": "Updated 2 days ago",
+  "desc": "Synthetic Data Generation Toolkit for LLMs",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "syda-ai/syda",
+  "stars": "98",
+  "lang": "Python",
+  "updated": "Updated 5 days ago",
+  "desc": "AI-powered synthetic data generation — structured tables, unstructured documents, multi-provider LLM support, referential integrity, and …",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Oqura-ai/local-datagen-cli",
+  "stars": "83",
+  "lang": "Python",
+  "updated": "Updated on Oct 9, 2025",
+  "desc": "synthetic dataset generation workflow using local file resources for finetuning llms.",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HowieHwong/DataGen",
+  "stars": "69",
+  "lang": "Python",
+  "updated": "Updated on Mar 9, 2025",
+  "desc": "[ICLR'25] DataGen: Unified Synthetic Dataset Generation via Large Language Models",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "datopian/portaljs",
+  "stars": "2.3k",
+  "lang": "TypeScript",
+  "updated": "Updated 4 days ago",
+  "desc": "🌀 AI-native framework for building data portals. Scaffold a full portal from a brief and load datasets in minutes with agentic skills — a…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "datagouv/datagouv-mcp",
+  "stars": "1.6k",
+  "lang": "Python",
+  "updated": "datagouv/datagouv-mcp",
+  "desc": "Official data.gouv.fr Model Context Protocol (MCP) server that allows AI chatbots to search, explore, and analyze datasets from the Frenc…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "sstklen/trump-code",
+  "stars": "794",
+  "lang": "Python",
+  "updated": "Updated 13 hours ago",
+  "desc": "🔐 AI decoding Trump's posts × stock market | AI 解碼川普推文 × 美股 | AIでトランプ投稿×株式市場を解読 — 31.5M models, 61.3% hit rate, open source",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "upgini/upgini",
+  "stars": "356",
+  "lang": "Python",
+  "updated": "Updated 11 hours ago",
+  "desc": "Data search & enrichment library for Machine Learning → Easily find and add relevant features to your ML & AI pipeline from hundreds of p…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ilhamfp/pasal",
+  "stars": "266",
+  "lang": "TypeScript",
+  "updated": "Updated on Mar 1",
+  "desc": "Pasal.id - The first open, AI-native Indonesian legal platform. MCP server + REST API + web app giving AI grounded access Indonesian laws.",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Hack23/cia",
+  "stars": "235",
+  "lang": "Java",
+  "updated": "Updated 9 hours ago",
+  "desc": "Citizen Intelligence Agency. Open-source intelligence platform analyzing Swedish political activities using AI and data visualization. Tr…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "MLT-OSS/FirstData",
+  "stars": "178",
+  "lang": "Python",
+  "updated": "Updated on May 13",
+  "desc": "The World's Most Comprehensive, Authoritative, and Structured Open Source Data Source Knowledge Base",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "minhe51805/UrbanReflex",
+  "stars": "132",
+  "lang": "TypeScript",
+  "updated": "Updated 24 days ago",
+  "desc": "UrbanReflex is an open-source smart city platform that transforms road segments into linked data nodes, integrating environmental monitor…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "BIMCV-CSUSP/BIMCV-COVID-19",
+  "stars": "130",
+  "lang": "HTML",
+  "updated": "Updated on Mar 29, 2023",
+  "desc": "Valencia Region Image Bank (BIMCV) that combines data from the PadChest dataset with future datasets based on COVID-19 pathology to provi…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "DavidOsherdiagnostica/data-gov-il-mcp",
+  "stars": "107",
+  "lang": "TypeScript",
+  "updated": "Updated 4 days ago",
+  "desc": "Advanced MCP server for seamless access to Israeli Government Open Data",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "TammineniTanay/distributed-finetune-pipeline",
+  "stars": "5",
+  "lang": "Python",
+  "updated": "Updated on Jun 18",
+  "desc": "End-to-end distributed LLM fine-tuning pipeline: data curation → QLoRA + DPO training → TIES/DARE/SLERP model merging → evaluation → vLLM…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "NoGamble/CodeForge-Agent",
+  "stars": "3",
+  "lang": "Python",
+  "updated": "Updated 2 days ago",
+  "desc": "An Agentic Data Curation Pipeline built with LangChain for filtering, deduplicating, and extracting high-quality Python pre-training data …",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Pratic2001/Advanced-LLM-Framework-NON-MOE",
+  "stars": "2",
+  "lang": "TypeScript",
+  "updated": "Updated 2 days ago",
+  "desc": "Production-grade dense (non-MoE) LLM training pipeline: pretrain → SFT → GRPO/DPO with integrated data curation via web scraping, HF data…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "leeroopedia/workflow-nvidia-nemo-curator-text-curation-pipeline",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on Feb 15",
+  "desc": "End-to-end text data curation pipeline for LLM training: cleaning, filtering, deduplication, and export using NeMo Curator patterns",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Aochong-Li/synthetic-mid-training",
+  "stars": "1",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Dec 2, 2025",
+  "desc": "a systematic pipeline for curating synthetic and real data for mid-training LLMs on domain-specific knowledge",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "priyansh19/System-Design-Expert-LLM",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated 15 days ago",
+  "desc": "Fine-tuning an open 7-8B LLM into a staff-level system-design/architecture advisor -- synthetic SFT/DPO data pipeline grounded in researc…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Hritikd/continuum",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on May 28",
+  "desc": "Self-improving ML pipeline — captures production signals, auto-curates training data via active learning, and runs incremental LoRA fine-…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "check-ai-labs/CorpusFlowAI",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on May 22, 2025",
+  "desc": "An extensible Python framework for seamlessly harvesting training data from diverse document sources. Built for AI/ML teams, it provides …",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "J-Aamir/Domain-Specific-GPT2-Pretraining-Australian-Legal-Corpus",
+  "stars": "1",
+  "lang": "",
+  "updated": "Updated on Apr 27",
+  "desc": "A complete end-to-end pipeline for pre-training a GPT-2 Small model (124M parameters) from scratch using a custom-curated dataset of 44.4…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Eucalypriccio/Jazzic",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on May 17",
+  "desc": "Jazzic is a domain-specific jazz music generation engine built on ACE-Step 1.5 XL base, fine-tuned with LoRA on a curated jazz dataset. T…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "commoncrawl/web-languages",
+  "stars": "71",
+  "lang": "",
+  "updated": "Updated 11 days ago",
+  "desc": "Crowd-sourced lists of urls to help Common Crawl crawl under-resourced languages. See https://github.com/commoncrawl/web-languages-code/ …",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "gaoalexander/web-search-engine",
+  "stars": "9",
+  "lang": "C++",
+  "updated": "Updated on Nov 13, 2019",
+  "desc": "Creates Varbyte-Compressed Inverted Index of the Common Crawl dataset (https://commoncrawl.org/), as well as associated Lexicon, Term Dic…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "sebastianbocek/PublicWWW-Free-Alternative",
+  "stars": "6",
+  "lang": "Python",
+  "updated": "Updated on Aug 19, 2025",
+  "desc": "Find web pages that contain keywords near each other (like PublicWWW “Snippets”) using the free Common Crawl dataset. This script searches …",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "cfoster0/humongous-rs",
+  "stars": "4",
+  "lang": "Rust",
+  "updated": "Updated on Oct 8, 2020",
+  "desc": "A Rust pipeline for extracting HUMONGOUS, a dataset of web-based text extracted from Common Crawl and ready for multilingual language mod…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "mrafayaleem/community-clusters",
+  "stars": "3",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Dec 8, 2018",
+  "desc": "We look to apply big data techniques to perform large-scale graph mining on web crawl data. We utilize the Common Crawl web dataset, whic…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "m-p-esser/commoncrawl_webgraph",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Apr 24, 2023",
+  "desc": "Prefect Pipeline for Common Crawl Dataset",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "rafaelsntn/keywords-common-crawl-spark",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Feb 9, 2022",
+  "desc": "Extracts keywords representing a web page and counts the occurence of each one. Web pages from Common Crawl dataset are processed by PySp…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "fadibenz/common-crawl-filtering",
+  "stars": "0",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Aug 25, 2025",
+  "desc": "This project provides a robust, scalable pipeline for processing thousands of WET raw web data from Common Crawl into a high-quality dataset",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "lmmx/wdc-rdfq",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Jan 20, 2025",
+  "desc": "Processing the Web Data Commons, in turn extracted from the Common Crawl dataset.",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pratheepknadar/My-Web-Search-Engine-Lite",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Dec 28, 2025",
+  "desc": "A high-performance, local search engine built with Python that indexes and ranks web pages from the petabyte-scale Common Crawl dataset u…",
+  "cats": [
+   "dataset"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "GiftMungmeeprued/document-parsers-list",
+  "stars": "184",
+  "lang": "",
+  "updated": "Updated on Jul 15, 2025",
+  "desc": "A comprehensive list of document parsers, covering PDF-to-text conversion and layout extraction. Each tested for support of tables, equat…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "dakshjain-1616/Table-Extraction-from-Financial-Documents",
+  "stars": "2",
+  "lang": "Python",
+  "updated": "Updated on Feb 11",
+  "desc": "Extracts structured tables from balance sheets, 10-Ks, and scanned financial PDFs using layout-aware OCR and transformer parsers. Preserv…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "KrupalWarale/Digital-Invoice-data-extraction-using-coordinate-Analysis",
+  "stars": "2",
+  "lang": "Python",
+  "updated": "Updated on Aug 19, 2025",
+  "desc": "This project provides a Python-based solution for extracting structured data from PDF documents, with a focus on accurately parsing table…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pSahoo-456/VibeParser",
+  "stars": "2",
+  "lang": "Python",
+  "updated": "Updated on Nov 28, 2025",
+  "desc": "A next-gen AI document extraction system capable of parsing text, tables, and layouts from native PDFs, scanned images, and various document",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "rohanbhaiya1705/Document-intelligence-pipeline-PDF-parsing-LLM-extraction-",
+  "stars": "0",
+  "lang": "",
+  "updated": "Updated on May 25",
+  "desc": "Document understanding, layout parsing, LLM-based extraction, structured output",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Navs1122/Context-Preserving-Document-Layout-Extraction-for-LLM-Consumption",
+  "stars": "0",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Mar 24",
+  "desc": "Context-aware document parser using Streamlit and PaddleOCR to extract tables and paragraphs from PDFs and images. Utilized PPStructureV3…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ymarx/doc-layout-analyzer",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Sep 19, 2025",
+  "desc": "📄 Advanced Document Layout Analysis System - DOCX/PDF parsing with template-based extraction, hybrid processing, and 5-step workflow. Fea…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "paxtonedgar/vaas",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Mar 10",
+  "desc": "Knowledge graph construction pipeline for IRS tax documents — PDF extraction, layout detection, semantic parsing, and graph building",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "StrategicProjects/doclingr",
+  "stars": "0",
+  "lang": "",
+  "updated": "Updated on Jul 11",
+  "desc": "Document intelligence for R via Docling — layout-aware PDF/DOCX/HTML parsing, table extraction and RAG chunking",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "maramzak1/docparser_project",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated 17 days ago",
+  "desc": "AI-powered PDF document parser with layout analysis, OCR fallback, intelligent classification, and structured JSON extraction.",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CortexLM/vgrep",
+  "stars": "146",
+  "lang": "Rust",
+  "updated": "Updated on Jan 21",
+  "desc": "[🧬] vgrep: a privacy-first, fully local semantic search engine that uses vector embeddings to understand meaning, not just keywords. It r…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "anrgct/autodev-codebase",
+  "stars": "119",
+  "lang": "TypeScript",
+  "updated": "Updated on Jul 5",
+  "desc": "A vector embedding-based code semantic search tool with MCP server and multi-model integration. Can be used as a pure CLI tool. Supports …",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "dineshsoudagar/local-document-intelligence",
+  "stars": "17",
+  "lang": "Python",
+  "updated": "Updated on Apr 15",
+  "desc": "A fully local document intelligence system that allows users to build a persistent private knowledge base from documents and query it usi…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "arsenyganov-pixel/embarsy-embedder",
+  "stars": "4",
+  "lang": "Swift",
+  "updated": "Updated on Jul 9",
+  "desc": "Native macOS menu-bar app that runs a local, offline vector database (Qdrant) + Ollama embeddings to index your codebase into a private s…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "zarkidev/ai-second-brain",
+  "stars": "3",
+  "lang": "Python",
+  "updated": "Updated 22 days ago",
+  "desc": "Ask your own documents anything, answered by meaning and 100% offline. Local RAG: Ollama embeddings + vector search + cited answers.",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "jonathanfavorite/RAGamuffin",
+  "stars": "3",
+  "lang": "C#",
+  "updated": "Updated on Jul 8, 2025",
+  "desc": "A lightweight, cross-platform .NET library for building RAG (Retrieval-Augmented Generation) pipelines with local embedding models and SQ…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "KrishKPs/Second-Brain",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated 23 days ago",
+  "desc": "Semantic search for your screenshots. OCR + embeddings + vector search, fully local and offline.",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "sweb1433/ai-resume-search-RAG",
+  "stars": "1",
+  "lang": "JavaScript",
+  "updated": "Updated 10 days ago",
+  "desc": "Local-first RAG from scratch: docx parsing → chunking → embeddings (transformers.js) → vector search → Ollama-grounded answers. No API ke…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Xenability/wallpaper-reverse-search",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated 29 days ago",
+  "desc": "Local reverse image search for Steam Workshop Wallpaper Engine. FAISS vector search with DINOv2 embeddings across 1.47M wallpapers. GPU-a…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hereisSwapnil/text-to-emoji",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated on Dec 10, 2025",
+  "desc": "A local semantic emoji search engine that uses transformer embeddings and sqlite vector search to find the perfect emoji from natural lan…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "infiniflow/ragflow",
+  "stars": "88.4k",
+  "lang": "Go",
+  "updated": "Updated 13 hours ago",
+  "desc": "RAGFlow is a leading open-source Retrieval-Augmented Generation (RAG) engine that fuses cutting-edge RAG with Agent capabilities to creat…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pathwaycom/llm-app",
+  "stars": "59k",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Jul 6",
+  "desc": "Ready-to-run cloud templates for RAG, AI pipelines, and enterprise search with live data. 🐳Docker-friendly.⚡Always in sync with Sharepoin…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HKUDS/LightRAG",
+  "stars": "38.9k",
+  "lang": "Python",
+  "updated": "Updated 1 hour ago",
+  "desc": "[EMNLP2025] LightRAG: Simple and Fast Retrieval-Augmented Generation",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "chatchat-space/Langchain-Chatchat",
+  "stars": "38.5k",
+  "lang": "Python",
+  "updated": "Updated on Nov 10, 2025",
+  "desc": "Langchain-Chatchat（原Langchain-ChatGLM）基于 Langchain 与 ChatGLM, Qwen 与 Llama 等语言模型的 RAG 与 Agent 应用 | Langchain-Chatchat (formerly langchain…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "VectifyAI/PageIndex",
+  "stars": "35.2k",
+  "lang": "Python",
+  "updated": "Updated 4 hours ago",
+  "desc": "📑 PageIndex: Document Index for Vectorless, Reasoning-based RAG",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "stanford-oval/storm",
+  "stars": "31k",
+  "lang": "Python",
+  "updated": "Updated on Oct 1, 2025",
+  "desc": "An LLM-powered knowledge curation system that researches a topic and generates a full-length report with citations.",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "NirDiamant/RAG_Techniques",
+  "stars": "29.1k",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated 3 hours ago",
+  "desc": "This repository showcases various advanced techniques for Retrieval-Augmented Generation (RAG) systems. Each technique has a detailed not…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "deepset-ai/haystack",
+  "stars": "26.2k",
+  "lang": "Python",
+  "updated": "Updated 1 hour ago",
+  "desc": "Open-source AI orchestration framework for building context-engineered, production-ready LLM applications. Design modular pipelines and a…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HKUDS/RAG-Anything",
+  "stars": "22.9k",
+  "lang": "Python",
+  "updated": "Updated yesterday",
+  "desc": "\"RAG-Anything: All-in-One RAG Framework\"",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "memvid/memvid",
+  "stars": "16.2k",
+  "lang": "Rust",
+  "updated": "Updated on Jul 14",
+  "desc": "Memory layer for AI Agents. Replace complex RAG pipelines with a serverless, single-file memory layer. Give your agents instant retrieval…",
+  "cats": [
+   "rag"
+  ],
+  "hits": 1
+ }
+]

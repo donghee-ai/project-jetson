@@ -1,0 +1,618 @@
+[
+ {
+  "repo": "lablup/model.backend.ai-ko-mecab",
+  "stars": "2",
+  "lang": "Python",
+  "updated": "Updated on Aug 2, 2018",
+  "desc": "the project of Mecab is Natural language processing tool for Korean.",
+  "cats": [
+   "korean"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "DEEPAK21072005/Korean-Grammar-Coach-Gemma-2B-CLI-Tool",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Aug 3, 2025",
+  "desc": "This project showcases a lightweight, offline Korean grammar correction tool built using Google's Gemma 2B model. Designed for language l…",
+  "cats": [
+   "korean"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "HaebinShin/jamotools",
+  "stars": "25",
+  "lang": "Python",
+  "updated": "Updated on Mar 21, 2018",
+  "desc": "A library for Korean Jamo split and vectorize.",
+  "cats": [
+   "korean"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Jaydenlee4891/Korean-Tokenizer",
+  "stars": "1",
+  "lang": "Python",
+  "updated": "Updated 4 days ago",
+  "desc": "Do information-theoretic tokenizer metrics work for Korean? 16-config SentencePiece sweep finds Rényi efficiency and morpheme alignment r…",
+  "cats": [
+   "korean"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "IrfanSadiqRahat/mcpx",
+  "stars": "1",
+  "lang": "TypeScript",
+  "updated": "Updated on May 19",
+  "desc": "Universal MCP server manager — one CLI to install, sync, audit, and orchestrate Model Context Protocol servers across Claude Desktop, Cla…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ndcorder/herd",
+  "stars": "0",
+  "lang": "Python",
+  "updated": "Updated on Mar 8",
+  "desc": "Model registry and lifecycle manager for local GGUF models served via llama-swap",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "SikamikanikoBG/homelab-monitor",
+  "stars": "181",
+  "lang": "Python",
+  "updated": "Updated 15 hours ago",
+  "desc": "Plug-and-play homelab dashboard in one container — GPU, local-AI VRAM, Docker, systemd, host health. Built-in read-only MCP server so AI …",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "AlpinDale/ssh-dashboard",
+  "stars": "156",
+  "lang": "Go",
+  "updated": "Updated 16 days ago",
+  "desc": "Monitor GPU/CPU Usage on SSH servers, with NVIDIA and AMD support.",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "niklasfrick/spark-dashboard",
+  "stars": "92",
+  "lang": "TypeScript",
+  "updated": "Updated 17 days ago",
+  "desc": "Real-time hardware and LLM inference monitoring — GPU, CPU, memory, and vLLM metrics streamed to a dashboard.",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "KempnerInstitute/kempnerpulse",
+  "stars": "38",
+  "lang": "Python",
+  "updated": "Updated 18 days ago",
+  "desc": "KempnerPulse - real-time GPU monitoring dashboard for DCGM metrics.",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "CamTosh/Ethereum",
+  "stars": "33",
+  "lang": "",
+  "updated": "Updated on Jan 22, 2018",
+  "desc": "old and ugly code - Small dashboard to monitor your mining rigs (Support AMD and Nvidia GPU)",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "en4ble1337/proxmox-gpu-dashboard",
+  "stars": "21",
+  "lang": "Shell",
+  "updated": "Updated on Apr 1",
+  "desc": "Native NVIDIA GPU monitoring integration for Proxmox VE dashboard (PVE 8.x/9.x)",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "omarkamali/picomon",
+  "stars": "16",
+  "lang": "Python",
+  "updated": "Updated on May 17",
+  "desc": "Beautiful TUI dashboard for monitoring GPUs (AMD, NVIDIA, Apple Silicon)",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Sean-Hawks/slurmtop",
+  "stars": "11",
+  "lang": "Python",
+  "updated": "Updated 8 days ago",
+  "desc": "One-screen terminal dashboard for small GPU clusters: CPU, RAM, per-GPU utilisation and the Slurm queue, with gradient bars and sparkline…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "jackccrawford/gpu-sentinel-pro",
+  "stars": "9",
+  "lang": "Python",
+  "updated": "Updated on Oct 21, 2025",
+  "desc": "Enterprise-grade NVIDIA GPU monitoring suite with real-time dashboard, time-series analytics, and intelligent alerts. Features React fron…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pmady/docker-gpu-dashboard-extension",
+  "stars": "8",
+  "lang": "JavaScript",
+  "updated": "Updated 9 days ago",
+  "desc": "Docker Desktop Extension — Real-time NVIDIA GPU metrics dashboard. Monitor utilization, memory, temperature, and power draw directly in D…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "SwanHubX/SwanLab",
+  "stars": "4.1k",
+  "lang": "Python",
+  "updated": "Updated 21 hours ago",
+  "desc": "⚡️SwanLab - an open-source, modern-design AI training tracking and visualization tool. Supports Cloud / Self-hosted use. Integrated with …",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "pracdata/awesome-open-source-data-engineering",
+  "stars": "598",
+  "lang": "",
+  "updated": "Updated on Mar 12, 2025",
+  "desc": "A curated list of open source tools used in analytics platforms and data engineering ecosystem",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "superlinked/VectorHub",
+  "stars": "529",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated 4 days ago",
+  "desc": "Deprecated historical repo. Superlinked now develops SIE, a self-hosted inference engine for embeddings, reranking, OCR, extraction, and …",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "eullm/eullm",
+  "stars": "56",
+  "lang": "Rust",
+  "updated": "Updated 2 days ago",
+  "desc": "Open-source platform for creating, distributing and running sovereign EU-compliant LLMs. Verticalize any model for your domain, language …",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "flyingriverhorse/Skyulf",
+  "stars": "47",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated 9 hours ago",
+  "desc": "Build ML pipelines you can trust — visually on a canvas or in Python. Self-hosted platform + Apache-2.0 library. Catches data leakage, ke…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "tonyd2wild/The-Sparky-Command-Center",
+  "stars": "20",
+  "lang": "Python",
+  "updated": "Updated 7 days ago",
+  "desc": "Plug-and-play, dependency-free web command center for DGX Spark fleets (and any GPU boxes): live per-node GPU/CPU/mem/temps/power, option…",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hkdb/lmgate",
+  "stars": "16",
+  "lang": "Go",
+  "updated": "Updated on Jun 11",
+  "desc": "A high performance authentication and access-control gateway for LLM API backends",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "colomalabs/coloma",
+  "stars": "13",
+  "lang": "Python",
+  "updated": "Updated 28 days ago",
+  "desc": "The Continuous Verification and Optimization layer for self-hosted LLMs",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "joeynyc/honeycomb-lab",
+  "stars": "13",
+  "lang": "Swift",
+  "updated": "Updated 7 days ago",
+  "desc": "Honeycomb Lab — hex map + OpenAI gateway control plane for a home AI fleet",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "clemens33/mlflow",
+  "stars": "11",
+  "lang": "Shell",
+  "updated": "Updated 11 days ago",
+  "desc": "mlflow container setup for docker, docker compose and kubernetes including helm chart",
+  "cats": [
+   "ops"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "NVIDIA/Model-Optimizer",
+  "stars": "3.4k",
+  "lang": "Python",
+  "updated": "Updated 4 hours ago",
+  "desc": "A unified library of SOTA model optimization techniques like quantization, distillation, pruning, neural architecture search, speculative d…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "tanishqkumar/ssd",
+  "stars": "988",
+  "lang": "Python",
+  "updated": "Updated on May 10",
+  "desc": "A lightweight inference engine supporting speculative speculative decoding (SSD).",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "feifeibear/LLMSpeculativeSampling",
+  "stars": "924",
+  "lang": "Python",
+  "updated": "Updated on Aug 22, 2024",
+  "desc": "Fast inference from large lauguage models via speculative decoding",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "vllm-project/speculators",
+  "stars": "730",
+  "lang": "Python",
+  "updated": "Updated 8 hours ago",
+  "desc": "A unified library for building, evaluating, and storing speculative decoding algorithms for LLM inference in vLLM",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "patchy631/time-to-first-token",
+  "stars": "487",
+  "lang": "HTML",
+  "updated": "Updated 9 hours ago",
+  "desc": "A 10-week, 30-minutes-a-day roadmap for LLM inference serving and optimization. vLLM, SGLang, quantization, speculative decoding, benchma…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Infini-AI-Lab/Sequoia",
+  "stars": "377",
+  "lang": "Python",
+  "updated": "Updated on Jan 28, 2025",
+  "desc": "scalable and robust tree-based speculative decoding algorithm",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "facebookresearch/LayerSkip",
+  "stars": "377",
+  "lang": "Python",
+  "updated": "Updated 25 days ago",
+  "desc": "Code for \"LayerSkip: Enabling Early Exit Inference and Self-Speculative Decoding\", ACL 2024",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Infini-AI-Lab/TriForce",
+  "stars": "280",
+  "lang": "Python",
+  "updated": "Updated on Sep 1, 2024",
+  "desc": "[COLM 2024] TriForce: Lossless Acceleration of Long Sequence Generation with Hierarchical Speculative Decoding",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "humanrouter/ddtree-mlx",
+  "stars": "145",
+  "lang": "Python",
+  "updated": "Updated on Apr 15",
+  "desc": "Tree-based speculative decoding for Apple Silicon (MLX). ~10-15% faster than DFlash on code, ~1.5x over autoregressive. First MLX port wi…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "sspec-project/SparseSpec",
+  "stars": "119",
+  "lang": "Python",
+  "updated": "Updated on Dec 2, 2025",
+  "desc": "Accelerating Large-Scale Reasoning Model Inference with Sparse Self-Speculative Decoding",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "jjiantong/Awesome-KV-Cache-Optimization",
+  "stars": "378",
+  "lang": "Python",
+  "updated": "Updated 8 days ago",
+  "desc": "[ACL 2026] Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "dipampaul17/KVSplit",
+  "stars": "361",
+  "lang": "Python",
+  "updated": "Updated on May 21, 2025",
+  "desc": "Run larger LLMs with longer contexts on Apple Silicon by using differentiated precision for KV cache quantization. KVSplit enables 8-bit …",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "OpenBitSys/BitDecoding",
+  "stars": "96",
+  "lang": "C++",
+  "updated": "Updated on May 14",
+  "desc": "[HPCA 2026] A GPU-optimized system for efficient long-context LLMs decoding with low-bit KV cache.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "wladimiravila/esp32s3-distributed-ai",
+  "stars": "48",
+  "lang": "C",
+  "updated": "Updated 15 days ago",
+  "desc": "Distributed 56M-parameter LLM inference across 3 ESP32-S3 boards via ESP-NOW , Split-PLE + KV cache, fully offline.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "200lz/llm-inference-optimization-lab",
+  "stars": "43",
+  "lang": "C++",
+  "updated": "Updated 26 days ago",
+  "desc": "Reproducible llama.cpp CPU inference profiling and a deterministic LLM serving simulator with continuous batching, KV cache, prefix caching…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ksm26/Efficiently-Serving-LLMs",
+  "stars": "22",
+  "lang": "Jupyter Notebook",
+  "updated": "Updated on Apr 12, 2024",
+  "desc": "Learn the ins and outs of efficiently serving Large Language Models (LLMs). Dive into optimization techniques, including KV caching and L…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "drowzeys/keys-vLLm-0.24.0-Optimized-DeepSeekV4-Flash-DSpark-NVFP4-KV-1.5M-CTX-3M-Pool-C-12-on-2-DGX-Spark",
+  "stars": "21",
+  "lang": "Shell",
+  "updated": "Updated on Jul 7",
+  "desc": "Run on TWO-DGX-Spark - vLLm-0.24.0 dual cache optimized DSV4F+DSpark+NVFP4 KV (Concurrency 12 with 1.5M context/3M KV token Pool) >0.58-0…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "iKislay/copium",
+  "stars": "17",
+  "lang": "Python",
+  "updated": "Updated 6 days ago",
+  "desc": "Context optimization layer for LLMs. 65-90% token savings with zero quality loss. Drop-in proxy for Claude, GPT, Gemini, and local LLMs (…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "Mog9/KV-Compression",
+  "stars": "16",
+  "lang": "Python",
+  "updated": "Updated on Jun 20",
+  "desc": "Implemented and benchmarked KV cache compression methods for LLM inference in Triton. Optimized kernels for KIVI and TurboQuant with Flas…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "tumma72/mlx-manager",
+  "stars": "15",
+  "lang": "Python",
+  "updated": "Updated on Mar 11",
+  "desc": "An optimized MLX (Apple Silicon Metal) Server for running local LLMs with higher performance inference using KV cache, batching, and para…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "hiyouga/LlamaFactory",
+  "stars": "74.1k",
+  "lang": "Python",
+  "updated": "Updated yesterday",
+  "desc": "Unified Efficient Fine-Tuning of 100+ LLMs & VLMs (ACL 2024)",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "ymcui/Chinese-LLaMA-Alpaca",
+  "stars": "18.9k",
+  "lang": "Python",
+  "updated": "Updated on Apr 19",
+  "desc": "中文LLaMA&Alpaca大语言模型+本地CPU/GPU训练部署 (Chinese LLaMA & Alpaca LLMs)",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "bitsandbytes-foundation/bitsandbytes",
+  "stars": "8.4k",
+  "lang": "Python",
+  "updated": "Updated yesterday",
+  "desc": "Accessible large language models via k-bit quantization for PyTorch.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "FareedKhan-dev/kimi-k3-in-c",
+  "stars": "5.6k",
+  "lang": "C",
+  "updated": "Updated 7 days ago",
+  "desc": "A 2.78-trillion-parameter Kimi K3 running inference on a single CPU in 8.24 GB of RAM. Portable C99: no BLAS, no framework, no GPU.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "AutoGPTQ/AutoGPTQ",
+  "stars": "5.1k",
+  "lang": "Python",
+  "updated": "Updated on Apr 11, 2025",
+  "desc": "An easy-to-use LLMs quantization package with user-friendly apis, based on GPTQ algorithm.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "vllm-project/llm-compressor",
+  "stars": "3.7k",
+  "lang": "Python",
+  "updated": "Updated 5 hours ago",
+  "desc": "Transformers-compatible library for applying various compression algorithms to LLMs for optimized deployment with vLLM",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "thu-ml/SageAttention",
+  "stars": "3.6k",
+  "lang": "Cuda",
+  "updated": "Updated on Jan 18",
+  "desc": "[ICLR2025, ICML2025, NeurIPS2025 Spotlight] Quantized Attention achieves speedup of 2-5x compared to FlashAttention, without losing end-t…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "intel/neural-compressor",
+  "stars": "2.7k",
+  "lang": "Python",
+  "updated": "Updated yesterday",
+  "desc": "SOTA low-bit LLM quantization (INT8/FP8/MXFP8/INT4/MXFP4/NVFP4) & sparsity; leading model compression techniques on PyTorch, TensorFlow, …",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "stochasticai/xTuring",
+  "stars": "2.7k",
+  "lang": "Python",
+  "updated": "Updated on Mar 5",
+  "desc": "Build, personalize and control your own LLMs. From data pre-processing to fine-tuning, xTuring provides an easy way to personalize open-s…",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ },
+ {
+  "repo": "amitshekhariitbhu/ai-engineering-interview-questions",
+  "stars": "2.5k",
+  "lang": "",
+  "updated": "Updated 2 days ago",
+  "desc": "Your Cheat Sheet for AI Engineering Interview – Questions and Answers.",
+  "cats": [
+   "edge"
+  ],
+  "hits": 1
+ }
+]
