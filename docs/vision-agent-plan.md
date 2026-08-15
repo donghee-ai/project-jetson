@@ -5,6 +5,26 @@
 
 ---
 
+> ### ⚠️ 2026-08-15 정정 — §1-3 "위층이 비어 있다"는 전제는 무효
+>
+> 클론된 Frigate 소스(`reference/frigate`, 11f8786)를 직접 확인한 결과,
+> **VLM 레이어는 이미 Frigate에 구현돼 있다.**
+>
+> | 이 문서가 "만들겠다"고 한 것 | 실제 Frigate 위치 |
+> |---|---|
+> | VLM 캡션 워커 | `frigate/genai/manager.py` |
+> | **llama.cpp 연동** | `frigate/genai/plugins/llama_cpp.py` (스트리밍·툴콜 파싱 포함) |
+> | 구조화 출력·위협도 판정 | `frigate/genai/prompts.py` (`potential_threat_level`, 한국어 옵션) |
+> | 자연어 검색 | `frigate/embeddings/`, `docs/.../semantic_search.md` |
+> | 오탐 필터 | `custom_classification/` (단, **사람이 라벨링해야 함**) |
+>
+> 즉 Phase 2~3은 **이미 있는 기능의 재구현**이다. 우리 llama-server를 `genai`
+> 프로바이더로 꽂는 것으로 대체된다.
+>
+> 남은 진짜 빈틈과 대안 설계 → [project-proposal.md](project-proposal.md)
+
+---
+
 ## 1. 왜 이 프로젝트인가
 
 ### 1-1. 유일하게 하드웨어를 제대로 쓰는 안

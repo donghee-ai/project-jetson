@@ -46,6 +46,10 @@
 ├── docs/         구축 · 기획 기록
 │   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
 │   └── grant-radar-plan.md  응용 서비스 기획
+├── openclaw-setup/  OpenClaw 에이전트 게이트웨이 (완전 온디바이스)
+│   ├── README.md            구축 기록 · 함정 10가지
+│   ├── systemd/             유닛 · 드롭인
+│   └── *.sh                 설치 스크립트
 ├── scripts/      측정 · 자동화 도구
 ├── results/      측정 원본 데이터
 ├── models/       GGUF 가중치 (git 제외)
