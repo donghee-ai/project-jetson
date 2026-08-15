@@ -1,7 +1,7 @@
 # LLM 런타임 구축 기록 — llama.cpp on Jetson Orin NX 16GB
 
 > 구축일: 2026-08-14
-> 관련: [hardware.md](../research/hardware.md) · [../wifi/README.md](../wifi/README.md)
+> 관련: [hardware.md](../research/hardware.md)
 
 ---
 

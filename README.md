@@ -47,7 +47,6 @@
 │   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
 │   └── grant-radar-plan.md  응용 서비스 기획
 ├── scripts/      측정 · 자동화 도구
-├── wifi/         MT7601U 드라이버 빌드 (커널 모듈 직접 컴파일)
 ├── results/      측정 원본 데이터
 ├── models/       GGUF 가중치 (git 제외)
 └── reference/    타 프로젝트 클론 (git 제외)
