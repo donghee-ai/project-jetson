@@ -1,0 +1,11 @@
+[Unit]
+Description=Life Trainer — 1시간마다 피드 수집
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+RandomizedDelaySec=3min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

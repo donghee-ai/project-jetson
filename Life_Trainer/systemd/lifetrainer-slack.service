@@ -1,0 +1,20 @@
+[Unit]
+Description=Life Trainer — Slack Socket Mode (/lt, /log 슬래시 커맨드)
+Documentation=https://github.com/
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt slack serve
+Restart=always
+RestartSec=10
+
+MemoryMax=512M
+
+# 주의: 기본적으로 enable 하지 않는다. 지금은 config/lifetrainer.toml 의
+# [slack].mode 가 "notify" 라 이 서비스가 필요 없다 (발송 전용, 슬래시 커맨드 없음).
+# mode 를 "bolt" 로 바꾸고 전용 앱 토큰(app_token)을 채운 뒤에만 의미가 있다
+# (docs/contracts.md §6, docs/implementation-plan.md §1-4 참고).
+[Install]
+WantedBy=default.target

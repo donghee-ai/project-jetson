@@ -1,0 +1,45 @@
+-- 002_day_boundary.sql — 논리적 하루 경계를 자정(0시)에서 06:00 으로 옮긴다.
+--
+-- 이 파일은 무엇이 바뀌는지 사람이 읽을 수 있게 기록한 스펙이다. 실제 적용은
+-- lifetrainer/db.py 의 migrate(conn) 러너가 아래 내용과 동일한 로직을 파이썬으로
+-- 실행한다 — 두 가지가 순수 SQL 스크립트로는 표현이 안 되기 때문이다:
+--   1) `ALTER TABLE ... ADD COLUMN` 은 SQLite 에 "IF NOT EXISTS" 가 없다.
+--      PRAGMA table_info 로 존재를 먼저 확인해야 멱등해진다(아래 1번 단계).
+--   2) slot_override 좌표 변환(4번 단계)은 zoneinfo 기반 epoch 계산이 필요하다.
+-- db.py 와 이 파일이 어긋나면 db.py 가 맞다 — 실제로 실행되는 쪽이 진실이다.
+
+-- ── 1) aw_bucket / slot_breakdown 에 device_id 컬럼을 추가한다 ──────────
+-- (이미 있으면 건너뛴다 — device 차원은 schema.sql 에 이미 존재하므로 새로
+--  만드는 DB 는 CREATE TABLE 단계에서 이미 이 컬럼을 갖고 있어 이 단계가
+--  통째로 no-op 이다. 문제가 되는 것은 그 이전에 만들어진 기존 DB 뿐이다.)
+--
+-- ALTER TABLE aw_bucket      ADD COLUMN device_id INTEGER REFERENCES device(id);
+-- ALTER TABLE slot_breakdown ADD COLUMN device_id INTEGER REFERENCES device(id);
+
+-- ── 2) 기존 aw_bucket.host 마다 device 행을 만들고 연결한다 ──────────────
+-- INSERT INTO device(name, kind, hostname, active, created_at)
+-- SELECT DISTINCT b.host, 'laptop', b.host, 1, <now>
+-- FROM aw_bucket b
+-- WHERE NOT EXISTS (SELECT 1 FROM device d WHERE d.name = b.host);
+--
+-- UPDATE aw_bucket
+-- SET device_id = (SELECT id FROM device WHERE device.name = aw_bucket.host)
+-- WHERE device_id IS NULL;
+
+-- ── 3) 파생 데이터(slot / slot_breakdown / unclassified_day)를 비운다 ────
+-- 전부 aw_event(원본, epoch)에서 06:00 경계로 무손실 재생성되는 값이다.
+-- 옛 자정 기준으로 계산된 값을 그대로 두면 06:00 경계와 어긋난 슬롯이 남는다.
+--
+-- DELETE FROM slot;
+-- DELETE FROM slot_breakdown;
+-- DELETE FROM unclassified_day;
+
+-- ── 4) slot_override 는 좌표만 변환한다 (사람이 넣은 입력이라 버리지 않는다) ──
+-- 기존 (day, slot) 을 "자정 기준(boundary_hour=0)" 으로 실제 시각(epoch)으로
+-- 복원한 뒤, 그 시각을 "06:00 기준(boundary_hour=6)" 새 (day, slot) 으로
+-- 다시 계산해 옮겨 쓴다. 슬롯 폭은 이 프로젝트 전역 기본값인 10분을 그대로 쓴다.
+-- 변환 중 두 개의 옛 좌표가 같은 새 좌표로 모이면(수학적으로는 일어나지 않지만
+-- 방어적으로) 나중 것(created_at 이 더 늦은 것)이 이긴다.
+--
+-- plan_check.checked=1 을 plan_instance 로 이관하는 것은 V2(계획 인스턴스) 담당의
+-- 몫이다 — 이 마이그레이션은 손대지 않는다.

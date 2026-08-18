@@ -1,0 +1,66 @@
+{
+  "display_information": {
+    "name": "Life Trainer",
+    "description": "온디바이스 개인 활동 트래커 — 플래너, 일일/주간 리포트, 수동 기록",
+    "background_color": "#1e293b",
+    "long_description": "Jetson Orin NX 위에서 상시 구동하는 개인 활동 로깅 에이전트입니다. 하루를 10분 단위 144슬롯으로 자동 계측하고, App Home 탭에서 계획을 추가·체크하며, 매일 타임라인 리포트를 보냅니다. 모든 데이터는 기기 안에 남고 외부로 나가지 않습니다."
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "life-trainer",
+      "always_online": true
+    },
+    "app_home": {
+      "home_tab_enabled": true,
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "slash_commands": [
+      {
+        "command": "/lt",
+        "description": "Life Trainer 조회",
+        "usage_hint": "today | yesterday | week | status | ping",
+        "should_escape": false
+      },
+      {
+        "command": "/plan",
+        "description": "계획 추가·조회 (모달)",
+        "usage_hint": "비워두면 입력창이 열립니다",
+        "should_escape": false
+      },
+      {
+        "command": "/log",
+        "description": "활동 수동 기록",
+        "usage_hint": "<카테고리> <기간> [메모]   예: 운동 60m 헬스장",
+        "should_escape": false
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "chat:write",
+        "commands",
+        "files:write",
+        "im:history",
+        "im:write",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "bot_events": [
+        "app_home_opened",
+        "app_mention",
+        "message.im"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true
+    },
+    "org_deploy_enabled": false,
+    "socket_mode_enabled": true,
+    "token_rotation_enabled": false
+  }
+}

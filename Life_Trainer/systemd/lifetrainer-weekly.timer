@@ -1,0 +1,11 @@
+[Unit]
+Description=Life Trainer — 일요일 22:00 주간 리포트
+
+[Timer]
+# config/lifetrainer.toml 의 [report].weekly_at 기본값(22:00)과 맞춰뒀다.
+OnCalendar=Sun *-*-* 22:00:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

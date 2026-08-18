@@ -1,0 +1,12 @@
+[Unit]
+Description=Life Trainer — 피드 수집 + 관심사 스코어링
+Documentation=https://github.com/
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt collect
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt score
+
+MemoryMax=512M

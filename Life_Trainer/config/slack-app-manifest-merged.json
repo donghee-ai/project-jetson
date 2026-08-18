@@ -1,0 +1,132 @@
+{
+  "display_information": {
+    "name": "OpenClaw",
+    "description": "OpenClaw + Life Trainer (활동 로깅·플래너)"
+  },
+  "features": {
+    "bot_user": {
+      "display_name": "OpenClaw",
+      "always_online": true
+    },
+    "app_home": {
+      "home_tab_enabled": true,
+      "messages_tab_enabled": true,
+      "messages_tab_read_only_enabled": false
+    },
+    "slash_commands": [
+      {
+        "command": "/openclaw",
+        "description": "Send a message to OpenClaw",
+        "should_escape": false
+      },
+      {
+        "command": "/lt",
+        "description": "Life Trainer 조회",
+        "should_escape": false,
+        "usage_hint": "today | yesterday | week | status | ping"
+      },
+      {
+        "command": "/plan",
+        "description": "계획 추가",
+        "should_escape": false,
+        "usage_hint": "저녁 약속가기  /  수학 #수학 @60m !high"
+      },
+      {
+        "command": "/del",
+        "description": "계획 삭제",
+        "should_escape": false,
+        "usage_hint": "비우면 목록에서 선택, 또는 3,5"
+      },
+      {
+        "command": "/view",
+        "description": "플래너 보기",
+        "should_escape": false,
+        "usage_hint": "어제 | 2026-08-17"
+      },
+      {
+        "command": "/done",
+        "description": "완료 처리",
+        "should_escape": false,
+        "usage_hint": "3"
+      },
+      {
+        "command": "/doing",
+        "description": "진행 중 표시",
+        "should_escape": false,
+        "usage_hint": "3"
+      },
+      {
+        "command": "/defer",
+        "description": "내일로 연기",
+        "should_escape": false,
+        "usage_hint": "3"
+      },
+      {
+        "command": "/memo",
+        "description": "그날 메모",
+        "should_escape": false,
+        "usage_hint": "예시 자료 다운로드"
+      },
+      {
+        "command": "/week",
+        "description": "주간 추이",
+        "should_escape": false
+      },
+      {
+        "command": "/log",
+        "description": "활동 수동 기록",
+        "should_escape": false,
+        "usage_hint": "운동 60m 헬스장"
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "app_mentions:read",
+        "assistant:write",
+        "channels:history",
+        "channels:read",
+        "chat:write",
+        "commands",
+        "emoji:read",
+        "files:read",
+        "files:write",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "im:read",
+        "im:write",
+        "mpim:history",
+        "mpim:read",
+        "mpim:write",
+        "pins:read",
+        "pins:write",
+        "reactions:read",
+        "reactions:write",
+        "usergroups:read",
+        "users:read"
+      ]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "event_subscriptions": {
+      "bot_events": [
+        "app_home_opened",
+        "app_mention",
+        "channel_rename",
+        "member_joined_channel",
+        "member_left_channel",
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim",
+        "pin_added",
+        "pin_removed",
+        "reaction_added",
+        "reaction_removed"
+      ]
+    }
+  }
+}

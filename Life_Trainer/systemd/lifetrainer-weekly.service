@@ -1,0 +1,11 @@
+[Unit]
+Description=Life Trainer — 주간 리포트 생성 + Slack 발송
+Documentation=https://github.com/
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt report weekly --post
+
+MemoryMax=512M

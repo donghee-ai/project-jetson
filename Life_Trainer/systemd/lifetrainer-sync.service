@@ -1,0 +1,14 @@
+[Unit]
+Description=Life Trainer — ActivityWatch 동기화 + 오늘 롤업
+Documentation=https://github.com/
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt sync
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt rollup --today
+
+# 이 기기는 가용 메모리가 2.8GB 뿐이고 llama-server 가 이미 10.4GB 를 쓴다.
+# 파이썬 배치가 폭주해 모델 서버를 밀어내면 안 되므로 상한을 건다.
+MemoryMax=512M

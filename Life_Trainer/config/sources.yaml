@@ -1,0 +1,113 @@
+# Life Trainer — 웹 수집 소스 목록 (Phase 2, 담당 E)
+#
+# 규칙 (docs/life-trainer-design.md §6, docs/contracts.md §7):
+#   - RSS/Atom/API 가 있는 곳만 넣는다. HTML 스크레이핑 대상은 넣지 않는다.
+#   - 모든 URL 은 이 파일을 작성하며 `curl -sL -o /dev/null -w '%{http_code} %{content_type}'`
+#     로 실제 200 + xml 계열 content-type 을 직접 확인했다 (검증일 2026-08-16).
+#     검증하지 못한 항목은 "미검증"이라고 주석을 남긴다 — 이 파일에는 없음.
+#   - kind: rss|atom  -> feeds.py 가 feedparser 로 URL 을 직접 가져온다.
+#     kind: arxiv      -> url 필드는 실제 URL 이 아니라 arXiv 쿼리 문자열이다
+#                         (arxiv.py 가 https://export.arxiv.org/api/query 로 감싼다).
+#   - interval_sec: 뉴스성(HN/GeekNews/포럼)은 1시간, 블로그/릴리스/논문은 6시간을 기본값으로 뒀다.
+#     실제 수집 주기는 http.py 의 적응형 로직(3회 무변경 시 ×2, 변경 시 ÷2)이 곧 알아서 조정한다 —
+#     여기 값은 "최초 추정치"일 뿐이다.
+#   - respect_robots: 소스별 robots.txt 예외 스위치. 기본값 true(=지킨다). arXiv 소스는
+#     아래에서 별도로 false 로 두고 이유를 남긴다 — 이게 이 파일에서 유일한 예외다.
+
+version: 1
+
+sources:
+  # ── 뉴스 / 커뮤니티 ────────────────────────────────────────────────
+  - {kind: rss, name: "Hacker News (프론트페이지)", url: "https://hnrss.org/frontpage",
+     tags: "news,hn,community", interval_sec: 3600}
+  - {kind: rss, name: "GeekNews (한국 IT 뉴스)", url: "https://news.hada.io/rss/news",
+     tags: "news,korea,community", interval_sec: 3600}
+  - {kind: rss, name: "NVIDIA Jetson 개발자 포럼", url: "https://forums.developer.nvidia.com/c/agx-autonomous-machines/jetson-embedded-systems/70.rss",
+     tags: "jetson,forum,embedded", interval_sec: 3600}
+
+  # ── 온디바이스 · 엣지 추론 (직접 관련 프로젝트) ────────────────────────
+  - {kind: atom, name: "llama.cpp 릴리스", url: "https://github.com/ggml-org/llama.cpp/releases.atom",
+     tags: "on-device,llm,gguf,inference", interval_sec: 21600}
+  - {kind: atom, name: "Ollama 릴리스", url: "https://github.com/ollama/ollama/releases.atom",
+     tags: "on-device,llm,inference", interval_sec: 21600}
+  - {kind: atom, name: "whisper.cpp 릴리스", url: "https://github.com/ggml-org/whisper.cpp/releases.atom",
+     tags: "on-device,speech,asr", interval_sec: 21600}
+
+  # ── 벤더 · 연구 블로그 ────────────────────────────────────────────
+  - {kind: atom, name: "NVIDIA Developer Blog", url: "https://developer.nvidia.com/blog/feed",
+     tags: "nvidia,jetson,cuda,edge-ai", interval_sec: 21600}
+  - {kind: rss, name: "NVIDIA Blog", url: "https://blogs.nvidia.com/feed/",
+     tags: "nvidia,ai", interval_sec: 21600}
+  - {kind: rss, name: "Hugging Face Blog", url: "https://huggingface.co/blog/feed.xml",
+     tags: "llm,open-source,model", interval_sec: 21600}
+  - {kind: rss, name: "Google AI Blog", url: "https://blog.google/innovation-and-ai/technology/ai/rss/",
+     tags: "llm,research", interval_sec: 21600}
+  - {kind: rss, name: "OpenAI Blog", url: "https://openai.com/news/rss.xml",
+     tags: "llm,research", interval_sec: 21600}
+  - {kind: rss, name: "Simon Willison's Weblog", url: "https://simonwillison.net/atom/everything/",
+     tags: "llm,on-device,commentary", interval_sec: 21600}
+  - {kind: rss, name: "GitHub Blog Changelog", url: "https://github.blog/changelog/feed/",
+     tags: "dev-tools,github", interval_sec: 21600}
+
+  # ── 로보틱스 / 비전 ──────────────────────────────────────────────
+  - {kind: rss, name: "IEEE Spectrum - Robotics", url: "https://spectrum.ieee.org/feeds/topic/robotics.rss",
+     tags: "robotics", interval_sec: 21600}
+  - {kind: rss, name: "IEEE Spectrum - AI", url: "https://spectrum.ieee.org/feeds/topic/artificial-intelligence.rss",
+     tags: "ai", interval_sec: 21600}
+
+  # ── arXiv (Atom API, arxiv.py 가 처리) ──────────────────────────────
+  #
+  # robots.txt 예외 (2026-08-16 결정, 실측):
+  #   export.arxiv.org/robots.txt 는 'User-agent: *\nDisallow: /' 로 export 호스트
+  #   전체를 막아둔다 — 이건 HTML 페이지를 긁는 크롤러를 겨냥한 규칙이다. 반면 우리가
+  #   쓰는 /api/query 는 arXiv 가 프로그램 접근용으로 공식 제공하고 별도 API 이용약관을
+  #   둔 전용 인터페이스이며, 설계서(docs/life-trainer-design.md §6)도 "arXiv API 우선,
+  #   요청 간 3초 간격 권장 준수"라고 명시한다. 그래서 아래 5개 소스만
+  #   respect_robots: false 로 robots.txt 검사를 건너뛰되, 도메인 레이트리밋(3초,
+  #   cfg.collect.arxiv_min_interval_sec)은 그대로 강제해 API 이용약관을 지킨다.
+  #   (arxiv.py 도 이 값을 몰라도 자체적으로 respect_robots 기본값을 False 로 둔다 —
+  #   여기 필드는 그 결정을 명시적으로 남기고, 나중에 되돌리고 싶을 때
+  #   respect_robots 를 지우거나 true 로 바꾸기만 하면 되게 하기 위함이다.)
+  - {kind: arxiv, name: "arXiv cs.CL (자연어처리)", url: "cat:cs.CL", tags: "paper,nlp",
+     interval_sec: 21600, respect_robots: false}
+  - {kind: arxiv, name: "arXiv cs.LG (기계학습)", url: "cat:cs.LG", tags: "paper,ml",
+     interval_sec: 21600, respect_robots: false}
+  - {kind: arxiv, name: "arXiv cs.CV (컴퓨터비전)", url: "cat:cs.CV", tags: "paper,vision",
+     interval_sec: 21600, respect_robots: false}
+  - {kind: arxiv, name: "arXiv cs.RO (로보틱스)", url: "cat:cs.RO", tags: "paper,robotics",
+     interval_sec: 21600, respect_robots: false}
+  - {kind: arxiv, name: "arXiv eess.AS (음성처리)", url: "cat:eess.AS", tags: "paper,speech",
+     interval_sec: 21600, respect_robots: false}
+
+# 관심사 키워드 — score.py 가 제목/초록 매칭 가중합에 쓴다 (LLM 없음, Phase 2 원칙).
+interests:
+  - {term: "on-device", weight: 3.0}
+  - {term: "jetson", weight: 3.0}
+  - {term: "orin", weight: 3.0}
+  - {term: "edge-ai", weight: 2.5}
+  - {term: "embedded", weight: 2.0}
+  - {term: "llama.cpp", weight: 2.5}
+  - {term: "gguf", weight: 2.0}
+  - {term: "quantization", weight: 2.0}
+  - {term: "qwen", weight: 2.5}
+  - {term: "qwen3", weight: 2.5}
+  - {term: "llm", weight: 2.0}
+  - {term: "small language model", weight: 2.0}
+  - {term: "inference", weight: 1.5}
+  - {term: "tensorrt", weight: 2.0}
+  - {term: "cuda", weight: 1.2}
+  - {term: "onnx", weight: 1.5}
+  - {term: "whisper", weight: 2.0}
+  - {term: "speech recognition", weight: 2.0}
+  - {term: "text-to-speech", weight: 1.5}
+  - {term: "vision-language model", weight: 2.0}
+  - {term: "vlm", weight: 2.0}
+  - {term: "rag", weight: 1.5}
+  - {term: "retrieval", weight: 1.2}
+  - {term: "fine-tuning", weight: 1.2}
+  - {term: "distillation", weight: 1.5}
+  - {term: "robotics", weight: 1.5}
+  - {term: "autonomous", weight: 1.0}
+  - {term: "personal agent", weight: 1.5}
+  - {term: "open source", weight: 1.0}
+  - {term: "korea", weight: 1.0}

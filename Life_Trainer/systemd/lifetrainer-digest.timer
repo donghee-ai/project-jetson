@@ -1,0 +1,11 @@
+[Unit]
+Description=Life Trainer — 매일 07:30 아침 다이제스트
+
+[Timer]
+# config/lifetrainer.toml 의 [report].morning_at 기본값(07:30)과 맞춰뒀다.
+OnCalendar=*-*-* 07:30:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

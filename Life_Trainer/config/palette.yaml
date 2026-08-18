@@ -1,0 +1,76 @@
+# Life Trainer 색상 단일 원본
+#
+# 웹 플래너(CSS)와 타임라인 PNG(matplotlib)가 **이 파일 하나**를 읽는다.
+# 두 곳에 색을 따로 적어두면 반드시 갈라진다.
+#
+# ── 이 값들이 어디서 왔는가 ──────────────────────────────────
+# dataviz 스킬의 검증된 기본 팔레트(8슬롯 범주형)를 그대로 가져왔다.
+# 임의로 고른 색이 아니다. 처음에 내가 눈대중으로 고른 Tailwind 색은
+# 검증기에서 3개 항목이 FAIL 했다:
+#
+#   [FAIL] 채도 하한      #94a3b8 이 회색으로 읽힘 (구조색과 충돌)
+#   [FAIL] CVD 분리       coding↔research ΔE 1.3 (적록색약)
+#   [FAIL] 정상시야 하한   coding↔research ΔE 12.0  ← 색각 정상인 사람도 구분 못 함
+#
+# coding 과 research 는 이 시스템에서 가장 자주 나오는 두 카테고리다.
+# 그 둘이 구분이 안 되면 타임라인 전체가 무의미해진다.
+#
+# ── 검증 결과 (scripts/validate_palette.js) ─────────────────
+#   라이트 adjacent : 전 항목 PASS (최악 CVD ΔE 9.1 / 정상시야 19.6)
+#   다크   adjacent : 전 항목 PASS, 경고 없음
+#   라이트 all-pairs: research(주황)↔ops(초록), research↔entertainment(빨강) 실패
+#
+# all-pairs 가 실패하므로 **2차 인코딩이 필수다.** 색만으로 정체를 전달하면 안 된다:
+#   - 범례를 항상 띄운다
+#   - 3칸(30분) 이상 연속된 블록에는 카테고리 이름을 직접 적는다
+#   - 웹에서는 칸에 hover/tap 시 카테고리명을 노출한다
+# 이 규칙을 어기면 위 실패 쌍이 실제 혼동으로 나타난다.
+#
+# 색을 바꾸고 싶으면 반드시 검증기를 다시 돌릴 것:
+#   node <dataviz>/scripts/validate_palette.js "<hex,...>" --mode light
+#
+# 라이트 모드에서 aqua/yellow/magenta 는 표면 대비가 3:1 미만이라
+# (검증기 WARN) 텍스트 라벨이 반드시 함께 있어야 한다. 위 2차 인코딩 규칙이 이걸 겸한다.
+
+version: 1
+
+surface:
+  light: "#fcfcfb"
+  dark:  "#1a1a19"
+
+ink:
+  primary:   {light: "#0b0b0b", dark: "#ffffff"}
+  secondary: {light: "#52514e", dark: "#c3c2b7"}
+  muted:     {light: "#898781", dark: "#898781"}
+  gridline:  {light: "#e1e0d9", dark: "#2c2c2a"}
+  baseline:  {light: "#c3c2b7", dark: "#383835"}
+
+# 활동 카테고리 — 고정 순서. 절대 순환 배정하지 않는다.
+# 슬롯 1~3 이 all-pairs 까지 통과하므로 가장 자주 나오는 카테고리에 배정했다.
+categories:
+  coding:        {slot: 1, hue: blue,    light: "#2a78d6", dark: "#3987e5", label: 코딩}
+  research:      {slot: 2, hue: orange,  light: "#eb6834", dark: "#d95926", label: 리서치}
+  writing:       {slot: 3, hue: aqua,    light: "#1baf7a", dark: "#199e70", label: 문서}
+  communication: {slot: 4, hue: yellow,  light: "#eda100", dark: "#c98500", label: 소통}
+  learning:      {slot: 5, hue: magenta, light: "#e87ba4", dark: "#d55181", label: 학습}
+  ops:           {slot: 6, hue: green,   light: "#008300", dark: "#008300", label: 운영}
+  browsing:      {slot: 7, hue: violet,  light: "#4a3aa7", dark: "#9085e9", label: 웹}
+  entertainment: {slot: 8, hue: red,     light: "#e34948", dark: "#e66767", label: 여가}
+
+# 구조 상태 — 활동이 아니다. 범주형 색을 쓰면 안 된다.
+# 종이 플래너의 빈 칸이 흰색이듯, off 는 표면에 가깝게 둬서
+# "채워진 곳"이 도드라지게 한다.
+structural:
+  away:    {light: "#d6d5cc", dark: "#35352f", label: 자리비움}
+  "off":   {light: "#f2f1ec", dark: "#222221", label: 빈칸}
+  unknown: {light: "#898781", dark: "#898781", label: 미분류}
+
+# 계획 오버레이 — 실제(채움) 위에 겹치는 층.
+# apple-design §12(반투명으로 위계 전달): 계획은 아직 일어나지 않은 것이므로
+# 실제보다 물러나 있어야 한다. 테두리와 옅은 washes 로만 표현한다.
+plan_overlay:
+  stroke:      {light: "#0b0b0b", dark: "#ffffff"}
+  stroke_alpha: 0.38
+  wash_alpha:   0.10
+  achieved:    {light: "#006300", dark: "#0ca30c"}   # 달성 표시 (성공 텍스트색)
+  missed:      {light: "#898781", dark: "#898781"}

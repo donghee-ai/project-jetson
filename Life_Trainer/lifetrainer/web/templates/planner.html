@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life Trainer 플래너 — {{ day }}</title>
+<style>
+{{ light_css_vars | safe }}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    {{ dark_css_vars | safe }}
+  }
+}
+:root[data-theme="dark"] {
+  {{ dark_css_vars | safe }}
+}
+/* ── 종이 표면 토큰(재검증됨, V5 팔레트 재검증 항목) ───────────────────
+ * harugyeol 의 --paper #fffdf8 을 쓰고 싶었지만 우리 8색 카테고리는
+ * 표면 #fcfcfb 기준으로 검증된 값이다. 그대로 새 표면을 쓰면 대비가
+ * 다시 계산돼야 해서, 아래 명령으로 재검증했다:
+ *
+ *   node <dataviz>/scripts/validate_palette.js \
+ *     "#2a78d6,#eb6834,#1baf7a,#eda100,#e87ba4,#008300,#4a3aa7,#e34948" \
+ *     --mode light --surface "#fffdf8"
+ *
+ * 결과: ALL CHECKS PASS (lightness/chroma/CVD 분리/정상시야 하한 전부 통과,
+ * 대비 WARN 3건은 #fcfcfb 기준과 사실상 동일 — aqua/yellow/magenta, 기존과
+ * 같은 조합, 새로운 위험 없음). 그래서 크림 표면을 채택한다.
+ *
+ * config/palette.yaml 은 이 담당(V5) 의 읽기 전용 파일이라 --surface 자체
+ * (문서·다른 렌더러가 참조하는 단일 원본)는 건드리지 않는다. 대신 카드
+ * 표면 전용 보조 토큰 --paper 만 여기(내가 소유한 템플릿)에 둔다. 다크
+ * 테마는 harugyeol 에 대응 디자인이 없으므로 --surface 로 되돌린다. */
+:root { --paper: #fffdf8; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: var(--surface); }
+}
+:root[data-theme="dark"] { --paper: var(--surface); }
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+</head>
+<body data-day="{{ day }}" data-today="{{ today }}" data-read-only="{{ 'true' if read_only else 'false' }}"
+      data-slot-minutes="{{ data.slot_minutes }}" data-grid-start-hour="{{ data.grid_start_hour }}">
+  <header class="topbar">
+    <nav class="day-nav" aria-label="날짜 이동">
+      <a href="{{ url_for('day_page', day=prev_day) }}" class="nav-btn" aria-label="이전 날짜">◀</a>
+      <div class="day-current">
+        <strong>{{ day }}</strong>
+        {% if day != today %}<a href="{{ url_for('day_page', day=today) }}" class="today-link">오늘로</a>{% endif %}
+      </div>
+      <a href="{{ url_for('day_page', day=next_day) }}" class="nav-btn" aria-label="다음 날짜">▶</a>
+      <a href="/w/{{ day }}" class="nav-btn nav-week" aria-label="주간 보기">주간</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" title="다크/라이트 전환" aria-label="다크/라이트 전환">◐</button>
+    </nav>
+
+    <div class="date-hero">
+      <div class="date-hero-copy">
+        <p class="eyebrow" id="day-eyebrow">&nbsp;</p>
+        <div class="stats-row">
+          <div class="stat"><span class="stat-label">활동</span><span class="stat-value">{{ data.stats.active_hm }}</span></div>
+          <div class="stat"><span class="stat-label">달성률</span><span class="stat-value">{{ (data.stats.achievement * 100) | round | int }}%</span><span class="stat-sub">({{ data.stats.achieved_count }}/{{ data.stats.total_count }})</span></div>
+          <div class="stat"><span class="stat-label">커버리지</span><span class="stat-value">{{ (data.stats.coverage * 100) | round | int }}%</span></div>
+        </div>
+      </div>
+      <div class="day-score" id="day-score" style="--score: {{ (data.stats.achievement * 360) | round | int }}deg"
+           role="img" aria-label="오늘 달성률 {{ (data.stats.achievement * 100) | round | int }}%">
+        <div><strong>{{ (data.stats.achievement * 100) | round | int }}%</strong><span>완료</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="plan-panel paper-card" aria-label="계획">
+      <div class="now-card" id="now-card" hidden>
+        <div class="now-card-head"><span><span class="live-dot"></span>지금 집중 중</span><span class="now-card-time" id="now-card-time"></span></div>
+        <h3 id="now-card-title"></h3>
+        <p id="now-card-sub"></p>
+        {% if not read_only %}
+        <div class="now-actions">
+          <button type="button" class="secondary-button" id="now-card-check">완료 기록</button>
+        </div>
+        {% endif %}
+      </div>
+
+      <h2>계획</h2>
+      <ul class="plan-list" id="plan-list">
+        {% for p in data.plans %}
+        <li class="plan-card" data-plan-id="{{ p.id }}">
+          <label class="plan-check">
+            <input type="checkbox" class="check-input" data-plan-id="{{ p.id }}" {% if p.checked %}checked{% endif %} {% if read_only %}disabled{% endif %}>
+          </label>
+          <div class="plan-info">
+            <div class="plan-title">
+              {% if p.category %}<span class="plan-cat-dot" style="background: var(--cat-{{ p.category }})"></span>{% endif %}
+              {{ p.title }}
+            </div>
+            <div class="plan-time">{{ p.time_range }}{% if p.weekdays_kr %} · {{ p.weekdays_kr }}{% endif %}{% if p.kind == 'oneoff' %} · {{ p.day }} 하루만{% endif %}</div>
+            <div class="plan-bar" title="달성률 {{ (p.achievement * 100) | round | int }}%"><div class="plan-bar-fill" style="width: {{ (p.achievement * 100) | round | int }}%"></div></div>
+          </div>
+          {% if not read_only %}
+          <div class="plan-actions">
+            <button type="button" class="btn-icon btn-skip" data-plan-id="{{ p.id }}" title="오늘만 건너뛰기">건너뜀</button>
+            <button type="button" class="btn-icon btn-delete" data-plan-id="{{ p.id }}" data-plan-title="{{ p.title }}" title="계획 삭제">삭제</button>
+          </div>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="empty">오늘 계획이 없습니다.</li>
+        {% endfor %}
+      </ul>
+
+      {% if not read_only %}
+      <details class="add-plan" id="add-plan">
+        <summary>+ 계획 추가</summary>
+        <form id="plan-form">
+          <label>제목 <input type="text" name="title" required maxlength="80"></label>
+          <label>카테고리
+            <select name="category">
+              <option value="">시간만 (카테고리 없음)</option>
+              {% for cat_id in palette.order %}
+              <option value="{{ cat_id }}">{{ palette.labels[cat_id] }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="time-row">
+            <label>시작 <input type="time" name="start" step="600" required></label>
+            <label>종료 <input type="time" name="end" step="600" required></label>
+          </div>
+          <p class="field-hint">시각은 10분 단위로 저장됩니다.</p>
+          <fieldset class="mode-fieldset">
+            <legend>반복</legend>
+            <label><input type="radio" name="mode" value="recurring" checked> 매주 반복</label>
+            <label><input type="radio" name="mode" value="oneoff"> 이 날짜만</label>
+          </fieldset>
+          <div class="weekday-picker" id="weekday-picker">
+            <div class="preset-row">
+              <button type="button" class="preset" data-preset="12345">평일</button>
+              <button type="button" class="preset" data-preset="67">주말</button>
+              <button type="button" class="preset" data-preset="1234567">매일</button>
+            </div>
+            {% for d, label in [("1","월"),("2","화"),("3","수"),("4","목"),("5","금"),("6","토"),("7","일")] %}
+            <label class="wd-chip"><input type="checkbox" name="weekday" value="{{ d }}" {% if d in "12345" %}checked{% endif %}> {{ label }}</label>
+            {% endfor %}
+          </div>
+          <label class="day-picker" id="day-picker" hidden>날짜 <input type="date" name="day" value="{{ day }}"></label>
+          <button type="submit" class="btn-primary">추가</button>
+          <p class="form-error" id="plan-form-error" role="alert" hidden></p>
+        </form>
+      </details>
+      {% endif %}
+    </section>
+
+    <section class="grid-panel paper-card" aria-label="타임테이블">
+      <h2>TIMETABLE</h2>
+      {% if not read_only %}
+      <p class="grid-hint">칸을 드래그(모바일은 탭-탭)해서 범위를 고르면 카테고리를 지정할 수 있습니다. 칸을 누르면 이름이 보입니다.</p>
+      {% endif %}
+      <div class="legend" id="legend" aria-label="범례">
+        {% for cat_id in palette.order %}
+        <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-{{ cat_id }})"></span>{{ palette.labels[cat_id] }}</span>
+        {% endfor %}
+        <span class="legend-divider" aria-hidden="true"></span>
+        <span class="legend-item structural"><span class="legend-swatch" style="background: var(--structural-off)"></span>빈칸</span>
+        <span class="legend-item structural"><span class="legend-swatch" style="background: var(--structural-away)"></span>자리비움</span>
+      </div>
+      <p class="selection-caption" id="selection-caption" aria-live="polite">&nbsp;</p>
+      <div class="grid" id="grid" style="--grid-cols: {{ grid_rows[0].cells | length if grid_rows else 6 }}">
+        {% for row in grid_rows %}
+        <div class="grid-hour">{{ "%02d" | format(row.hour) }}</div>
+        <div class="grid-row" data-hour="{{ row.hour }}">
+          {% for cell in row.cells %}
+          <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}"
+               data-slot="{{ cell.slot }}"
+               data-category="{{ cell.category }}"
+               title="{{ cell.tooltip }}"
+               style="background-color: var({{ cell.css_var }})">
+            {% if cell.label_text %}<span class="cell-label">{{ cell.label_text }}</span>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="now-line" id="now-line" hidden aria-hidden="true">
+          <span class="now-line-label">NOW</span>
+          <span class="now-line-dot" id="now-line-dot"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  {% if not read_only %}
+  <div class="category-chooser" id="category-chooser" hidden>
+    <div class="chooser-panel">
+      <span class="sheet-handle" aria-hidden="true"></span>
+      <p class="chooser-title" id="chooser-title"></p>
+      <div class="chooser-options" id="chooser-options"></div>
+      <div class="chooser-buttons">
+        <button type="button" id="chooser-clear" class="btn-secondary">보정 해제</button>
+        <button type="button" id="chooser-cancel" class="btn-secondary">취소</button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <script id="lt-initial-data" type="application/json">{{ data_json | safe }}</script>
+  <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+[Unit]
+Description=Life Trainer — 10분마다 ActivityWatch 동기화 + 롤업
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+RandomizedDelaySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

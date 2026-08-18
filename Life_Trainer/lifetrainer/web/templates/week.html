@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life Trainer 주간 — {{ end_day }}</title>
+<style>
+{{ light_css_vars | safe }}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    {{ dark_css_vars | safe }}
+  }
+}
+:root[data-theme="dark"] {
+  {{ dark_css_vars | safe }}
+}
+/* --paper 토큰 근거는 planner.html 의 동일 블록 참고 — dataviz
+ * validate_palette.js 로 surface #fffdf8 재검증(PASS) 후 채택. */
+:root { --paper: #fffdf8; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: var(--surface); }
+}
+:root[data-theme="dark"] { --paper: var(--surface); }
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+</head>
+<body data-end-day="{{ end_day }}" data-today="{{ today }}" data-read-only="{{ 'true' if read_only else 'false' }}">
+  <header class="topbar">
+    <nav class="day-nav" aria-label="주 이동">
+      <a href="/w/{{ prev_end_day }}" class="nav-btn" aria-label="이전 주">◀</a>
+      <div class="day-current">
+        <strong>{{ end_day }}</strong> 까지 7일
+      </div>
+      <a href="/w/{{ next_end_day }}" class="nav-btn" aria-label="다음 주">▶</a>
+      <a href="/d/{{ end_day }}" class="nav-btn nav-week" aria-label="일간 보기">일간</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" title="다크/라이트 전환" aria-label="다크/라이트 전환">◐</button>
+    </nav>
+  </header>
+
+  <div class="week-wrap">
+    <div class="week-hero">
+      <p class="eyebrow">WEEKLY REVIEW</p>
+      <h1>이번 주의 흐름</h1>
+    </div>
+
+    <p class="week-loading" id="week-loading">불러오는 중…</p>
+
+    <div class="stats-grid" id="stats-grid" hidden>
+      <article class="paper-card stat-card">
+        <span>활동 시간</span>
+        <strong id="stat-active">—</strong>
+        <small id="stat-active-sub">&nbsp;</small>
+      </article>
+      <article class="paper-card stat-card">
+        <span>평균 달성률</span>
+        <strong id="stat-achievement">—</strong>
+        <small id="stat-achievement-sub">&nbsp;</small>
+      </article>
+      <article class="paper-card stat-card">
+        <span>가장 활동적인 날</span>
+        <strong id="stat-best-day">—</strong>
+        <small id="stat-best-day-sub">&nbsp;</small>
+      </article>
+    </div>
+
+    <article class="paper-card weekly-card" id="weekly-card" hidden>
+      <h2>7일 활동 시간</h2>
+      <div class="week-chart" id="week-chart" aria-label="7일 활동 시간 막대그래프"></div>
+    </article>
+
+    <article class="paper-card weekly-card week-legend" id="category-breakdown" hidden>
+      <h2>카테고리별 합계</h2>
+      <div class="legend" id="week-legend" aria-label="카테고리별 시간 합계"></div>
+    </article>
+  </div>
+
+  <script src="{{ url_for('static', filename='week.js') }}" defer></script>
+</body>
+</html>

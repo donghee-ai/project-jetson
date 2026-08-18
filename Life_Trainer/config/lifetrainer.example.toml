@@ -1,0 +1,66 @@
+# Life Trainer 설정 예시.
+#   cp config/lifetrainer.example.toml config/lifetrainer.toml
+# 실제 파일(config/lifetrainer.toml)은 git 에 올리지 않는다 — 토큰이 들어갈 수 있다.
+#
+# 우선순위: 환경변수 LT_* > config/lifetrainer.toml > 이 기본값
+
+[general]
+timezone  = "Asia/Seoul"
+data_dir  = "data"                        # 상대 경로는 프로젝트 루트 기준
+db_path   = "data/lifetrainer.db"
+log_level = "INFO"
+
+[activitywatch]
+# PC(Windows) 의 aw-server. Tailscale 주소를 쓴다.
+base_url          = "http://100.64.0.3:5600"
+# aw-server v0.14.0b1+ 의 [auth] api_key. 비-loopback 바인드에서는 반드시 설정할 것
+# (비-loopback 이면 Host 헤더 검사가 조용히 꺼진다 — docs/research/activitywatch.md §4)
+api_key           = ""
+timeout_sec       = 10
+poll_interval_sec = 600
+# 재폴링 시 되감는 구간. 버킷의 마지막 이벤트는 하트비트라 duration 이 계속 자란다.
+# 이 값보다 짧은 주기로 폴링하면서 upsert 하면 이중 계산이 생기지 않는다.
+overlap_sec       = 900
+backfill_days     = 7
+hosts             = []                    # 비우면 모든 호스트
+
+[rollup]
+slot_minutes      = 10                    # 하루 144 슬롯
+afk_category      = "away"
+no_data_category  = "off"
+# 슬롯 총 600초 중 관측된 활동이 이 비율 미만이면 off 로 본다.
+min_active_ratio  = 0.05
+rules_path        = "config/rules.yaml"
+
+[report]
+png_dir     = "data/png"
+font_family = "NanumGothic"               # 한글 깨짐 방지
+daily_at    = "23:30"
+weekly_at   = "22:00"                     # 일요일
+morning_at  = "07:30"
+
+[slack]
+# notify = 발송 전용 (기존 OpenClaw 봇 토큰 재사용, 슬래시 커맨드 없음)
+# bolt   = 전용 앱 (Socket Mode, 슬래시 커맨드 사용)
+mode            = "notify"
+bot_token       = ""                      # 비우면 openclaw_config 에서 읽는다
+app_token       = ""                      # bolt 모드에서만 필요
+default_channel = ""                      # 채널 ID(C…) 또는 DM 상대 user ID(U…)
+openclaw_config = "/home/user/.openclaw/openclaw.json"
+
+[llm]
+base_url         = "http://127.0.0.1:8080/v1"
+model            = "qwen3-8b"
+timeout_sec      = 300
+# 실측: 깊이 3~5K 가 처리량 최적 구간. 그 이상은 생성 속도가 급락한다.
+max_input_tokens = 4000
+enable_thinking  = false                  # JSON 출력 시 반드시 false
+
+[collect]
+user_agent                  = "LifeTrainer/0.1 (+https://github.com/; personal research bot)"
+per_domain_min_interval_sec = 2.0
+per_domain_concurrency      = 1
+arxiv_min_interval_sec      = 3.0
+max_fail_before_disable     = 10
+sources_path                = "config/sources.yaml"
+respect_robots              = true
