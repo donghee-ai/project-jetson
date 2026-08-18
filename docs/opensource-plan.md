@@ -57,13 +57,40 @@ llama.cpp가 툴 정의를 조용히 버렸고, 모델은 툴이 존재하는지
 
 ---
 
+### 2-3. 메모리 대역폭 60 GB/s — 해석이 틀렸음
+
+`performance.md` 는 `membw.cu` 로 잰 **60 GB/s** 를 "사양 대비 58%" 라며
+**모든 성능 예측의 출발점**으로 삼았다. 2026-08-18 모델 11종 실측이 이를 반증했다.
+
+가중치 트래픽(`tok/s × 파일크기`)은 양자화 계수가 개입하지 않는 순수 실측치다:
+
+```
+membw.cu 읽기 커널        60.0 GB/s
+Qwen3-8B Q4_K_M 트래픽    56.0 GB/s
+Qwen3-8B Q8_0 트래픽      86.4 GB/s   ← 읽기 커널보다 44% 높다
+```
+
+| 잘못된 서술 | 올바른 서술 |
+|---|---|
+| ❌ 실측 60 GB/s 가 하드웨어 천장 | ✅ **단일 커널 마이크로벤치의 한계**이지 하드웨어 한계가 아니다 |
+| ❌ 사양 대비 58% 밖에 못 낸다 | ✅ Q8_0 8B 기준 **84%** 까지 낸다 (양자화·크기 의존) |
+
+K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 언패킹 연산 비용**
+때문이다. 즉 **연산에 먼저 막히는 것**이지 메모리가 모자란 게 아니다.
+
+> **§2-1(EXAONE)과 같은 종류의 실수다.** 관측값은 맞았지만 원인 귀속이 틀렸다.
+> 이 상태로 트랙 C 글("사양 102.4, 실측 60 — 대역폭 괴리")을 냈으면 두 번째
+> 오정보가 될 뻔했다. → 해당 소재 철회 (§6).
+
+근거: [../../opensource/docs/benchmark-results.md](../../opensource/docs/benchmark-results.md) §5
+
 ## 3. 보유 자산
 
 | 자산 | 위치 | 생태계 내 희소성 |
 |---|---|---|
 | MAXN에서 GPU TPC 절반 게이팅 발견 (4→8 SM) | [hardware.md](../research/hardware.md) | **매우 높음** |
 | Super Mode 불가 원인 규명 (`nvpower.sh` 코드 라인) | 동 | **매우 높음** |
-| 메모리 대역폭 실측 60 GB/s (사양의 58%) | [performance.md](../research/performance.md) | 높음 |
+| ~~메모리 대역폭 실측 60 GB/s (사양의 58%)~~ **← 2026-08-18 철회, §2-3 참조** | [performance.md](../research/performance.md) | — |
 | 컨텍스트 깊이 10지점 곡선 (32K에서 −70%) | 동 | **매우 높음** |
 | 모델 3종 비교 (깊이별 순위 역전) | [llm-models.md](../research/llm-models.md) | 높음 |
 | EXAONE 한국어 토큰 19% 절약 | 동 | 높음 |
@@ -101,7 +128,7 @@ llama.cpp가 툴 정의를 조용히 버렸고, 모델은 툴이 존재하는지
 
 | 저장소 | ★ | 포크 | 이슈 | 기여 내용 |
 |---|---|---|---|---|
-| **`Andyyyy64/whichllm`** | 6,255 | 337 | 16 | **젯슨 Orin NX 16GB 프로필 + 모델 3종 실측치** |
+| **`Andyyyy64/whichllm`** | 6,255 | 337 | 16 | **젯슨 탐지 자체가 안 됨 — 패치 + 대역폭 레지스트리** (2026-08-18 완료, 제출 대기) |
 | `dusty-nv/jetson-containers` | 4,830 | 843 | 196 | Super Mode 불가 원인 — 이슈 등록 |
 | `rbonghi/jetson_stats` | 2,611 | 330 | 51 | (해당 시) 이슈 |
 | `ggml-org/llama.cpp` | 123,938 | 21,714 | 2,034 | `-no-cnv` 미동작 이슈 |
@@ -113,16 +140,25 @@ llama.cpp가 툴 정의를 조용히 버렸고, 모델은 툴이 존재하는지
 남의 스키마에 맞춰야 하므로 **일부만 들어간다.**
 
 ```
-✅ 들어감   모델별 tok/s · 메모리 요구량 · 하드웨어 스펙
+✅ 들어감   탐지 코드 · 모듈별 대역폭 · compute capability
+⚠️ 근거로만 모델별 tok/s (whichllm 은 벤치마크 수집기가 아니라 예측기다)
 ❌ 안 들어감 Super Mode 불가 원인 · TPC 게이팅 발견 · 깊이별 곡선 방법론
 ```
+
+> **2026-08-18 정정.** 원래 "모델 3종 실측치를 데이터로 넣는다"고 봤으나,
+> whichllm 은 **사양에서 성능을 예측하는 도구**이지 벤치마크를 수집하지 않는다.
+> `docs/scoring.md` 원문: *"The reported speed is a point estimate, not a live benchmark."*
+> 실측치는 데이터가 아니라 **레지스트리 값의 정당화 근거**로 들어간다.
+> 그리고 더 큰 것을 발견했다 — **whichllm 은 젯슨에서 GPU 를 아예 못 본다**
+> (`No GPU detected — CPU-only mode`). 그쪽이 본체 기여가 됐다.
 
 **안 들어가는 쪽이 오히려 더 가치 있다.** 그래서 트랙 A가 먼저다.
 
 ### 할 일
 
-- [ ] `whichllm` 데이터 스키마 확인 (CONTRIBUTING·기존 PR 형식)
-- [ ] 젯슨 프로필 PR 작성
+- [x] `whichllm` 데이터 스키마 확인 → [opensource/docs/whichllm-contribution-format.md](../../opensource/docs/whichllm-contribution-format.md)
+- [x] 젯슨 탐지 패치 + 테스트 40개 작성 → [opensource/contribution/](../../opensource/contribution/)
+- [ ] PR 제출 — **승인 대기**
 - [ ] `jetson-containers`에 Super Mode 이슈 등록 (재현 절차 포함)
 - [ ] llama.cpp `-no-cnv` 이슈 — 재현 최소 예제 첨부
 
@@ -143,7 +179,7 @@ llama.cpp가 툴 정의를 조용히 버렸고, 모델은 툴이 존재하는지
 1. **"출고 상태 젯슨은 GPU 절반이 꺼져 있다"** — TPC 게이팅 발견
 2. **"Super Mode가 안 켜지는 진짜 이유"** — nvpower.sh 코드 분석
 3. **"얕은 벤치마크로 모델 고르면 안 되는 이유"** — 깊이 9.6K에서 순위 역전
-4. **"사양 102.4 GB/s, 실측 60 GB/s"** — 대역폭 괴리
+4. ~~**"사양 102.4 GB/s, 실측 60 GB/s"** — 대역폭 괴리~~ **← 소재 철회 (§2-3)**
 
 1번과 2번이 가장 강하다. **문제 규명형**이라 검색 수요가 있다.
 
