@@ -67,6 +67,11 @@ _WEB_PATTERNS = [
     re.compile(r"뉴스|기사|헤드라인|속보"),
     re.compile(r"(최신|요즘|오늘자|지금).{0,8}(뭐|무엇|어떤|순위|버전|소식|이슈)"),
     re.compile(r"(찾아|검색해|알아봐|확인해)\s*(줘|봐|주라|보라)"),
+    re.compile(r"검색|서치|search", re.I),
+    # ★ "롤체가 뭐야?" 같은 **모르는 낱말**을 묻는 말. 이게 없으면 모델이 도메인을
+    #   지어낸다. 다만 "내 오늘 일정이 뭐야" 까지 걸리면 안 되므로 아래
+    #   `_PERSONAL_PATTERNS` 로 뺀다.
+    re.compile(r"(뭐야|뭐지|무엇인|뭔지|어떤\s*(게임|회사|사람|곳)|누구야|누구인지)"),
     re.compile(r"(사이트|웹페이지|페이지|링크|주소).{0,6}(열|읽|봐|확인|가져|보내)"),
     re.compile(r"릴리스|릴리즈|release\s*note", re.I),
     # ★ 아래는 실제로 놓쳐서 환각이 나온 표현들이다. "한국 유튜브 기준 실시간 급상승
@@ -84,6 +89,28 @@ _WEB_PATTERNS = [
 ]
 
 
+# ── 내 기록에 대한 질문 (웹 트리거에서 빼는 낱말) ──────────────────────
+# 웹 그룹이 걸린 턴은 `tool_choice="required"` 라 첫 바퀴에 툴 호출이 강제된다.
+# "내 오늘 일정이 뭐야" 처럼 **이미 프롬프트에 실려 있는 것**을 묻는 말까지 걸리면
+# 필요 없는 툴 호출 한 바퀴(2~4초)가 붙는다. 그래서 개인 기록 낱말이 있으면 뺀다.
+# ★ 시간 낱말만으로 빼면 안 된다. "오늘자 뉴스 뭐 있어?" 가 통째로 걸려
+#   바깥 조회가 죽는다 — 실제로 테스트가 잡아냈다. **개인 기록을 가리키는 낱말**이
+#   함께 있을 때만 뺀다.
+_PERSONAL_PATTERNS = [
+    re.compile(r"(내|제|나의|우리)\s*(계획|일정|활동|기록|하루|공부|시간|플래너)"),
+    re.compile(r"(내|제|나의)\s*(오늘|어제|이번\s*주|지난\s*주|이번주|지난주)"),
+    re.compile(
+        r"(오늘|어제|그제|이번\s*주|지난\s*주|이번주|지난주)\s*(의)?\s*"
+        r"(계획|일정|스케줄|할\s*일|투두|달성)"
+    ),
+    re.compile(
+        r"(오늘|어제|그제|이번\s*주|지난\s*주|이번주|지난주)\s*(뭐|무엇|얼마나)?\s*"
+        r"(했|한\s*거|공부|코딩|작업)"
+    ),
+    re.compile(r"달성률|플래너|타임라인|슬롯|미분류"),
+]
+
+
 @dataclass
 class TriggerGroup:
     """한 덩어리로 함께 실리는 툴들과, 그것을 켜는 규칙."""
@@ -91,8 +118,12 @@ class TriggerGroup:
     name: str
     tools: list[str]
     patterns: list[re.Pattern] = field(default_factory=list)
+    # 이 규칙에 걸리면 위 patterns 가 맞아도 발동하지 않는다.
+    excludes: list[re.Pattern] = field(default_factory=list)
 
     def matches(self, text: str) -> bool:
+        if any(p.search(text) for p in self.excludes):
+            return False
         return any(p.search(text) for p in self.patterns)
 
 
@@ -103,7 +134,14 @@ GROUPS: list[TriggerGroup] = [
         patterns=_REMINDER_PATTERNS,
     ),
     TriggerGroup(name="plan_write", tools=["add_plan"], patterns=_PLAN_PATTERNS),
-    TriggerGroup(name="web", tools=["fetch_url"], patterns=_WEB_PATTERNS),
+    # 검색과 읽기를 **함께** 싣는다. 검색만 실으면 모델이 목록을 읽고 그걸 본문인 양
+    # 답하고, 읽기만 실으면 주소를 모를 때 도메인을 지어낸다 — 둘 다 겪은 실패다.
+    TriggerGroup(
+        name="web",
+        tools=["web_search", "fetch_url"],
+        patterns=_WEB_PATTERNS,
+        excludes=_PERSONAL_PATTERNS,
+    ),
 ]
 
 

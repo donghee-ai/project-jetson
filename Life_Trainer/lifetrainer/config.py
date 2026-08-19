@@ -89,6 +89,17 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "sources_path": "config/sources.yaml",
         "respect_robots": True,
     },
+    "search": {
+        "naver_client_id": "",
+        "naver_client_secret": "",
+        "serper_api_key": "",
+        "timeout_sec": 10.0,
+        "max_results": 5,
+    },
+    "nightly": {
+        "summary_limit": 600,
+        "tag_limit": 20,
+    },
     "web": {
         "host": "127.0.0.1",
         "port": 8770,
@@ -98,6 +109,12 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "link_ttl_sec": 600,
         "session_ttl_sec": 2592000,
         "external": False,
+    },
+    "ingest": {
+        "enabled": False,
+        "secret": "",
+        "max_body_bytes": 4194304,
+        "clock_skew_sec": 300,
     },
 }
 
@@ -175,6 +192,31 @@ class CollectConfig:
 
 
 @dataclass(frozen=True)
+class SearchConfig:
+    """웹 검색 공급자 키. **한국어는 네이버, 그 외는 Serper** 로 나눈다.
+
+    구글 Custom Search JSON API 는 신규 가입이 닫혀 있다 (2026-08-19 확인).
+    근거와 대안 비교는 `docs/known-issues.md §1`.
+    """
+
+    naver_client_id: str = ""
+    naver_client_secret: str = ""
+    serper_api_key: str = ""
+    timeout_sec: float = 10.0
+    max_results: int = 5
+
+
+@dataclass(frozen=True)
+class NightlyConfig:
+    """야간 배치(02:00)가 한 번에 큐에 넣는 양. 전부 요약하면 14시간짜리다."""
+
+    # 실측 22.2초/건. 새벽 창 02:00~06:00 = 4시간 = 약 700건이 상한이고,
+    # 600건이면 약 3.3시간이라 05:50 중단 시각 전에 끝난다.
+    summary_limit: int = 600
+    tag_limit: int = 20  # 미분류 상위 N개를 한 번의 호출로 묶어 태깅
+
+
+@dataclass(frozen=True)
 class WebConfig:
     host: str = "127.0.0.1"  # 실수로 외부에 노출되지 않게
     port: int = 8770
@@ -191,6 +233,24 @@ class WebConfig:
 
 
 @dataclass(frozen=True)
+class IngestConfig:
+    """폰이 밀어 넣는 수신 엔드포인트(`POST /ingest/aw`) 설정.
+
+    **비밀키를 `web.session_secret` 과 분리한다.** 폰이 들고 있는 값이라,
+    새더라도 플래너 세션까지 열리면 안 된다. 비어 있으면 `web/auth.py` 가
+    `<data_dir>/ingestsecret` 에 0600 으로 만들어 쓴다.
+
+    `enabled=False` 가 기본이다 — 이 엔드포인트는 공개 인터넷(Cloudflare Tunnel)
+    으로 열리는 유일한 경로라, 켜는 것이 명시적인 행위여야 한다.
+    """
+
+    enabled: bool = False
+    secret: str = ""
+    max_body_bytes: int = 4 * 1024 * 1024
+    clock_skew_sec: int = 300
+
+
+@dataclass(frozen=True)
 class Config:
     root: Path  # 프로젝트 루트 (절대 경로)
     timezone: str
@@ -204,6 +264,9 @@ class Config:
     llm: LLMConfig
     collect: CollectConfig
     web: WebConfig = WebConfig()  # 새로 추가된 필드 — 기본값으로 기존 생성 코드와 호환 유지
+    nightly: NightlyConfig = NightlyConfig()
+    search: SearchConfig = SearchConfig()
+    ingest: IngestConfig = IngestConfig()
 
     @property
     def tz(self) -> ZoneInfo:
@@ -391,6 +454,19 @@ def load_config(path: str | Path | None = None) -> Config:
         respect_robots=bool(raw["collect"]["respect_robots"]),
     )
 
+    search = SearchConfig(
+        naver_client_id=str(raw["search"]["naver_client_id"]),
+        naver_client_secret=str(raw["search"]["naver_client_secret"]),
+        serper_api_key=str(raw["search"]["serper_api_key"]),
+        timeout_sec=float(raw["search"]["timeout_sec"]),
+        max_results=int(raw["search"]["max_results"]),
+    )
+
+    nightly = NightlyConfig(
+        summary_limit=int(raw["nightly"]["summary_limit"]),
+        tag_limit=int(raw["nightly"]["tag_limit"]),
+    )
+
     web = WebConfig(
         host=str(raw["web"]["host"]),
         port=int(raw["web"]["port"]),
@@ -400,6 +476,13 @@ def load_config(path: str | Path | None = None) -> Config:
         link_ttl_sec=int(raw["web"]["link_ttl_sec"]),
         session_ttl_sec=int(raw["web"]["session_ttl_sec"]),
         external=bool(raw["web"]["external"]),
+    )
+
+    ingest = IngestConfig(
+        enabled=bool(raw["ingest"]["enabled"]),
+        secret=str(raw["ingest"]["secret"]),
+        max_body_bytes=int(raw["ingest"]["max_body_bytes"]),
+        clock_skew_sec=int(raw["ingest"]["clock_skew_sec"]),
     )
 
     return Config(
@@ -415,6 +498,9 @@ def load_config(path: str | Path | None = None) -> Config:
         llm=llm,
         collect=collect,
         web=web,
+        nightly=nightly,
+        search=search,
+        ingest=ingest,
     )
 
 

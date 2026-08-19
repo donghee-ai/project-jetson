@@ -415,6 +415,53 @@ def _tool_fetch_url(ctx: ToolContext, args: dict) -> str:
     return f"[웹 · {label}] {head}\n{page.text}{tail}"
 
 
+def _tool_web_search(ctx: ToolContext, args: dict) -> str:
+    """검색어로 웹 결과 목록을 가져온다. **본문은 안 읽는다** — 그건 fetch_url 이다.
+
+    이 툴이 생긴 이유는 `fetch_url` 이 URL 을 알아야만 동작하기 때문이다. 모르면
+    모델이 도메인을 지어냈다 — "롤체" 를 묻자 `valorant.com` 을 열고 그 뒤 세 턴이
+    같은 틀린 출처를 인용했다 (`docs/known-issues.md §1`).
+
+    결과에 **어느 검색엔진인지**를 박는다. 한국어 질의는 네이버, 그 외는 Serper 로
+    가는데, 그 사실을 안 밝히면 모델이 "구글에서 찾았다" 같은 말을 지어낸다.
+    """
+    from lifetrainer.llm.websearch import SearchError, search
+
+    query = str(args.get("query") or "").strip()
+    if not query:
+        raise ToolError("query 가 비었습니다.")
+
+    try:
+        result = search(ctx.cfg, query)
+    except SearchError as exc:
+        # ★ 실패했을 때 **무엇을 말해야 하는지까지** 알려준다. "키가 없습니다" 만
+        # 돌려주면 8B 는 그 턴을 자기가 아는 것으로 메운다 — 실제로 "롤체가 뭐야"에
+        # 주입된 활동 요약을 읽고 "롤체는 사용자의 활동 분석 도구" 라고 답했다.
+        raise ToolError(
+            f"{exc} 검색을 못 했으므로 이 질문의 답을 모른다. "
+            "추측하거나 다른 자료로 대신 답하지 말고, 확인하지 못했다고 그대로 말하라."
+        ) from exc
+
+    if not result.hits:
+        # 빈손이면 빈손이라고 말한다. 다른 것으로 대신 채우지 않는다
+        # (HISTORY/2026-08-18-search-fallback-noise.md).
+        return (
+            f"[검색 · {result.label}] '{result.query}' 결과 0건. "
+            "다른 낱말로 다시 검색하거나, 확인하지 못했다고 답한다."
+        )
+
+    lines = [f"[검색 · {result.label}] '{result.query}' 상위 {len(result.hits)}건"]
+    for i, hit in enumerate(result.hits, 1):
+        lines.append(f"{i}. {hit.title} — {hit.url}")
+        if hit.snippet:
+            lines.append(f"   {hit.snippet}")
+    lines.append(
+        "※ 위는 검색 결과 요약일 뿐 본문이 아니다. 근거가 필요하면 fetch_url 로 "
+        "**서로 다른 두 곳 이상**을 열어 확인한다."
+    )
+    return "\n".join(lines)
+
+
 # 아는 출처는 무엇인지 한국어로 못박아 둔다. 모델이 "구글 검색어 트렌드" 를 읽고
 # "유튜브 급상승 1위" 라고 답하는 일이 실제로 있었다 — 데이터도 링크도 진짜인데
 # **그게 무엇인지에 대한 주장**이 틀렸다. 프롬프트로는 안 잡혀서(온도를 낮추면
@@ -699,6 +746,38 @@ _register(
             },
         },
         handler=_tool_fetch_url,
+    )
+)
+
+
+_register(
+    Tool(
+        name="web_search",
+        gated=True,
+        schema={
+            "type": "function",
+            "function": {
+                "name": "web_search",
+                "description": (
+                    "웹을 검색해 제목·주소·요약 목록을 받는다. **주소를 모를 때 먼저 쓴다.** "
+                    "한국어로 검색하면 네이버, 영어로 검색하면 구글 결과가 온다 — "
+                    "한국 관련 질문은 한국어로 검색한다. 결과는 목록일 뿐 본문이 아니므로, "
+                    "내용을 근거로 답하려면 fetch_url 로 서로 다른 두 곳 이상을 열어 확인한다. "
+                    "이미 주소를 알고 있으면 검색하지 말고 바로 fetch_url 을 쓴다."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "검색어. 사용자의 말에서 핵심 낱말만 뽑아 짧게 쓴다.",
+                        }
+                    },
+                    "required": ["query"],
+                },
+            },
+        },
+        handler=_tool_web_search,
     )
 )
 

@@ -1,0 +1,12 @@
+[Unit]
+Description=Life Trainer — 05:50 에 야간 배치를 접는다
+
+[Timer]
+# 요약 600건 ≈ 3.3시간이라 보통은 05:20 쯤 끝난다. 이 타이머는 안전망이다 —
+# 문서가 길어 느려진 밤에도 **낮까지 새지 않게** 남은 잡을 비운다.
+# 진행 중인 1건(약 20초)은 끝까지 처리한다.
+OnCalendar=*-*-* 05:50:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

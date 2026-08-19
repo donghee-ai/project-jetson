@@ -56,8 +56,11 @@ def ensure_session_secret(cfg: Any) -> str:
     """
     if cfg.web.session_secret:
         return cfg.web.session_secret
+    return _read_or_create_secret(Path(cfg.data_dir) / _WEBSECRET_FILENAME)
 
-    path = Path(cfg.data_dir) / _WEBSECRET_FILENAME
+
+def _read_or_create_secret(path: Path) -> str:
+    """`path` 의 비밀키를 읽고, 없으면 무작위 32바이트로 만들어 0600 으로 저장한다."""
     if path.exists():
         secret = path.read_text(encoding="utf-8").strip()
         if secret:
@@ -71,8 +74,100 @@ def ensure_session_secret(cfg: Any) -> str:
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(secret)
     os.chmod(path, 0o600)
-    logger.info("새 세션 비밀키를 생성했습니다: %s", path)
+    logger.info("새 비밀키를 생성했습니다: %s", path)
     return secret
+
+
+# ── ingest 서명 (폰 → 젯슨 push) ──────────────────────────────────────────
+#
+# 토큰이 아니라 **요청 본문에 대한 서명**이다. 자체 완결형 토큰은 가로채면 그대로
+# 재생할 수 있는데, 여기는 공개 인터넷(Cloudflare Tunnel)으로 열리는 유일한
+# 경로라 본문까지 서명에 묶는다.
+#
+#     Authorization: LT1 <device>:<ts>:<nonce>:<sig>
+#     sig = b64url(HMAC-SHA256(secret, "<device>\n<ts>\n<nonce>\n<sha256(body) hex>"))
+
+_INGEST_SECRET_FILENAME = "ingestsecret"
+INGEST_AUTH_SCHEME = "LT1"
+
+
+def ensure_ingest_secret(cfg: Any) -> str:
+    """ingest 서명에 쓸 비밀키. **세션 비밀키와 별개다.**
+
+    폰이 들고 있는 값이라 새더라도 플래너 세션까지 열려서는 안 된다.
+    `cfg.ingest.secret` 이 비어 있으면 `<data_dir>/ingestsecret` 을 읽고,
+    파일도 없으면 새로 만든다(무작위 32바이트, 0600).
+    """
+    if cfg.ingest.secret:
+        return cfg.ingest.secret
+    return _read_or_create_secret(Path(cfg.data_dir) / _INGEST_SECRET_FILENAME)
+
+
+def sign_ingest(secret: str, device: str, ts: float, nonce: str, body: bytes) -> str:
+    """ingest 요청 서명을 만든다. 폰 쪽 구현과 테스트가 공유하는 단일 정의."""
+    digest = hashlib.sha256(body).hexdigest()
+    msg = f"{device}\n{int(ts)}\n{nonce}\n{digest}"
+    mac = hmac.new(secret.encode("utf-8"), msg.encode("utf-8"), hashlib.sha256).digest()
+    return _b64e(mac)
+
+
+def verify_ingest(conn: Any, cfg: Any, header: str | None, body: bytes, *, now: float | None = None) -> str:
+    """`Authorization` 헤더를 검증하고 기기 이름을 돌려준다. 실패하면 AuthError.
+
+    검증 순서가 곧 방어선이다:
+
+    1. **서명 먼저** — 위조된 요청의 device/ts 는 애초에 신뢰하지 않는다
+    2. **시계 오차 창** (`cfg.ingest.clock_skew_sec`) — 오래된 요청을 잘라낸다
+    3. **nonce 1회용** — 창 안에서의 재전송을 막는다
+
+    3번 상태는 서명·시각 검증을 통과한 뒤에만 남긴다. 그러지 않으면 아무 문자열이나
+    던지는 것만으로 `sync_state` 가 부풀어 오른다 (`consume_link_token` 과 같은 이유).
+    """
+    ts_now = now if now is not None else time.time()
+    secret = ensure_ingest_secret(cfg)
+
+    scheme, _, rest = (header or "").partition(" ")
+    if scheme != INGEST_AUTH_SCHEME:
+        raise AuthError("인증 헤더가 없거나 형식이 다릅니다")
+    parts = rest.strip().split(":")
+    if len(parts) != 4:
+        raise AuthError("인증 헤더 형식이 올바르지 않습니다")
+    device, ts_raw, nonce, sig = parts
+    if not device or not nonce:
+        raise AuthError("인증 헤더에 기기 이름 또는 nonce 가 없습니다")
+
+    try:
+        ts = float(ts_raw)
+    except ValueError:
+        raise AuthError("인증 헤더의 타임스탬프를 읽을 수 없습니다") from None
+
+    if not hmac.compare_digest(sign_ingest(secret, device, ts, nonce, body), sig):
+        raise AuthError("서명이 유효하지 않습니다")
+
+    skew = cfg.ingest.clock_skew_sec
+    if abs(ts_now - ts) > skew:
+        raise AuthError(f"요청 시각이 허용 오차({skew}초)를 벗어났습니다")
+
+    state_key = f"ingest_nonce:{device}:{nonce}"
+    if db.get_state(conn, state_key) is not None:
+        raise AuthError("이미 처리된 요청입니다 (재전송)")
+    db.set_state(conn, state_key, repr(ts))
+    return device
+
+
+def prune_ingest_nonces(conn: Any, cfg: Any, *, now: float | None = None) -> int:
+    """시계 오차 창을 벗어난 nonce 를 지운다. 반환값은 지운 개수.
+
+    nonce 는 창(기본 300초) 안의 재전송만 막으면 되고, 창을 벗어난 요청은 시각
+    검증에서 어차피 걸린다. 안 지우면 `sync_state` 가 5분마다 한 행씩 영영 늘어난다.
+    """
+    ts_now = now if now is not None else time.time()
+    cutoff = ts_now - cfg.ingest.clock_skew_sec
+    cur = conn.execute(
+        "DELETE FROM sync_state WHERE key LIKE 'ingest_nonce:%' AND CAST(value AS REAL) < ?",
+        (cutoff,),
+    )
+    return cur.rowcount if cur.rowcount and cur.rowcount > 0 else 0
 
 
 # ── 토큰 인코딩/디코딩 (HMAC-SHA256, base64url) ───────────────────────────

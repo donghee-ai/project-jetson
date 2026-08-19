@@ -5,7 +5,7 @@
 # 심링크로 건다 — 저장소를 고치면 유닛도 같이 바뀐다 (openclaw-setup/install.sh 와 같은 패턴).
 #
 # 기동하는 것:
-#   - lifetrainer-{sync,daily,weekly,collect,digest}.timer  (+ 대응하는 .service)
+#   - lifetrainer-{sync,daily,weekly,collect,digest,nightly,nightly-stop}.timer
 #   - lifetrainer-worker.service                            (상시 GPU 잡 워커)
 #
 # 기동하지 않는 것:
@@ -24,6 +24,8 @@ TIMERS=(
     lifetrainer-weekly
     lifetrainer-collect
     lifetrainer-digest
+    lifetrainer-nightly
+    lifetrainer-nightly-stop
 )
 
 echo "== Life Trainer systemd 유닛 설치 =="

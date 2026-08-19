@@ -25,6 +25,11 @@
 - **JSON 스키마에 `pattern` 금지** — llama.cpp GBNF 변환기가 요청 전체를 400 으로 거부.
   **툴 스키마도 마찬가지다** (OpenClaw 의 `cron` 툴이 정확히 이걸로 죽었다)
 - **JSON 출력·툴 콜링 시 thinking off** — 사고 텍스트가 섞여 파싱이 깨진다
+- **JSON 스키마의 배열 필드에 `maxItems` 를 둔다** — 스키마 강제는 문법만 보장하지
+  길이를 모른다. 8B 가 태그를 16개 뽑다 `max_tokens` 에 걸려 JSON 이 문자열 중간에서
+  잘렸다 ([실제 사고](HISTORY/2026-08-19-summary-json-truncated-by-tags.md))
+- **Field description·docstring 은 그대로 프롬프트에 실린다** — 근거는 주석에 쓰고
+  스키마 안에는 짧게
 - **LLM 입력 3~5K 로 끊기** — 깊이 32K 에서 생성 속도 −70%
 - **파이썬 상주 300MB 이하** — 가용 메모리 2.8GB (llama-server 가 10.4GB 사용 중)
 - **GPU 잡 동시 실행 금지** — `fcntl.flock`
@@ -37,7 +42,9 @@
 - **5분 미만 기기 전환은 앞 활동으로 흡수한다** (`rollup.absorb_short_switches`).
   "코딩 10분 → 폰 3분 → 코딩 10분" 은 코딩 23분이다 — 잠깐 딴짓까지 다 찍히면
   플래너를 읽을 수 없다. 임계값은 `rollup.switch_absorb_sec`
-- 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지
+- 활동 카테고리 **9개** (게임 포함) + 구조 상태 3개
+- 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지.
+  **색을 더할 때는 검증기로 계산한다** — 눈대중 금지. 근거는 palette.yaml 주석에
 - **Slack 발송은 `--post` 등 명시적 지시가 있을 때만**
 
 ## 대화 프롬프트 규칙 (`llm/context.py`·`converse.py`)
@@ -61,11 +68,22 @@
 - **툴 결과는 "무엇인지"와 "무엇이 없는지"를 같이 말한다.** 빈손일 때 다른 걸로
   대체하거나, 출처를 안 밝히면 모델이 그걸 사실로 취급한다 (실제 사고 2건:
   `HISTORY/2026-08-18-search-fallback-noise.md`)
-- **바깥 정보를 묻는 턴은 `tool_choice="required"`.** `auto` 면 기억으로 지어낸다
+- **바깥 정보는 툴에 맡기지 말고 선주입한다.** `tool_choice="required"` 는 툴 호출을
+  **본문 뒤로** 붙일 뿐이라, 모델이 틀린 답을 다 쓰고 나서 툴을 부른다(35초 낭비).
+  예산이 먼저 끝나면 그 틀린 본문이 답이 된다
+  ([실제 사고](HISTORY/2026-08-19-required-tool-choice-is-not-a-guarantee.md))
+- **닿을 방법이 없는 질문에는 모델을 부르지 않는다.** 검색 키도 없고 주소도 없으면
+  거절 문장을 코드가 반환한다 — 부르는 순간 빈자리를 기억으로 채운다
+- **웹 트리거에서 개인 기록 질문을 뺀다.** "내 오늘 일정이 뭐야" 까지 웹 툴을 실으면
+  강제 툴 호출 한 바퀴(2~4초)가 낭비된다. 단 **시간 낱말만으로 빼면 안 된다** —
+  "오늘자 뉴스 뭐 있어?" 가 같이 죽는다 (테스트가 잡았다)
+- **검색은 질의어만 내보낸다.** 활동·창 제목·계획은 절대 싣지 않고 120자에서 자른다
+- **대화 턴은 `interactive_turn` 안에서 돈다.** 야간 배치가 GPU 를 잡고 있으면
+  2초짜리 질문이 20초가 된다 — 워커가 다음 잡을 안 집게 막는 락이다
 
 ## 검증
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 기준선 767개
-.venv/bin/lt doctor                       # 9항목 점검
+.venv/bin/python -m pytest tests/ -q     # 기준선 858개
+.venv/bin/lt doctor                       # 10항목 점검
 ```

@@ -23,11 +23,22 @@ class ActivityTag(BaseModel):
     confidence: float = Field(description="0.0~1.0 확신도")
 
 
+# ★ tags 에 상한이 있는 이유 (2026-08-19 실측)
+#
+# 상한이 없으면 8B 가 태그를 16개까지 뽑다가 `max_tokens=400` 에 걸려 **JSON 이
+# 문자열 중간에서 잘린다.** 파싱이 깨지고 잡은 3번 재시도한 뒤 실패한다 —
+# 요약 하나에 GPU 1분을 쓰고 아무것도 안 남는다. 생성 8~9 tok/s 라 출력 길이가
+# 곧 실패 확률이다. 스키마로 막는 것이 프롬프트로 부탁하는 것보다 확실하다
+# (llama.cpp 의 GBNF 가 maxItems 를 강제한다).
+#
+# ★ 이 클래스의 docstring·Field description 은 그대로 프롬프트에 실린다.
+#   설명을 길게 쓰면 매 호출의 입력 토큰이 는다 — 근거는 여기 주석에 남기고
+#   스키마 안에는 짧게 쓴다.
 class DocSummary(BaseModel):
     """`doc` 한 건을 3~4줄로 요약한 결과."""
 
     summary: str = Field(description="3~4문장 한국어 요약")
-    tags: list[str] = Field(description="핵심 키워드 태그 목록")
+    tags: list[str] = Field(description="핵심 키워드 태그 (최대 6개)", max_length=6)
     relevance: float = Field(description="관심사 대비 관련도 0.0~1.0")
 
 

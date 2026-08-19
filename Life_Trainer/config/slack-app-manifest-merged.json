@@ -29,7 +29,7 @@
         "command": "/plan",
         "description": "계획 추가",
         "should_escape": false,
-        "usage_hint": "저녁 약속가기  /  수학 #수학 @60m !high"
+        "usage_hint": "저녁 약속가기  /  프로젝트 보고서 #프로젝트 @90m !high"
       },
       {
         "command": "/del",
@@ -65,7 +65,7 @@
         "command": "/memo",
         "description": "그날 메모",
         "should_escape": false,
-        "usage_hint": "예시 자료 다운로드"
+        "usage_hint": "신청 작업 장바구니 담기"
       },
       {
         "command": "/week",

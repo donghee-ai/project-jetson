@@ -179,8 +179,21 @@ class SlackNotifier:
         initial_comment: str | None = None,
         channel: str | None = None,
         thread_ts: str | None = None,
+        share: bool = True,
     ) -> dict:
-        """`files_upload_v2` 로 PNG 를 올린다. 비활성/파일 없음이면 빈 dict."""
+        """`files_upload_v2` 로 PNG 를 올린다. 비활성/파일 없음이면 빈 dict.
+
+        ## ★ `share=False` 를 언제 쓰나 (2026-08-19)
+
+        `files_upload_v2` 에 `channel` 을 주면 **슬랙이 그 파일을 채널에 하나의
+        메시지로 게시한다.** 그 뒤 같은 file id 를 `slack_file` 이미지 블록에 넣어
+        카드를 또 올리면 **같은 그림이 두 번 뜬다.** 실제로 사용자가 두 번 봤다.
+
+        슬랙이 문서에서 권하는 순서는 "업로드해서 file id 를 받고 → 그 id 를
+        image 블록으로 참조" 이고, 업로드 시 채널 공유는 **선택**이다.
+        그래서 블록에 실을 목적이면 `share=False` 로 올린다 — 채널에 파일 메시지가
+        따로 생기지 않고 카드 하나만 남는다.
+        """
         if not self.enabled:
             logger.warning("Slack 비활성화(토큰 없음) — PNG 업로드 생략: %s", path)
             return {}
@@ -188,19 +201,22 @@ class SlackNotifier:
         if not p.exists():
             logger.warning("PNG 파일이 존재하지 않아 업로드 생략: %s", p)
             return {}
-        target = self.resolve_channel(channel)
-        if not target:
-            logger.warning("Slack 채널이 지정되지 않아 PNG 업로드 생략")
-            return {}
-        resp = self._call_with_retry(
-            self.client.files_upload_v2,
-            channel=target,
-            file=str(p),
-            filename=p.name,
-            title=title,
-            initial_comment=initial_comment,
-            thread_ts=thread_ts,
-        )
+
+        kwargs: dict = {"file": str(p), "filename": p.name, "title": title}
+        if share:
+            target = self.resolve_channel(channel)
+            if not target:
+                logger.warning("Slack 채널이 지정되지 않아 PNG 업로드 생략")
+                return {}
+            kwargs["channel"] = target
+            kwargs["initial_comment"] = initial_comment
+            kwargs["thread_ts"] = thread_ts
+        elif initial_comment or thread_ts:
+            # 공유하지 않는 업로드에 코멘트/스레드를 주면 슬랙이 무시한다.
+            # 조용히 사라지는 대신 호출부 실수를 로그로 드러낸다.
+            logger.warning("share=False 업로드에는 initial_comment/thread_ts 가 적용되지 않습니다")
+
+        resp = self._call_with_retry(self.client.files_upload_v2, **kwargs)
         # ★ `dict(resp)` 를 하면 안 된다. slack_sdk 는 dict 가 아니라 `SlackResponse`
         # 를 돌려주고, 그걸 dict() 로 감싸면 `ValueError: dictionary update sequence
         # element #0 has length 1` 로 터진다 — **업로드는 이미 성공한 뒤에** 터지므로
@@ -241,7 +257,11 @@ class SlackNotifier:
         png_path = getattr(report, "png_path", None)
         if png_path:
             try:
-                upload = self.upload_png(png_path, title=f"{report.kind} {report.day}", channel=target)
+                # share=False — 이 파일은 아래 이미지 블록으로 실린다. 채널에도
+                # 공유하면 같은 그림이 두 번 뜬다.
+                upload = self.upload_png(
+                    png_path, title=f"{report.kind} {report.day}", channel=target, share=False
+                )
                 file_id = (upload or {}).get("file", {}).get("id") if isinstance(upload, dict) else None
                 if file_id:
                     blocks.append(

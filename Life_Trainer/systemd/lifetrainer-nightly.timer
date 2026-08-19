@@ -1,0 +1,12 @@
+[Unit]
+Description=Life Trainer — 매일 02:00 야간 배치 적재
+
+[Timer]
+# 사용자가 자는 시간. daily(23:30)·digest(07:30) 와 겹치지 않는다.
+# 요약 20건 ≈ 7분이라 아침까지 여유가 크다.
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

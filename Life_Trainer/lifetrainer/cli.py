@@ -62,7 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_doctor = sub.add_parser("doctor", parents=[common], help="환경 점검 (DB, AW, LLM, Slack, 폰트, 디스크, 큐)")
+    p_doctor = sub.add_parser("doctor", parents=[common], help="환경 점검 (DB, AW, LLM, Slack, 폰트, 디스크, 큐, 검색)")
     p_doctor.set_defaults(func=cmd_doctor)
 
     p_initdb = sub.add_parser("init-db", parents=[common], help="스키마 생성")
@@ -70,6 +70,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_sync = sub.add_parser("sync", parents=[common], help="ActivityWatch 동기화")
     p_sync.set_defaults(func=cmd_sync)
+
+    p_import = sub.add_parser(
+        "import", parents=[common], help="폰에서 뽑은 ActivityWatch export 파일 넣기"
+    )
+    p_import.add_argument("--from", dest="src", required=True, help="JSON 파일 또는 디렉터리")
+    p_import.add_argument(
+        "--device", default=None, help="기기 이름 (생략하면 버킷 메타의 hostname 에서 추론)"
+    )
+    p_import.add_argument(
+        "--rollup", action="store_true", help="넣은 뒤 해당 날짜들을 다시 롤업한다"
+    )
+    p_import.set_defaults(func=cmd_import)
 
     p_synth = sub.add_parser("synth", parents=[common], help="합성 데이터 생성 (AW 없이 파이프라인 검증)")
     p_synth.add_argument("--days", type=int, default=7, help="생성할 일수 (기본 7)")
@@ -123,6 +135,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_digest = sub.add_parser("digest", parents=[common], help="아침 다이제스트 (키워드 랭킹, LLM 없음)")
     p_digest.add_argument("--post", action="store_true", help="Slack 으로 발송 (없으면 절대 보내지 않음)")
     p_digest.set_defaults(func=cmd_digest)
+
+    p_nightly = sub.add_parser(
+        "nightly", parents=[common], help="야간 배치 적재 (문서 요약 + 미분류 태깅을 큐에 넣는다)"
+    )
+    p_nightly.add_argument("--summaries", type=int, default=None, help="요약할 문서 수 (기본: 설정값)")
+    p_nightly.add_argument("--tags", type=int, default=None, help="한 번에 태깅할 미분류 수 (0 이면 건너뜀)")
+    p_nightly.add_argument("--dry-run", action="store_true", help="큐에 넣지 않고 대상만 센다")
+    p_nightly.add_argument(
+        "--stop", action="store_true",
+        help="적재 대신 **남은 배치 잡을 큐에서 비운다** (새벽 창이 끝날 때. 알림은 안 건드림)",
+    )
+    p_nightly.set_defaults(func=cmd_nightly)
 
     p_worker = sub.add_parser("worker", parents=[common], help="GPU 잡 워커")
     p_worker.add_argument("--once", action="store_true", help="큐를 한 번 비우고 종료 (기본: 상시 폴링)")
@@ -395,6 +419,27 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         except Exception as exc:  # noqa: BLE001
             warn("큐", f"조회 실패: {exc}")
 
+    # 8-B. 웹 검색 키 (없으면 대화가 URL 을 추측한다 — known-issues §1)
+    try:
+        from lifetrainer.llm.websearch import providers_available
+
+        have = providers_available(cfg)
+        if have["naver"] and have["serper"]:
+            ok("웹 검색", "네이버(한국어) + Serper(영어)")
+        elif have["naver"]:
+            warn("웹 검색", "네이버만 설정됨 — 영어 질의도 네이버로 간다 ([search] serper_api_key)")
+        elif have["serper"]:
+            warn("웹 검색", "Serper 만 설정됨 — 한국어 질의도 구글로 간다 ([search] naver_client_id/secret)")
+        else:
+            warn(
+                "웹 검색",
+                "키 없음 — 대화가 주소를 추측한다. "
+                "config/lifetrainer.toml 의 [search] 에 naver_client_id/naver_client_secret "
+                "(하루 25,000건 무료) 또는 serper_api_key 를 넣는다",
+            )
+    except Exception as exc:  # noqa: BLE001
+        warn("웹 검색", f"확인 실패: {exc}")
+
     if conn is not None:
         conn.close()
 
@@ -439,6 +484,103 @@ def cmd_sync(args: argparse.Namespace, cfg: Config) -> int:
         for err in result.errors:
             print(f"  경고: {err}")
         return 0
+    finally:
+        conn.close()
+
+
+def _days_touched(cfg: Config, result) -> set[str]:
+    """이번에 들어온 이벤트가 걸친 논리적 하루(06:00 경계) 목록.
+
+    폰 데이터는 **늦게 도착한다** (수집 1시간 주기 + 자정 파싱). 오늘만 롤업하면
+    어제 후반부가 영영 반영되지 않으므로, 실제로 건드린 날짜를 전부 돌려준다.
+    """
+    if result.ts_min is None or result.ts_max is None:
+        return set()
+    lo = timeutil.day_str(result.ts_min, cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
+    hi = timeutil.day_str(result.ts_max, cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
+    return set(timeutil.day_range(lo, hi))
+
+
+def cmd_import(args: argparse.Namespace, cfg: Config) -> int:
+    """폰에서 뽑은 export 파일을 넣는다 (`POST /ingest/aw` 와 같은 코드 경로).
+
+    adb 로 뽑은 표본과 상시 경로가 갈라지면, 파일로는 되는데 네트워크로는 안 되는
+    상황을 나중에 디버깅하게 된다. 검증·삽입은 `collect/ingest.apply_payload` 하나뿐이다.
+    """
+    import json as _json
+
+    from lifetrainer.collect import ingest
+
+    src = Path(args.src)
+    if src.is_dir():
+        files = sorted(src.glob("*.json"))
+        if not files:
+            print(f"JSON 파일이 없습니다: {src}", file=sys.stderr)
+            return 1
+    elif src.exists():
+        files = [src]
+    else:
+        print(f"경로를 찾을 수 없습니다: {src}", file=sys.stderr)
+        return 1
+
+    conn = db.open_db(cfg)
+    try:
+        total_events = 0
+        failed = 0
+        touched_days: set[str] = set()
+        for path in files:
+            try:
+                payload = _json.loads(path.read_text(encoding="utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                print(f"  {path.name}: 읽기 실패 — {exc}", file=sys.stderr)
+                failed += 1
+                continue
+
+            device = args.device or ingest.infer_device_name(payload)
+            if not device:
+                print(
+                    f"  {path.name}: 기기 이름을 추론할 수 없습니다 — --device 로 지정하세요",
+                    file=sys.stderr,
+                )
+                failed += 1
+                continue
+
+            try:
+                with db.transaction(conn):
+                    result = ingest.apply_payload(
+                        conn,
+                        payload,
+                        device=device,
+                        allow_new_device=True,
+                        device_kind=ingest.kind_for_payload(payload),
+                    )
+            except ingest.IngestError as exc:
+                print(f"  {path.name}: 거부됨 — {exc}", file=sys.stderr)
+                failed += 1
+                continue
+
+            total_events += result.events
+            print(
+                f"  {path.name}: 기기 {result.device} — 버킷 {result.buckets}개 / "
+                f"이벤트 {result.events}건"
+            )
+            for note in result.skipped:
+                print(f"      건너뜀: {note}")
+            touched_days |= _days_touched(cfg, result)
+
+        print(f"완료: 파일 {len(files) - failed}/{len(files)}개, 이벤트 {total_events}건")
+
+        if args.rollup and touched_days:
+            from lifetrainer.rollup.rollup import rollup_day
+
+            classifier = _load_classifier(cfg)
+            for day in sorted(touched_days):
+                # rollup_day 는 자기 안에서 트랜잭션을 연다 — 밖에서 또 감싸면
+                # sqlite 가 "cannot start a transaction within a transaction" 을 낸다.
+                rollup_day(conn, cfg, classifier, day)
+                print(f"  재롤업: {day}")
+
+        return 1 if failed else 0
     finally:
         conn.close()
 
@@ -699,6 +841,42 @@ def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
                     print(f"Slack 발송 완료 (ts={ts})")
                 else:
                     print("Slack 발송 실패 또는 채널 미지정", file=sys.stderr)
+        return 0
+    finally:
+        conn.close()
+
+
+def cmd_nightly(args: argparse.Namespace, cfg: Config) -> int:
+    """야간 배치 잡을 큐에 넣는다. 실제 처리는 상시 워커가 한다 (여기서 LLM 을 부르지 않는다)."""
+    from lifetrainer.llm.nightly import enqueue_nightly, pending_docs, untagged_count  # noqa: F401
+
+    conn = db.open_db(cfg)
+    try:
+        if args.stop:
+            from lifetrainer.llm.nightly import cancel_pending_batch
+
+            dropped = cancel_pending_batch(conn)
+            print(f"대기 중이던 배치 잡 {dropped}건을 큐에서 비웠습니다 (예약 알림은 그대로).")
+            return 0
+
+        if args.dry_run:
+            s_limit = cfg.nightly.summary_limit if args.summaries is None else args.summaries
+            docs = pending_docs(conn, s_limit)
+            untagged = untagged_count(conn)
+            print(f"요약 대상 {len(docs)}건 (상한 {s_limit}) · 미태깅 지문 {untagged}개")
+            print("(--dry-run 이라 큐에 넣지 않았습니다)")
+            return 0
+
+        result = enqueue_nightly(
+            conn, cfg, summary_limit=args.summaries, tag_limit=args.tags
+        )
+        print(
+            f"요약 잡 {result['summaries']}건 적재"
+            f" (후보 {result['candidates']}건 중 중복 {result['summaries_skipped']}건 제외)"
+        )
+        print(f"태깅 잡 {result['tags']}건 적재 (미태깅 지문 {result['untagged']}개)")
+        if result["summaries"] or result["tags"]:
+            print("처리는 상시 워커(lifetrainer-worker.service)가 합니다.")
         return 0
     finally:
         conn.close()

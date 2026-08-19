@@ -19,6 +19,7 @@ from typing import IO, TYPE_CHECKING, Callable
 
 from lifetrainer.db import transaction
 from lifetrainer.llm.client import LLMClient, LLMUnavailable
+from lifetrainer.llm.interactive import interactive_busy
 from lifetrainer.llm.queue import Job, claim, complete, fail, reap_expired
 from lifetrainer.llm.schemas import DocSummary, json_schema_of
 from lifetrainer.timeutil import now_ts
@@ -85,8 +86,11 @@ def tag_activity(
     """
     limit = int(job.payload.get("limit", 20))
     rows = conn.execute(
+        # seconds_total = 0 은 규칙 보강으로 이미 흡수된 지문이다 (롤업이 재계산한다).
+        # 빼지 않으면 배치가 이미 분류된 앱을 태깅하느라 GPU 를 쓴다.
         "SELECT fingerprint, app, title_sample FROM unclassified"
-        " WHERE llm_category IS NULL ORDER BY seconds_total DESC LIMIT ?",
+        " WHERE llm_category IS NULL AND seconds_total > 0"
+        " ORDER BY seconds_total DESC LIMIT ?",
         (limit,),
     ).fetchall()
     if not rows:
@@ -160,7 +164,7 @@ def summarize_doc(
     abstract = row["abstract"] or ""
     system = (
         "당신은 문서를 한국어로 간결하게 요약하는 도우미입니다. "
-        "3~4문장으로 요약하고 핵심 키워드 태그를 뽑으세요."
+        "3~4문장으로 요약하고 핵심 키워드 태그를 6개 이하로 뽑으세요."
     )
     user = f"제목: {title}\n\n본문/초록:\n{abstract}"
     schema = json_schema_of(DocSummary, "DocSummary")
@@ -229,6 +233,25 @@ HANDLERS: dict[str, Callable[["sqlite3.Connection", "Config", LLMClient, Job], d
     "reminder": send_reminder,
 }
 
+# ★ GPU(=llama-server)를 쓰는 잡. 대화 턴이 진행 중이면 이것들만 미룬다.
+# `reminder` 는 LLM 을 안 쓰고 시각이 곧 약속이라 절대 미루지 않는다 —
+# "10분 뒤 알려줘" 가 대화 때문에 늦으면 그건 기능이 고장난 것이다.
+GPU_KINDS: frozenset[str] = frozenset({"tag_activity", "summarize_doc"})
+
+
+def _claimable_kinds(cfg: "Config") -> list[str]:
+    """이번 바퀴에 집어도 되는 잡 종류. 대화 중이면 GPU 잡을 뺀다.
+
+    llama-server 는 `--parallel 1` 이라 요약 1건(약 20초)을 집는 순간 사용자의
+    질문이 그 뒤에 선다. 워커는 한 번에 한 건만 처리하므로, 집기 전에 물어보는
+    것만으로 최악 대기가 20초 → 0초가 된다 (`docs/rag-plan.md §4`).
+    """
+    if not interactive_busy(cfg):
+        return list(HANDLERS.keys())
+    deferred = [k for k in HANDLERS if k not in GPU_KINDS]
+    logger.debug("대화 진행 중 — GPU 잡을 미룹니다 (이번 바퀴 대상: %s)", deferred)
+    return deferred
+
 
 def acquire_gpu_lock(cfg: "Config") -> "IO | None":
     """`data/gpu.lock` 에 배타 락을 건다. 이미 잡혀 있으면(다른 워커 실행 중) `None`.
@@ -269,7 +292,8 @@ def _process_ready_jobs(conn: "sqlite3.Connection", cfg: "Config", *, worker: st
     processed = 0
 
     while True:
-        job = claim(conn, worker=worker, kinds=list(HANDLERS.keys()))
+        # 매 바퀴 다시 묻는다 — 배치 도중에 사용자가 말을 걸 수 있다.
+        job = claim(conn, worker=worker, kinds=_claimable_kinds(cfg))
         if job is None:
             break
 

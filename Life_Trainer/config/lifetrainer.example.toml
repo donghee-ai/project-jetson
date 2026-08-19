@@ -67,3 +67,48 @@ arxiv_min_interval_sec      = 3.0
 max_fail_before_disable     = 10
 sources_path                = "config/sources.yaml"
 respect_robots              = true
+
+[nightly]
+# 야간 배치(lifetrainer-nightly.timer, 02:00)가 한 번에 큐에 넣는 양.
+# 실측 22.2초/건이므로 새벽 창 02:00~06:00(4시간)은 약 700건이 상한이다.
+# 600건 ≈ 3.3시간이라 중단 타이머(05:50)에 걸리기 전에 끝난다.
+summary_limit = 600
+tag_limit     = 20                        # 미분류 상위 N개를 한 번의 호출로 묶어 태깅
+
+[search]
+# 대화가 주소를 모를 때 쓰는 웹 검색. **한국어는 네이버, 그 외는 Serper** 로 나눈다.
+# 구글 Custom Search JSON API 는 신규 가입이 닫혔다 (2026-08-19 확인) —
+# 근거와 대안 비교는 docs/known-issues.md §1.
+#
+#   네이버  https://developers.naver.com → 애플리케이션 등록 → 검색 API
+#           하루 25,000건 무료. 국내 사이트·한국어 고유명사에 강하다
+#   Serper  https://serper.dev  가입 시 2,500건(6개월). 구글 결과를 JSON 으로
+#
+# 키가 없어도 나머지 기능은 그대로 돌아간다 (lt doctor 가 WARN 으로 알려준다).
+naver_client_id     = ""
+naver_client_secret = ""
+serper_api_key      = ""
+timeout_sec         = 10.0
+max_results         = 5
+
+# 폰이 밀어 넣는 수신 엔드포인트 (POST /ingest/aw).
+#
+# ★ 기본이 꺼짐이다. 이 앱에서 **공개 인터넷(Cloudflare Tunnel)으로 열리는 유일한
+#   경로**라, 켜는 것이 명시적인 행위여야 한다.
+#
+# secret 을 비워 두면 <data_dir>/ingestsecret 에 무작위 키를 0600 으로 만들어 쓴다.
+# **web.session_secret 과 일부러 분리했다** — 폰이 들고 있는 값이라 새더라도
+# 플래너 세션까지 열려서는 안 된다. 폰에는 이 값을 넣는다.
+#
+# 인증은 본문에 묶인 HMAC 서명이다:
+#   Authorization: LT1 <기기>:<epoch초>:<nonce>:<서명>
+#   서명 = b64url(HMAC-SHA256(secret, "<기기>\n<epoch초>\n<nonce>\n<sha256(본문) hex>"))
+# clock_skew_sec 밖의 요청과 이미 쓴 nonce 는 거절된다.
+#
+# 네트워크 경로는 **이미 등록된 기기만** 받는다. 첫 등록은 로컬에서:
+#   lt import --from <adb 로 뽑은 export.json> --device phone-example
+[ingest]
+enabled        = false
+secret         = ""
+max_body_bytes = 4194304
+clock_skew_sec = 300

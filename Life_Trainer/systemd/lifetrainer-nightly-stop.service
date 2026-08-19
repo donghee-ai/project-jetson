@@ -1,0 +1,10 @@
+[Unit]
+Description=Life Trainer — 새벽 창 종료 (남은 배치 잡 비우기)
+Documentation=https://github.com/
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
+ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt nightly --stop
+
+MemoryMax=256M

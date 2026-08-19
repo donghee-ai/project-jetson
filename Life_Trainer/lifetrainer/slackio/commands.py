@@ -8,7 +8,7 @@
 `plan.models.parse_time_range` 를 그대로 재사용한다(계약서 지시).
 
 `/plan` 확장 문법 토큰:
-    #<과목>   -> ParsedTask.subject   예) #수학
+    #<과목>   -> ParsedTask.subject   예) #프로젝트
     @<기간>   -> ParsedTask.minutes   예) @60m, @1h30m (timeutil.parse_duration 재사용)
     !<우선순위> -> ParsedTask.priority  예) !high
     HH:MM-HH:MM -> ParsedTask.start_min/end_min (plan.models.parse_time_range 재사용)
@@ -42,7 +42,7 @@ class ParsedTask:
 # ── 번호 목록 분리 ────────────────────────────────────────────────────
 #
 # "N. " 또는 "N) " 형태의 항목 표식만 인정한다. 공백이 아닌 문자 바로 뒤에
-# 붙은 숫자(예: "RPM 1-1"의 "1", 소수 "3.5"의 "3")는 표식으로 오인하지 않도록
+# 붙은 숫자(예: "실습 3-1"의 "3", 소수 "3.5"의 "3")는 표식으로 오인하지 않도록
 # 앞에 (?<!\S)(공백이거나 문자열 시작)을 요구하고, 뒤에는 반드시 공백을 요구한다.
 _ITEM_MARK_RE = re.compile(r"(?<!\S)(\d+)[.)]\s+")
 

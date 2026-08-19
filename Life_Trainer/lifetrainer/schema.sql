@@ -48,7 +48,14 @@ CREATE TABLE IF NOT EXISTS aw_bucket (
     bucket_id  TEXT PRIMARY KEY,
     host       TEXT NOT NULL,
     client     TEXT,                       -- aw-watcher-window / aw-watcher-afk / aw-watcher-web-*
-    type       TEXT NOT NULL,              -- window | afk | web | unknown
+    -- window | afk | web | android | unlock | unknown
+    --
+    -- 안드로이드는 `window` 가 아니라 자기 이름으로 받는다. 앱 세션은 데스크톱 창
+    -- 포커스와 의미가 다르고(창이 여러 개 뜨지 않고 afk 짝이 없다), 합류는 롤업의
+    -- 어댑터 한 곳에서만 한다. 판별 근거는 `collect/aw_sync.bucket_type()` 주석.
+    -- CHECK 을 걸지 않는다 — 상류가 새 워처를 내놓을 때 동기화가 통째로 실패하는
+    -- 것보다 `unknown` 으로 들어와 무시되는 편이 낫다.
+    type       TEXT NOT NULL,
     hostname   TEXT,                       -- 원본 bucket 메타의 hostname
     device_id  INTEGER REFERENCES device(id) ON DELETE SET NULL,
     first_seen REAL NOT NULL,

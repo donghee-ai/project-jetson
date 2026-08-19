@@ -45,8 +45,8 @@ logger = logging.getLogger(__name__)
 
 _LT_USAGE = "사용법: /lt ping|today|yesterday|week|status"
 _LOG_USAGE = "사용법: /log <카테고리> <기간> [메모]  예) /log 운동 60m 헬스장  (기간 뒤에 `at HH:MM` 을 붙이면 그 시각을 종료 기준으로 삼는다)"
-_PLAN_USAGE = "사용법: /plan <텍스트>  예) /plan 예시 작업 A #수학 @60m !high"
-_MEMO_USAGE = "사용법: /memo <텍스트>  예) /memo 예시 자료 다운로드"
+_PLAN_USAGE = "사용법: /plan <텍스트>  예) /plan 프로젝트 보고서 #프로젝트 @90m !high"
+_MEMO_USAGE = "사용법: /memo <텍스트>  예) /memo 신청 작업 장바구니 담기"
 
 _DEFAULT_TASK_MINUTES = 30  # /plan 에서 기간/시각 범위를 아무것도 안 준 태스크의 기본 길이
 _VALID_PRIORITIES = frozenset({"low", "normal", "high"})
@@ -755,7 +755,9 @@ def _dispatch_view(cfg: Config, command: dict, respond) -> None:
         channel = command.get("channel_id")
 
         notifier = _build_notifier(cfg)
-        upload = notifier.upload_png(png_path, title=f"플래너 {day}", channel=channel)
+        # share=False — 아래에서 이미지 블록으로 싣는다. 채널 공유까지 하면
+        # 파일 메시지 + 카드 이미지로 **같은 그림이 두 번 뜬다** (2026-08-19 사고).
+        upload = notifier.upload_png(png_path, title=f"플래너 {day}", channel=channel, share=False)
         file_id = (upload or {}).get("file", {}).get("id") if isinstance(upload, dict) else None
         if file_id:
             card_blocks = [*card_blocks, blocks_mod.image_block(str(file_id), title=f"플래너 {day}", alt=f"{day} 플래너")]

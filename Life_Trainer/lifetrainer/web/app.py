@@ -28,6 +28,7 @@ from flask import Flask, Response, abort, jsonify, redirect, render_template, re
 from werkzeug.exceptions import HTTPException
 
 from lifetrainer import db, timeutil
+from lifetrainer.collect import ingest
 from lifetrainer.plan.achieve import day_achievement, plans_for_day
 from lifetrainer.plan.models import (
     Plan,
@@ -51,7 +52,9 @@ _DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 # 면제고, `/healthz` 는 헬스체크(모니터링이 쿠키를 들고 다니지 않는다),
 # 정적 파일은 민감정보가 없는 CSS/JS 다.
 _AUTH_EXEMPT_PATHS = ("/healthz", "/auth/enter")
-_AUTH_EXEMPT_PREFIXES = ("/static/",)
+# `/ingest/` 는 세션 쿠키가 아니라 **본문 서명**(auth.verify_ingest)으로 인증한다.
+# 폰에는 브라우저 세션이 없다. 면제는 "인증 없음"이 아니라 "다른 인증"이다.
+_AUTH_EXEMPT_PREFIXES = ("/static/", "/ingest/")
 
 # palette.yaml 에는 구조 상태(off/away/unknown)의 한글 라벨이 있지만
 # report/palette.py 의 Palette.structural 은 색상만 뽑아온다(라벨은 활동 카테고리 전용).
@@ -452,6 +455,62 @@ def create_app(cfg: Any) -> Flask:
     def _enforce_read_only() -> None:
         if cfg.web.read_only and request.method in ("POST", "PATCH", "DELETE"):
             abort(405, description="읽기 전용 모드입니다 (cfg.web.read_only=True)")
+
+    # ── 수신 (폰 → 젯슨) ────────────────────────────────────────────────
+
+    @app.post("/ingest/aw")
+    def ingest_aw() -> Response:
+        """폰이 밀어 넣는 ActivityWatch export 를 받는다.
+
+        **이 앱에서 공개 인터넷(Cloudflare Tunnel)으로 열리는 유일한 경로다.**
+        그래서 검사 순서가 곧 방어선이다: 켜져 있는가 → 크기 → 서명 → 형식.
+        서명 전에 본문을 파싱하지 않는다.
+        """
+        if not cfg.ingest.enabled:
+            abort(404, description="수신이 꺼져 있습니다 (cfg.ingest.enabled=False)")
+
+        # Content-Length 를 먼저 보고, 값이 없거나 거짓말일 수 있으므로 실제로 읽은
+        # 바이트로 다시 확인한다.
+        limit = cfg.ingest.max_body_bytes
+        if (request.content_length or 0) > limit:
+            abort(413, description=f"본문이 너무 큽니다 (상한 {limit} 바이트)")
+        body = request.get_data(cache=False)
+        if len(body) > limit:
+            abort(413, description=f"본문이 너무 큽니다 (상한 {limit} 바이트)")
+
+        conn = db.open_db(cfg)
+        try:
+            try:
+                device = auth.verify_ingest(conn, cfg, request.headers.get("Authorization"), body)
+            except auth.AuthError as exc:
+                # 실패 사유를 그대로 돌려준다. 폰 쪽 설정 오류(시계·비밀키)를
+                # 로그 없이 진단할 수 있어야 한다 — 어차피 서명을 못 만든 상대는
+                # 이 문장으로 얻을 것이 없다.
+                abort(401, description=str(exc))
+
+            try:
+                payload = json.loads(body.decode("utf-8"))
+            except Exception as exc:  # noqa: BLE001
+                abort(400, description=f"JSON 을 해석할 수 없습니다: {exc}")
+
+            try:
+                with db.transaction(conn):
+                    result = ingest.apply_payload(conn, payload, device=device)
+                    auth.prune_ingest_nonces(conn, cfg)
+            except ingest.IngestError as exc:
+                abort(400, description=str(exc))
+
+            return jsonify(
+                {
+                    "ok": True,
+                    "device": result.device,
+                    "buckets": result.buckets,
+                    "events": result.events,
+                    "skipped": result.skipped,
+                }
+            )
+        finally:
+            conn.close()
 
     # ── 인증 ────────────────────────────────────────────────────────────
 
