@@ -57,6 +57,7 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "min_active_ratio": 0.05,
         "rules_path": "config/rules.yaml",
         "day_boundary_hour": 6,
+        "switch_absorb_sec": 300,
     },
     "report": {
         "png_dir": "data/png",
@@ -126,6 +127,10 @@ class RollupConfig:
     # 원칙을 지키려면 새 필드는 항상 안전한 기본값을 가져야 한다.
     # timeutil.* 의 boundary_hour 기본값(6)과 반드시 일치시킬 것 — 값을
     # 두 곳에 따로 두면 언젠가 갈라진다(계약서 §2).
+    switch_absorb_sec: float = 300.0
+    # 기기 전환(=컴퓨터를 안 쓴 구간)을 별도 활동으로 기록할 최소 길이. 이보다 짧으면
+    # 앞 활동에 흡수한다. "코딩 10분 → 폰 3분 → 코딩 10분" 을 코딩 23분으로 본다 —
+    # 잠깐 딴짓한 것까지 전부 찍히면 플래너가 난잡해서 읽을 수 없다.
 
 
 @dataclass(frozen=True)
@@ -336,6 +341,7 @@ def load_config(path: str | Path | None = None) -> Config:
         min_active_ratio=float(raw["rollup"]["min_active_ratio"]),
         rules_path=_abs_path(root, str(raw["rollup"]["rules_path"])),
         day_boundary_hour=int(raw["rollup"]["day_boundary_hour"]),
+        switch_absorb_sec=float(raw["rollup"]["switch_absorb_sec"]),
     )
 
     report = ReportConfig(

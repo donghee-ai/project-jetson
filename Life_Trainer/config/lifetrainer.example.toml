@@ -32,6 +32,9 @@ no_data_category  = "off"
 min_active_ratio  = 0.05
 rules_path        = "config/rules.yaml"
 
+# 기기 전환을 별도 활동으로 남길 최소 길이(초). 짧으면 앞 활동에 흡수한다.
+switch_absorb_sec = 300
+
 [report]
 png_dir     = "data/png"
 font_family = "NanumGothic"               # 한글 깨짐 방지

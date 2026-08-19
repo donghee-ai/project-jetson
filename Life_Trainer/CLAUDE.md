@@ -34,6 +34,9 @@
 
 - 논리적 하루 = **KST 06:00 → 다음날 06:00**, `slot 0 = 06:00~06:10`
 - 집계 원천은 `slot_breakdown` (`slot` 의 winner-takes-all 은 시각화 전용)
+- **5분 미만 기기 전환은 앞 활동으로 흡수한다** (`rollup.absorb_short_switches`).
+  "코딩 10분 → 폰 3분 → 코딩 10분" 은 코딩 23분이다 — 잠깐 딴짓까지 다 찍히면
+  플래너를 읽을 수 없다. 임계값은 `rollup.switch_absorb_sec`
 - 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지
 - **Slack 발송은 `--post` 등 명시적 지시가 있을 때만**
 
@@ -63,6 +66,6 @@
 ## 검증
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 기준선 758개
+.venv/bin/python -m pytest tests/ -q     # 기준선 767개
 .venv/bin/lt doctor                       # 9항목 점검
 ```

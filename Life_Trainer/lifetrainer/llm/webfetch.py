@@ -242,9 +242,11 @@ def fetch_page(
         )
         if result.error == "robots_disallowed":
             raise WebFetchError(f"이 사이트의 robots.txt 가 접근을 막고 있습니다: {current}")
-        if result.error:
-            raise WebFetchError(f"가져오지 못했습니다 ({current}): {result.error}")
 
+        # ★ 리다이렉트 판정을 `result.error` 검사보다 **먼저** 한다.
+        # PoliteSession 은 비-2xx 를 전부 `error="http_<code>"` 로 표시하므로(수집용
+        # 관점에서는 3xx 도 "본문 못 받음"이다), 순서를 바꾸면 301 한 번에 통째로
+        # 실패한다. 실제로 www.valorant.com 이 그렇게 죽었다.
         if 300 <= result.status < 400:
             location = (result.headers or {}).get("Location") or (result.headers or {}).get("location")
             if not location:
@@ -254,6 +256,9 @@ def fetch_page(
             # ★ 홉마다 다시 검증한다. 여기서 안 막으면 SSRF 방어가 무의미해진다.
             current = assert_public_url(urljoin(current, location))
             continue
+
+        if result.error:
+            raise WebFetchError(f"가져오지 못했습니다 ({current}): {result.error}")
 
         if result.status >= 400:
             raise WebFetchError(f"서버가 {result.status} 를 반환했습니다: {current}")
