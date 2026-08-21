@@ -1,7 +1,7 @@
 # 벤치마크 실측 결과 — Jetson Orin NX 16GB
 
 > 측정일: 2026-08-14 / 측정 조건: MAXN, llama.cpp `b1-a94d563`, CUDA 12.6
-> 관련: [llm-runtime.md](../docs/llm-runtime.md) · [hardware.md](hardware.md)
+> 관련: [llm-runtime.md](../docs/build/llm-runtime.md) · [hardware.md](hardware.md)
 
 ---
 

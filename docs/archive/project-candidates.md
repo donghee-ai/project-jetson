@@ -1,6 +1,6 @@
 # 프로젝트 후보 전체 비교 — CCTV 외 대안 포함
 
-> 작성일: 2026-08-15 / 근거: [../results/gh-final.json](../results/gh-final.json) 704개 재질의 + [../research/](../research/) 실측치
+> 작성일: 2026-08-15 / 근거: [gh-final.json](../../results/gh-final.json) 704개 재질의 + [research/](../../research/) 실측치
 > 관련: [project-proposal.md](project-proposal.md) (후보 A 상세)
 
 ---
@@ -31,7 +31,7 @@ CCTV 계열이 1순위로 나온 이유는 단 하나, **영상이 젯슨의 8�
 | G | 인프라 — 대역폭 스케줄러 / 모델 라우터 | 3 | 4 | **5** | **5** | 2 | 19 |
 | **H** | **음성 스택 — 오프라인 한국어 통역기** | 3 | 4 | 4 | 4 | **5** | **20** |
 
-> **H는 별도 조사 완료** → [speech-stack-research.md](speech-stack-research.md).
+> **H는 별도 조사 완료** → [speech-stack-research.md](../../research/speech-stack.md).
 > LLM 통역 지연을 본 기기에서 실측(문장당 1.2~1.5초)했고, 착수 전 추정(4~5초)이 틀렸음을 확인했다.
 > 젯슨의 비전 엔진을 하나도 쓰지 않아 ①이 낮지만, **실사용 가치는 후보 중 최고**다.
 

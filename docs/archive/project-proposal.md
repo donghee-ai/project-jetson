@@ -1,8 +1,8 @@
 # 프로젝트 제안 — Understudy: 현장에서 스스로 배우는 카메라
 
 > 작성일: 2026-08-15 / 상태: **제안**
-> 근거: [../research/hardware.md](../research/hardware.md) · [../research/performance.md](../research/performance.md) ·
-> [../research/llm-models.md](../research/llm-models.md) · [../research/reference-survey.md](../research/reference-survey.md)
+> 근거: [hardware.md](../../research/hardware.md) · [performance.md](../../research/performance.md) ·
+> [llm-models.md](../../research/llm-models.md) · [reference-survey.md](../../research/reference-survey.md)
 > 레퍼런스 소스 직접 확인: `reference/frigate` (11f8786, 2026-08-13) · `reference/jetson-containers`
 
 ---
@@ -183,11 +183,11 @@ IP캠 RTSP ─→ Frigate  [NVDEC 디코딩 · 모션 · 이벤트 · 녹화 · 
 | **합계** | **~7.3 GB ✅ 여유** | **~11.3 GB ⚠️ 빠듯** |
 
 **야간 학습 잡은 선생을 언로드하고 실행한다.** 동시 상주는 금지.
-[llm-models.md](../research/llm-models.md)의 "텍스트 LLM을 따로 띄우지 말 것" 원칙 유지 — 텍스트 작업도 선생 VLM이 겸한다.
+[llm-models.md](../../research/llm-models.md)의 "텍스트 LLM을 따로 띄우지 말 것" 원칙 유지 — 텍스트 작업도 선생 VLM이 겸한다.
 
 ### 3-6. 시간 예산
 
-측정치로 환산한다 ([performance.md](../research/performance.md)).
+측정치로 환산한다 ([performance.md](../../research/performance.md)).
 
 ```
 선생 1회 = 이미지 프리필 + 캡션/라벨 100~150토큰

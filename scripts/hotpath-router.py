@@ -12,7 +12,7 @@
   핫패스 (규칙)   → 수 밀리초      ← 명령의 대부분
   폴백  (LLM)     → 2~4초          ← 애매하거나 처음 보는 표현
 
-[Understudy](../docs/project-proposal.md)의 선생-학생 구조와 같다.
+[Understudy](../docs/archive/project-proposal.md)의 선생-학생 구조와 같다.
 학생(규칙)이 확신하면 즉답하고, 못 하면 선생(LLM)에게 넘긴다.
 나아가 **LLM이 처리한 표현을 규칙으로 승격**시키면 학생이 계속 자란다.
 

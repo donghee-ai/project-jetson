@@ -1,13 +1,13 @@
 # 오픈소스 공개 · 기여 계획
 
 > 작성일: 2026-08-15 / 상태: **계획 단계**
-> 관련: [../research/reference-survey.md](../research/reference-survey.md) · [../research/performance.md](../research/performance.md)
+> 관련: [reference-survey.md](../../research/reference-survey.md) · [performance.md](../../research/performance.md)
 
 ---
 
 ## 1. 왜 이걸 하는가
 
-[레퍼런스 조사](../research/reference-survey.md)에서 확인된 사실:
+[레퍼런스 조사](../../research/reference-survey.md)에서 확인된 사실:
 
 ```
 GitHub 전체 704개 중 젯슨 명시 저장소  93개
@@ -82,19 +82,19 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 > 이 상태로 트랙 C 글("사양 102.4, 실측 60 — 대역폭 괴리")을 냈으면 두 번째
 > 오정보가 될 뻔했다. → 해당 소재 철회 (§6).
 
-근거: [../../opensource/docs/benchmark-results.md](../../opensource/docs/benchmark-results.md) §5
+근거: [benchmark-results.md](../../../opensource/docs/benchmark-results.md) §5
 
 ## 3. 보유 자산
 
 | 자산 | 위치 | 생태계 내 희소성 |
 |---|---|---|
-| MAXN에서 GPU TPC 절반 게이팅 발견 (4→8 SM) | [hardware.md](../research/hardware.md) | **매우 높음** |
+| MAXN에서 GPU TPC 절반 게이팅 발견 (4→8 SM) | [hardware.md](../../research/hardware.md) | **매우 높음** |
 | Super Mode 불가 원인 규명 (`nvpower.sh` 코드 라인) | 동 | **매우 높음** |
-| ~~메모리 대역폭 실측 60 GB/s (사양의 58%)~~ **← 2026-08-18 철회, §2-3 참조** | [performance.md](../research/performance.md) | — |
+| ~~메모리 대역폭 실측 60 GB/s (사양의 58%)~~ **← 2026-08-18 철회, §2-3 참조** | [performance.md](../../research/performance.md) | — |
 | 컨텍스트 깊이 10지점 곡선 (32K에서 −70%) | 동 | **매우 높음** |
-| 모델 3종 비교 (깊이별 순위 역전) | [llm-models.md](../research/llm-models.md) | 높음 |
+| 모델 3종 비교 (깊이별 순위 역전) | [llm-models.md](../../research/llm-models.md) | 높음 |
 | EXAONE 한국어 토큰 19% 절약 | 동 | 높음 |
-| 재현 가능한 측정 스크립트 7종 | [scripts/](../scripts/) | 중간 |
+| 재현 가능한 측정 스크립트 7종 | [scripts/](../../scripts/) | 중간 |
 
 ---
 
@@ -156,8 +156,8 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 
 ### 할 일
 
-- [x] `whichllm` 데이터 스키마 확인 → [opensource/docs/whichllm-contribution-format.md](../../opensource/docs/whichllm-contribution-format.md)
-- [x] 젯슨 탐지 패치 + 테스트 40개 작성 → [opensource/contribution/](../../opensource/contribution/)
+- [x] `whichllm` 데이터 스키마 확인 → [opensource/docs/whichllm-contribution-format.md](../../../opensource/docs/whichllm-contribution-format.md)
+- [x] 젯슨 탐지 패치 + 테스트 40개 작성 → [opensource/contribution/](../../../opensource/contribution/)
 - [ ] PR 제출 — **승인 대기**
 - [ ] `jetson-containers`에 Super Mode 이슈 등록 (재현 절차 포함)
 - [ ] llama.cpp `-no-cnv` 이슈 — 재현 최소 예제 첨부
@@ -226,5 +226,5 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 ### 판단 기준
 
 이 계획은 **이미 만든 것을 정리해 내놓는 일**이라 새로 배우는 것은 적다.
-"만드는 것"이 목적이라면 [레퍼런스 조사 §10](../research/reference-survey.md)의
+"만드는 것"이 목적이라면 [레퍼런스 조사 §10](../../research/reference-survey.md)의
 **Frigate + VLM 레이어**가 더 맞다 — 유휴 상태인 NVDEC·DLA·OFA를 실제로 쓰게 된다.

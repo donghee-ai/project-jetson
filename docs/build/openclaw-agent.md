@@ -1,9 +1,10 @@
 # OpenClaw 에이전트 게이트웨이 — 로컬 LLM 결합 기록
 
-> 작성일: 2026-08-15 / 상태: **구축·검증 완료, 현재 중지**
-> 관련: [llm-runtime.md](llm-runtime.md) · [../research/llm-models.md](../research/llm-models.md) ·
-> [../research/performance.md](../research/performance.md)
-> 실행 자산: [../openclaw-setup/](../openclaw-setup/)
+> 작성일: 2026-08-15 / **갱신: 2026-08-21 — §5 현재 상태 정정**
+> 상태: **구축·검증 완료, 게이트웨이 가동 중 (Slack 채널만 꺼짐)**
+> 관련: [llm-runtime.md](llm-runtime.md) · [llm-models.md](../../research/llm-models.md) ·
+> [performance.md](../../research/performance.md)
+> 실행 자산: [openclaw-setup/](../../openclaw-setup/)
 
 ---
 
@@ -92,7 +93,7 @@ openclaw config set channels.slack.enabled true
 systemctl --user restart openclaw-gateway
 ```
 
-Slack 앱은 [../openclaw-setup/slack-app-manifest.json](../openclaw-setup/slack-app-manifest.json)
+Slack 앱은 [slack-app-manifest.json](../../openclaw-setup/slack-app-manifest.json)
 을 붙여넣어 만든다. 플러그인이 내장한 공식 매니페스트를 추출한 것으로,
 스코프 23개·이벤트 15개·Socket Mode·슬래시 커맨드가 한 번에 설정된다.
 
@@ -112,7 +113,7 @@ Slack 앱은 [../openclaw-setup/slack-app-manifest.json](../openclaw-setup/slack
 | **에이전트 경유** | **25~40초** |
 | RAM (8B @ 40,960 + 게이트웨이) | 11,123 / 15,643 MB |
 
-생성 속도는 [../results/Qwen3-8B-Q4KM.depth.txt](../results/Qwen3-8B-Q4KM.depth.txt) 의
+생성 속도는 [Qwen3-8B-Q4KM.depth.txt](../../results/Qwen3-8B-Q4KM.depth.txt) 의
 깊이별 곡선(9.6K → 7.80, 16K → 6.58 tok/s)과 일치한다.
 **게이트웨이를 얹어도 추론 성능 자체에는 손해가 없다.**
 
@@ -216,7 +217,7 @@ pattern 제거         → 200 OK
 
 제거해도 안전하다. `minLength: 1` 이 남고, 공백 문자열 거부는 런타임 코드가
 이미 두 군데에서 한다(`"declarationKey must not be blank"`).
-→ [../openclaw-setup/patch-cron-schema.sh](../openclaw-setup/patch-cron-schema.sh)
+→ [patch-cron-schema.sh](../../openclaw-setup/patch-cron-schema.sh)
 
 **CLI 는 왜 멀쩡했나** — `cron` 이 owner 전용 툴이라 CLI 발신자에게는 자동 제외됐다.
 웹 UI(operator.admin)에는 실려서 깨졌다. **증상이 반쪽만 나타나 원인 추적이 어려웠다.**
@@ -234,7 +235,7 @@ pattern 제거         → 200 OK
 | "`/절대/경로`에 써. 쓴 다음 `ls -la` 로 확인해서 보여줘" | **성공** (파일 시스템에서 독립 검증) |
 
 앞의 경우 **에러가 안 난다.** 그럴듯한 문장이 돌아오는데 아무 일도 일어나지 않았다.
-[../research/llm-models.md](../research/llm-models.md) 의 30B 툴 벤치 실패 유형과 같다.
+[llm-models.md](../../research/llm-models.md) 의 30B 툴 벤치 실패 유형과 같다.
 
 > **성공률이 모델 성능이 아니라 프롬프트 형태에 좌우된다.**
 > 검증을 요구하면 "하겠다"로 빠져나갈 수 없다 — 결과를 보여주려면 실제로 실행해야 하므로.
@@ -367,23 +368,42 @@ LAN 과 HTTPS 가 공존한다(operator 지정 필요: `sudo tailscale set --ope
 
 ---
 
-## 5. 현재 상태 (2026-08-15 기준)
+## 5. 현재 상태 (2026-08-21 기준)
 
-**OpenClaw 스택은 중지·비활성 상태다.**
+**스택은 살아 있다. 다만 Slack 채널만 OpenClaw 에서 떼어냈다.**
 
 ```
-llama-server.service     disabled (유닛 심링크 제거됨)
-openclaw-gateway.service disabled, inactive
-8080 포트                Qwen3-4B (수동 기동, -c 8192, temp 0.2) 가 사용 중
+llama-server.service     enabled, active   Qwen3-8B Q4_K_M, -c 40960, RSS 10.2 GB
+openclaw-gateway.service enabled, active   329 MB
+8080 포트                모델 id `qwen3-8b` 응답 중
+channels.slack.enabled   false             ← Life Trainer 가 소켓을 가져갔다
 ```
 
-8B 스택(11.1GB)과 4B(3.7GB)는 **가용 13.4GB 안에서 공존할 수 없고 포트도 같다.**
-둘 중 하나만 돌아간다.
+> ★ **Slack 소켓은 워크스페이스 앱당 하나뿐이다.** 둘 다 켜면 서로 뺏는다.
+> 지금은 [Life Trainer](../../Life_Trainer/HANDOFF.md) 가 갖고 있고, 게이트웨이는
+> 셸·파일 작업을 `openclaw agent --json` 으로 위임받을 수 있도록 살려만 뒀다.
 
-### OpenClaw 로 되돌리려면
+`llama-server` 는 **두 프로젝트가 공유한다.** Life Trainer 는 전용 모델 서버를 띄우지
+않는다 — 8B 스택 하나로 가용 메모리가 거의 찬다 (전체 15 GB 중 여유 3.9 GB).
+
+### 2026-08-15 기록 (당시 상태)
+
+작성 시점에는 유닛이 전부 내려가 있었고 8080 을 Qwen3-4B 가 수동으로 쓰고 있었다.
+**8B 스택(11.1GB)과 4B(3.7GB)는 가용 13.4GB 안에서 공존할 수 없고 포트도 같다** —
+이 제약 자체는 지금도 유효하다.
+
+### Slack 을 OpenClaw 로 되돌리려면
 
 ```bash
-killall -q llama-server              # 4B 내리기 (pkill -f 는 자기매칭 주의)
+systemctl --user disable --now lifetrainer-slack     # 먼저 소켓을 놓게 한다
+openclaw config set channels.slack.enabled true
+systemctl --user restart openclaw-gateway
+```
+
+스택 전체가 내려가 있는 상태에서 올릴 때는:
+
+```bash
+killall -q llama-server              # 다른 모델이 8080 을 쥐고 있으면 (pkill -f 는 자기매칭 주의)
 bash openclaw-setup/install.sh       # 유닛 재등록 + 기동 + linger
 systemctl --user enable --now openclaw-gateway
 ```
@@ -394,7 +414,7 @@ systemctl --user enable --now openclaw-gateway
 
 ## 6. 미완
 
-- **지속 부하 발열 미측정** — [../research/performance.md](../research/performance.md) 의
+- **지속 부하 발열 미측정** — [performance.md](../../research/performance.md) 의
   빈칸과 동일. 24시간 가동 설계에 필요하다.
 - **에이전트 능동 발송 미검증** — §4-13. `message` 툴의 실제 가용 여부.
 - **cron 실전 미검증** — dist 패치 후 Slack 에서 예약 동작을 확인하지 않았다.

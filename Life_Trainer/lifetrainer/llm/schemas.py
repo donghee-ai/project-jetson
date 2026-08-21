@@ -2,7 +2,7 @@
 
 llama.cpp 는 `--jinja` 로 JSON 스키마를 GBNF 문법으로 변환하는데, 정규식(`pattern`)을
 제대로 다루지 못해 요청 전체를 400 으로 거부한다(실측 사고 —
-`docs/openclaw-agent.md §4-5`). Pydantic 이 자동으로 붙이는 `pattern` 은 특히
+`docs/build/openclaw-agent.md §4-5`). Pydantic 이 자동으로 붙이는 `pattern` 은 특히
 `Literal`/`Enum`/제약 문자열 필드에서 흔히 생기므로, 스키마를 서버에 보내기 전에
 반드시 이 모듈의 `json_schema_of` 를 거쳐 `pattern` 을 제거해야 한다.
 `minLength`/`maxLength` 같은 다른 제약은 GBNF 로도 문제없이 변환되므로 남긴다.

@@ -26,3 +26,8 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+
+# 손으로 만든 백업 사본. 스크립트가 만드는 정식 백업은 data/backup/ 으로 간다
+# (scripts/apply-slack-manifest.sh 참조) — 저장소에 사본이 두 벌 있으면
+# 어느 쪽이 최신인지 알 수 없다.
+*.bak

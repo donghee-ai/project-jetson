@@ -91,6 +91,32 @@ serper_api_key      = ""
 timeout_sec         = 10.0
 max_results         = 5
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 플래너 웹 서버 (lifetrainer-web.service 가 상시 띄운다)
+#
+# host  기본 127.0.0.1. tailnet 에서 열려면 "0.0.0.0" 으로 두고 Tailscale 을
+#       1차 경계로 쓴다. 공개 인터넷에 직접 노출하지 않는다.
+# port  8770
+#
+# external = true 면 응답에서 **창 제목·앱 이름을 제거**한다 (실측 22KB→13KB).
+#   폰에서 바깥 경로로 열 때를 위한 마스킹이다. 카테고리와 시간만 남는다.
+#
+# session_secret 을 비워 두면 <data_dir>/websecret 에 무작위 키를 0600 으로 만들어
+#   쓴다. HMAC 원타임 링크(link_ttl_sec)로 들어와 세션(session_ttl_sec)을 받는다.
+#   ★ [ingest].secret 과 **일부러 분리돼 있다** — 아래 주석 참조.
+#
+# read_only = true 면 계획 CRUD·칸 보정이 전부 막힌다 (조회 전용).
+[web]
+host            = "127.0.0.1"
+port            = 8770
+base_url        = ""
+read_only       = false
+session_secret  = ""
+link_ttl_sec    = 600
+session_ttl_sec = 2592000
+external        = false
+
+
 # 폰이 밀어 넣는 수신 엔드포인트 (POST /ingest/aw).
 #
 # ★ 기본이 꺼짐이다. 이 앱에서 **공개 인터넷(Cloudflare Tunnel)으로 열리는 유일한

@@ -2,7 +2,7 @@
 
 OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립트.
 
-**구축 기록·실측·함정 정리는 [../docs/openclaw-agent.md](../docs/openclaw-agent.md)** 에 있다.
+**구축 기록·실측·함정 정리는 [../docs/build/openclaw-agent.md](../docs/build/openclaw-agent.md)** 에 있다.
 이 폴더는 그 문서가 참조하는 실행 파일만 담는다.
 
 > ⚠️ `~/.config/systemd/user/` 의 드롭인이 이 폴더를 **심링크로 참조**한다.
@@ -41,4 +41,4 @@ systemctl --user status llama-server openclaw-gateway
 ```
 
 현재 상태와 되돌리는 방법은
-[../docs/openclaw-agent.md §5](../docs/openclaw-agent.md) 참조.
+[../docs/build/openclaw-agent.md §5](../docs/build/openclaw-agent.md) 참조.

@@ -2,7 +2,7 @@
 
 > 작성일: 2026-08-13
 > 상태: **기획 단계** (미착수) / 향후 사업화 검토 대상
-> 관련: [hardware.md](../research/hardware.md)
+> 관련: [hardware.md](../../research/hardware.md)
 
 ---
 

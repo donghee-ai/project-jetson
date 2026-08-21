@@ -31,9 +31,13 @@
 - **Field description·docstring 은 그대로 프롬프트에 실린다** — 근거는 주석에 쓰고
   스키마 안에는 짧게
 - **LLM 입력 3~5K 로 끊기** — 깊이 32K 에서 생성 속도 −70%
-- **파이썬 상주 300MB 이하** — 가용 메모리 2.8GB (llama-server 가 10.4GB 사용 중)
+- **파이썬 상주 300MB 이하** — 가용 메모리 약 3.9GB (llama-server 가 10.2GB 사용 중).
+  헤드리스 크로미움 같은 **일시적 스파이크**는 이 규칙이 아니라 GPU 잡과의 직렬화 문제다
 - **GPU 잡 동시 실행 금지** — `fcntl.flock`
-- **모델 id 까지 확인** — 포트만 보는 헬스체크가 1시간 무중단 다운을 낸 적 있다
+- **모델 id 까지 확인** — 포트만 보는 헬스체크가 1시간 무중단 다운을 낸 적 있다.
+  ★ **살아 있다 ≠ 서빙 가능하다.** 기동 직후 `llama-server` 는 503 `Loading model` 을
+  낸다. 야간 배치가 이걸 안 기다려 요약 잡 277건이 죽었다
+  ([known-issues §2](docs/known-issues.md))
 
 ## 기본값
 
@@ -84,6 +88,22 @@
 ## 검증
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 기준선 858개
-.venv/bin/lt doctor                       # 10항목 점검
+.venv/bin/python -m pytest tests/ -q     # 기준선 870개 (2026-08-21). 아래로 내려가면 안 된다
+.venv/bin/lt doctor                       # 10항목 점검 — 현재 OK 9 / WARN 1 (검색 키)
 ```
+
+**기준선 숫자를 고칠 때는 실제로 돌려서 나온 값을 쓴다.** 이 저장소는 한때 네 문서가
+서로 다른 테스트 수를 말하고 있었다 (858 · 826 · 687 · 584).
+
+## 문서를 어디에 쓰는가 (저장소 전체)
+
+| 무엇 | 어디에 |
+|---|---|
+| 이 프로젝트의 지금 상태 | [HANDOFF.md](HANDOFF.md) — **이어받는 사람이 여기부터 읽는다** |
+| 무엇이 있고 어떻게 흐르는가 | [docs/handbook.md](docs/handbook.md) |
+| 기기 실측치 (대역폭·속도·메모리) | [`research/`](../research/) — 색인 있음 |
+| 이 기기에서 돌고 있는 것의 구축 기록 | [`docs/build/`](../docs/build/) |
+| 아직 안 고친 문제 | [docs/known-issues.md](docs/known-issues.md) |
+
+**고칠 때까지 안 고친 것은 `known-issues.md` 에 남긴다.** "나중에 하자"를 문서 밖에
+두면 다음 사람이 같은 걸 다시 발견한다.
