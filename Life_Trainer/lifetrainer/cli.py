@@ -491,7 +491,7 @@ def cmd_sync(args: argparse.Namespace, cfg: Config) -> int:
 def _days_touched(cfg: Config, result) -> set[str]:
     """이번에 들어온 이벤트가 걸친 논리적 하루(06:00 경계) 목록.
 
-    폰 데이터는 **늦게 도착한다** (수집 1시간 주기 + 자정 파싱). 오늘만 롤업하면
+    폰 데이터는 **늦게 도착한다** (수집이 1시간 주기이고 Doze 에서 더 밀린다). 오늘만 롤업하면
     어제 후반부가 영영 반영되지 않으므로, 실제로 건드린 날짜를 전부 돌려준다.
     """
     if result.ts_min is None or result.ts_max is None:

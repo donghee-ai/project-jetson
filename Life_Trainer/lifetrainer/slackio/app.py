@@ -40,6 +40,7 @@ from lifetrainer.plan import models as plan_models
 from lifetrainer.slackio import blocks as blocks_mod
 from lifetrainer.slackio import commands as commands_mod
 from lifetrainer.slackio.notify import SlackNotifier
+from lifetrainer.web import auth as web_auth
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +317,12 @@ def _register_actions(app: App, cfg: Config) -> None:
     def _handle_del_select(ack) -> None:  # noqa: ANN001
         # 체크박스 토글 자체는 서버 상태를 바꾸지 않는다 — Slack 이 3초 안에
         # ack 를 요구하므로 즉시 확인만 하고, 실제 삭제는 [삭제] 버튼 클릭 때 한다.
+        ack()
+
+    @app.action("open_planner")
+    def _handle_open_planner(ack) -> None:  # noqa: ANN001
+        # URL 버튼도 Slack 이 block_actions 를 보낼 수 있다. 브라우저 이동은 Slack 이
+        # 처리하므로 서버에서는 3초 안에 확인만 한다.
         ack()
 
     @app.action("del_cancel")
@@ -751,7 +758,8 @@ def _dispatch_view(cfg: Config, command: dict, respond) -> None:
         finally:
             conn.close()
 
-        card_blocks = blocks_mod.planner_card_blocks(day, overall, achieved, total)
+        planner_url = web_auth.signed_planner_url(cfg, str(command.get("user_id") or "slack-user"), day)
+        card_blocks = blocks_mod.planner_card_blocks(day, overall, achieved, total, planner_url)
         channel = command.get("channel_id")
 
         notifier = _build_notifier(cfg)

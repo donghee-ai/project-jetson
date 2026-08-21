@@ -329,6 +329,50 @@ def _build_grid_rows(
     return rows
 
 
+def _build_activity_runs(
+    slots: list[dict[str, Any]], pal: Palette, grid_start_hour: int, slot_minutes: int
+) -> list[dict[str, Any]]:
+    """Dayflow처럼 읽을 수 있는 실제 활동 피드를 만든다.
+
+    격자는 10분 단위 정밀도를 담당하고, 이 피드는 연속된 같은 카테고리를 한 문장으로
+    압축해 회고를 담당한다. 기록 없음(off)과 자리비움(away)은 활동 이야기가 아니므로
+    제외한다. 상세 문구는
+    같은 런 안의 top_title을 우선하고 없으면 top_app을 쓰며, 외부 모드에서는 호출 전에
+    `_mask_external`이 두 필드를 제거하므로 자동으로 빠진다.
+    """
+    runs: list[dict[str, Any]] = []
+    index = 0
+    while index < len(slots):
+        category = str(slots[index].get("category") or "off")
+        end = index + 1
+        while end < len(slots) and slots[end].get("category") == category:
+            end += 1
+
+        if category not in ("off", "away"):
+            start_clock_min = (grid_start_hour * 60 + index * slot_minutes) % 1440
+            end_clock_min = (grid_start_hour * 60 + end * slot_minutes) % 1440
+            detail = ""
+            for slot in slots[index:end]:
+                detail = str(slot.get("top_title") or slot.get("top_app") or "").strip()
+                if detail:
+                    break
+            runs.append(
+                {
+                    "category": category,
+                    "label": _label_for(pal, category),
+                    "start": _hhmm(start_clock_min),
+                    "end": _hhmm(end_clock_min),
+                    "duration_min": (end - index) * slot_minutes,
+                    "detail": detail,
+                    "css_var": (
+                        f"--structural-{category}" if category in pal.structural else f"--cat-{category}"
+                    ),
+                }
+            )
+        index = end
+    return runs
+
+
 _PLAN_UPDATE_KEYS = (
     "title",
     "category",
@@ -572,6 +616,14 @@ def create_app(cfg: Any) -> Flask:
         light_css = css_variables(pal_light)
         dark_css = _inner_decls(css_variables(load_palette(palette_path, "dark")))
         today = timeutil.day_str(timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
+        present_categories = {slot["category"] for slot in data["slots"]}
+        used_categories = [cat for cat in pal_light.order if cat in present_categories]
+        used_structural = [cat for cat in ("away", "unknown", "off") if cat in present_categories]
+        cols = grid_rows[0]["cells"] if grid_rows else []
+        minute_labels = [cfg.rollup.slot_minutes * (idx + 1) for idx in range(len(cols))]
+        activity_runs = _build_activity_runs(
+            data["slots"], pal_light, cfg.rollup.day_boundary_hour, cfg.rollup.slot_minutes
+        )
 
         return render_template(
             "planner.html",
@@ -583,6 +635,10 @@ def create_app(cfg: Any) -> Flask:
             data_json=_json_script(data),
             grid_rows=grid_rows,
             palette=pal_light,
+            used_categories=used_categories,
+            used_structural=used_structural,
+            minute_labels=minute_labels,
+            activity_runs=activity_runs,
             light_css_vars=light_css,
             dark_css_vars=dark_css,
             read_only=cfg.web.read_only,

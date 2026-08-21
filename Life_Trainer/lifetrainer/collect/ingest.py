@@ -109,6 +109,37 @@ def _parse_events(bucket_id: str, raw_events: object) -> list[AWEvent]:
     return events
 
 
+def normalize_android_events(events: list[AWEvent]) -> None:
+    """안드로이드 이벤트의 `app`/`title` 을 데스크톱 관례에 맞춘다 (제자리 수정).
+
+    aw-android 는 이렇게 넣는다 (master `models/Event.kt` 의 `fromUsageEvent`):
+
+        {"app": "카카오톡", "package": "com.kakao.talk", "classname": "..."}
+
+    `app` 이 **사람이 읽는 앱 이름**(`PackageManager.getApplicationLabel`)이다.
+    그대로 두면 `rules.yaml` 의 분류 규칙이 그 이름에 걸리는데, **폰 언어를 바꾸거나
+    앱이 표시 이름을 바꾸면 조용히 안 맞게 된다.** 라벨은 로케일 의존이고 앱끼리
+    겹칠 수도 있다. 안정적인 식별자는 패키지명이다.
+
+    그래서 데스크톱과 같은 배치로 바꾼다:
+
+        app   = com.kakao.talk   (안정적 — 규칙이 여기 걸린다)
+        title = 카카오톡          (사람이 읽는 이름 — 리포트에 보인다)
+
+    데스크톱이 `app=Code.exe` / `title=창 제목` 인 것과 같은 구조다.
+    `package` 가 없으면 손대지 않는다 — 상류가 형태를 바꿨을 때 라벨이라도 남는 편이
+    아무것도 없는 것보다 낫다.
+    """
+    for ev in events:
+        package = ev.data.get("package")
+        if not package:
+            continue
+        label = ev.data.get("app")
+        ev.data["app"] = str(package)
+        if label and not ev.data.get("title"):
+            ev.data["title"] = str(label)
+
+
 def apply_payload(
     conn: sqlite3.Connection,
     payload: object,
@@ -162,6 +193,8 @@ def apply_payload(
             # 실패하는 것보다, 아는 것만 받고 무엇을 건너뛰었는지 말하는 편이 낫다.
             result.skipped.append(f"{bucket_id} (알 수 없는 버킷 타입)")
             continue
+        if btype == "android":
+            normalize_android_events(events)
         # 메타에 events 를 담은 채로 넘기지 않는다 — aw_bucket 이 쓰는 필드만 본다.
         bucket_meta = {k: v for k, v in meta.items() if k != "events"}
         upsert_bucket(conn, bucket_id, bucket_meta, device_id=device_id)

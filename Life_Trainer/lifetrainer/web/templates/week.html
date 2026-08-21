@@ -14,13 +14,6 @@
 :root[data-theme="dark"] {
   {{ dark_css_vars | safe }}
 }
-/* --paper 토큰 근거는 planner.html 의 동일 블록 참고 — dataviz
- * validate_palette.js 로 surface #fffdf8 재검증(PASS) 후 채택. */
-:root { --paper: #fffdf8; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --paper: var(--surface); }
-}
-:root[data-theme="dark"] { --paper: var(--surface); }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
 </head>

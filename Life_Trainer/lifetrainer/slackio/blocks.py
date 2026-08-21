@@ -161,13 +161,16 @@ def error_blocks(title: str, detail: str) -> list[dict]:
 # ── `/plan` `/view` 카드 ─────────────────────────────────────────────
 
 
-def planner_card_blocks(day: str, overall: float, achieved: int, total: int) -> list[dict]:
-    """`/view` 카드: 헤더 + 달성률 fields. 플래너 PNG 이미지 블록은 업로드 후
+def planner_card_blocks(
+    day: str, overall: float, achieved: int, total: int, planner_url: str | None = None
+) -> list[dict]:
+    """`/view` 카드: 헤더 + 달성률 fields + 선택적 웹 플래너 링크.
 
     호출부(`slackio.app`)가 `image_block` 으로 덧붙인다 — 파일 id 는 여기서
-    알 수 없기 때문이다.
+    알 수 없기 때문이다. `planner_url` 은 사용자별 단기 서명 링크이며, 웹 주소가
+    설정되지 않은 설치에서는 블록 자체를 만들지 않아 깨진 버튼을 남기지 않는다.
     """
-    return [
+    result = [
         header(f"플래너 — {day}"),
         fields_section(
             [
@@ -176,6 +179,23 @@ def planner_card_blocks(day: str, overall: float, achieved: int, total: int) -> 
             ]
         ),
     ]
+    if planner_url:
+        result.append(
+            {
+                "type": "actions",
+                "block_id": "planner_open_actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "웹에서 계획 조절", "emoji": True},
+                        "style": "primary",
+                        "action_id": "open_planner",
+                        "url": planner_url,
+                    }
+                ],
+            }
+        )
+    return result
 
 
 # ── `/del` 인터랙션 (SPEC §7-2) ────────────────────────────────────────
