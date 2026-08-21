@@ -259,6 +259,25 @@ def _load_classifier(cfg: Config):
 # ── 서브커맨드 구현 ───────────────────────────────────────────────────────
 
 
+def _top_job_error(conn: sqlite3.Connection) -> str:
+    """실패 잡의 가장 흔한 오류를 한 줄로. 없거나 조회에 실패하면 빈 문자열.
+
+    `lt doctor` 는 진단 도구라 **무엇이 잘못됐는지까지** 말해야 한다. 개수만 보여주면
+    사람이 sqlite3 를 열어야 하고, 그 한 단계가 실제로 이틀을 잡아먹었다.
+    """
+    try:
+        row = conn.execute(
+            "SELECT error, COUNT(*) AS c FROM job WHERE state = 'failed' AND error IS NOT NULL"
+            " GROUP BY substr(error, 1, 60) ORDER BY c DESC LIMIT 1"
+        ).fetchone()
+    except Exception:  # noqa: BLE001 - 진단이 진단 때문에 죽으면 안 된다
+        return ""
+    if row is None or not row["error"]:
+        return ""
+    text = " ".join(str(row["error"]).split())
+    return f"{text[:70]}… ×{row['c']}" if len(text) > 70 else f"{text} ×{row['c']}"
+
+
 def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     """환경 점검. 사람이 설치 후 가장 먼저 돌리는 명령이라 실패 원인을 명확히 알려준다."""
     print(f"Life Trainer doctor — root={cfg.root} tz={cfg.timezone}")
@@ -415,7 +434,27 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             from lifetrainer.llm.queue import stats as queue_stats
 
             qs = queue_stats(conn)
-            ok("큐", ", ".join(f"{k}={v}" for k, v in sorted(qs.items())) if qs else "비어 있음")
+            detail = ", ".join(f"{k}={v}" for k, v in sorted(qs.items())) if qs else "비어 있음"
+
+            # ★ 조회가 됐다고 OK 가 아니다. 실패한 잡이 쌓여 있으면 그게 요점이다.
+            #   2026-08-21 에 요약 잡 277건이 503("Loading model")으로 죽어 있었는데,
+            #   이 항목이 개수만 나열하고 OK 를 찍어서 이틀을 못 봤다.
+            #   → 실패는 "조회 가능" 이 아니라 "실패율" 로 판정한다.
+            failed = int(qs.get("failed", 0))
+            done = int(qs.get("done", 0))
+            finished = failed + done
+            if failed and finished:
+                rate = failed / finished
+                top = _top_job_error(conn)
+                hint = f" — 대표 사유: {top}" if top else ""
+                msg = f"{detail} · 실패율 {rate:.0%} ({failed}/{finished}){hint}"
+                # 10% 를 넘으면 뭔가 구조적으로 새고 있는 것이다. 한두 건은 잡음.
+                if rate >= 0.10 or failed >= 50:
+                    warn("큐", msg + " — `lt queue stats` 로 확인, known-issues 참조")
+                else:
+                    ok("큐", msg)
+            else:
+                ok("큐", detail)
         except Exception as exc:  # noqa: BLE001
             warn("큐", f"조회 실패: {exc}")
 
@@ -429,13 +468,16 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         elif have["naver"]:
             warn("웹 검색", "네이버만 설정됨 — 영어 질의도 네이버로 간다 ([search] serper_api_key)")
         elif have["serper"]:
-            warn("웹 검색", "Serper 만 설정됨 — 한국어 질의도 구글로 간다 ([search] naver_client_id/secret)")
+            # 네이버는 API HUB 이관으로 신규 발급이 막혔다(known-issues §4). Serper
+            # 하나가 정상 구성이라 OK 를 준다 — 못 하는 일을 WARN 으로 권하지 않는다.
+            ok("웹 검색", "Serper (구글 경유) — 한국어 질의는 gl=kr 로 간다")
         else:
             warn(
                 "웹 검색",
                 "키 없음 — 대화가 주소를 추측한다. "
-                "config/lifetrainer.toml 의 [search] 에 naver_client_id/naver_client_secret "
-                "(하루 25,000건 무료) 또는 serper_api_key 를 넣는다",
+                "config/lifetrainer.toml 의 [search] 에 serper_api_key 를 넣는다 "
+                "(serper.dev, 2,500건 무료). 네이버는 API HUB 이관으로 신규 발급 불가 "
+                "— docs/known-issues.md §4",
             )
     except Exception as exc:  # noqa: BLE001
         warn("웹 검색", f"확인 실패: {exc}")

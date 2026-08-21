@@ -76,13 +76,15 @@ summary_limit = 600
 tag_limit     = 20                        # 미분류 상위 N개를 한 번의 호출로 묶어 태깅
 
 [search]
-# 대화가 주소를 모를 때 쓰는 웹 검색. **한국어는 네이버, 그 외는 Serper** 로 나눈다.
-# 구글 Custom Search JSON API 는 신규 가입이 닫혔다 (2026-08-19 확인) —
-# 근거와 대안 비교는 docs/known-issues.md §1.
+# 대화가 주소를 모를 때 쓰는 웹 검색. 코드는 **한국어는 네이버, 그 외는 Serper** 로
+# 나누게 돼 있지만, 한쪽만 있으면 그쪽으로 넘어간다 (라벨에 어디로 갔는지 드러난다).
 #
-#   네이버  https://developers.naver.com → 애플리케이션 등록 → 검색 API
-#           하루 25,000건 무료. 국내 사이트·한국어 고유명사에 강하다
-#   Serper  https://serper.dev  가입 시 2,500건(6개월). 구글 결과를 JSON 으로
+#   Serper  https://serper.dev  가입 시 2,500건(6개월). 구글 결과를 JSON 으로.
+#           ★ 지금 쓰는 것은 이쪽 하나다 (2026-08-21 결정)
+#   네이버  ✗ 지금은 못 쓴다. 검색 API 가 NAVER API HUB 로 이관되고 개발자센터
+#           신규 신청이 2026-07-31 에 닫혔다. HUB 키는 도메인·헤더가 달라서
+#           아래 두 값에 넣어도 401 이 난다 — docs/known-issues.md §4
+#   구글    ✗ Custom Search JSON API 신규 가입 종료 (2026-08-19 확인) — §1
 #
 # 키가 없어도 나머지 기능은 그대로 돌아간다 (lt doctor 가 WARN 으로 알려준다).
 naver_client_id     = ""

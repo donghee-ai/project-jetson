@@ -12,11 +12,16 @@
 고객도 2027-01-01 종료). 대안으로 안내되는 Vertex AI Search 는 도메인 50개 이하
 사이트 검색용이고 GCP 과금 계정이 전제다. 그래서:
 
-    한국어 질의  ->  네이버 검색 API   하루 25,000건 무료. 국내 사이트에 강하다
+    한국어 질의  ->  네이버 검색 API   국내 사이트에 강하다
     그 외        ->  Serper.dev        구글 결과를 JSON 으로. 2,500건 무료
 
-**언어로 고른다.** 실패 사례("롤체")가 국내 게임 용어였다 — 그 구멍을 메우는 건
-구글이 아니라 네이버다.
+**언어로 고른다.** 실패 사례("롤체")가 국내 게임 용어였다.
+
+★ **네이버는 지금 못 쓴다** — 검색 API 가 NAVER API HUB 로 이관되고 개발자센터
+신규 신청이 2026-07-31 에 닫혔다. 아래 `NAVER_ENDPOINT`·헤더는 옛 방식이라 HUB
+키로는 401 이 난다 (`docs/known-issues.md §4`). 그래서 실제로는 **Serper 하나로
+돌고 있고**, 한국어 질의는 `_pick_provider` 의 폴백을 타고 Serper 로 간다.
+그 대신 `_serper` 가 한국어일 때 `gl=kr&hl=ko` 를 붙인다.
 
 ## ★ 이 툴은 질의어를 바깥으로 내보낸다
 
@@ -156,9 +161,14 @@ def _naver(cfg: "Config", query: str, limit: int) -> SearchResults:
 def _serper(cfg: "Config", query: str, limit: int) -> SearchResults:
     import requests
 
+    # 한국어 질의는 지역·언어를 한국으로 못박는다. Serper 기본값은 구글 미국/영어라
+    # "롤체" 같은 국내 용어가 엉뚱한 곳에 안착한다 — 이 툴이 생긴 이유가 그 사고다.
+    # 네이버를 쓸 수 없게 된 뒤(known-issues §4) 한국어 질의는 전부 여기로 온다.
+    locale = {"gl": "kr", "hl": "ko"} if is_korean(query) else {}
+
     resp = requests.post(
         SERPER_ENDPOINT,
-        json={"q": query, "num": limit},
+        json={"q": query, "num": limit, **locale},
         headers={
             "X-API-KEY": cfg.search.serper_api_key,
             "Content-Type": "application/json",

@@ -46,7 +46,20 @@ class LLMError(Exception):
 
 
 class LLMUnavailable(LLMError):
-    """LLM 서버에 연결할 수 없음. 호출부가 잡아서 잡을 재시도로 돌릴 수 있어야 한다."""
+    """LLM 이 **지금은** 못 받는 상태. 호출부가 잡아서 잡을 재시도로 돌릴 수 있어야 한다.
+
+    연결 실패뿐 아니라 **서버가 떠 있지만 아직 서빙할 수 없는 경우**도 여기다.
+    `llama-server` 는 모델을 메모리에 올리는 동안 503 `{"message": "Loading model"}` 을
+    낸다 — 잡이 잘못된 게 아니라 **너무 일찍 물어본 것**이다.
+
+    ★ **살아 있다 ≠ 서빙 가능하다.** 이걸 `LLMError` 로 분류해 뒀더니 야간 배치가
+    02:00 에 적재한 요약 잡 277건이 재시도 없이 죽었다 (`docs/known-issues.md` §2).
+    """
+
+
+# 잠깐 뒤에 다시 물어보면 되는 상태 코드. 4xx 라도 429 는 "지금은 말고" 라는 뜻이라
+# 재시도 대상이다. 400/401/404/422 는 요청 자체가 틀린 것이라 재시도해도 똑같다.
+_RETRYABLE_STATUS = frozenset({429, 502, 503, 504})
 
 
 @dataclass
@@ -429,6 +442,10 @@ class LLMClient:
         if resp.status_code >= 400:
             error_text = f"LLM 서버가 {resp.status_code} 를 반환했습니다: {resp.text[:500]}"
             self._record_call(purpose, None, None, latency_ms, False, error_text)
+            if resp.status_code in _RETRYABLE_STATUS:
+                # 모델 로딩 중(503)·과부하(429)·게이트웨이(502/504) — 잡의 잘못이 아니다.
+                # 워커가 이걸 잡으면 시도 횟수를 안 깎고 큐로 되돌린다.
+                raise LLMUnavailable(error_text)
             raise LLMError(error_text)
 
         try:
