@@ -31,7 +31,10 @@
 - **Field description·docstring 은 그대로 프롬프트에 실린다** — 근거는 주석에 쓰고
   스키마 안에는 짧게
 - **LLM 입력 3~5K 로 끊기** — 깊이 32K 에서 생성 속도 −70%
-- **파이썬 상주 300MB 이하** — 가용 메모리 약 3.9GB (llama-server 가 10.2GB 사용 중).
+- **파이썬 상주 300MB 이하** — 가용 약 4.5GB (llama-server 6.7GB + 임베딩 1.8GB
+  + 게이트웨이 0.3GB). ctx 를 40960 → 20480 으로 낮춰 KV 2.99GB → 1.50GB (08-23).
+  ★ **모델 파일 크기 ≠ 상주 메모리.** 0.6B(610MB)를 GPU 에 올렸더니 3,144MB 가 되어
+  8B 가 CUDA 버퍼를 못 잡고 죽었다. 임베딩은 `-ngl 0`(CPU) 로 양보시킨다.
   헤드리스 크로미움 같은 **일시적 스파이크**는 이 규칙이 아니라 GPU 잡과의 직렬화 문제다
 - **GPU 잡 동시 실행 금지** — `fcntl.flock`
 - **모델 id 까지 확인** — 포트만 보는 헬스체크가 1시간 무중단 다운을 낸 적 있다.
@@ -88,8 +91,8 @@
 ## 검증
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 기준선 887개 (2026-08-21). 아래로 내려가면 안 된다
-.venv/bin/lt doctor                       # 10항목 점검 — 현재 OK 9 / WARN 1 (검색 키)
+.venv/bin/python -m pytest tests/ -q     # 기준선 948개 (2026-08-23). 아래로 내려가면 안 된다
+.venv/bin/lt doctor                       # 11항목 점검 (임베딩 포함)
 ```
 
 **기준선 숫자를 고칠 때는 실제로 돌려서 나온 값을 쓴다.** 이 저장소는 한때 네 문서가
@@ -101,6 +104,7 @@
 |---|---|
 | 이 프로젝트의 지금 상태 | [HANDOFF.md](HANDOFF.md) — **이어받는 사람이 여기부터 읽는다** |
 | 무엇이 있고 어떻게 흐르는가 | [docs/handbook.md](docs/handbook.md) |
+| **왜 이 모양인가** — ERD·워크플로우·판정 근거 | [docs/architecture.md](docs/architecture.md) |
 | 기기 실측치 (대역폭·속도·메모리) | [`research/`](../research/) — 색인 있음 |
 | 이 기기에서 돌고 있는 것의 구축 기록 | [`docs/build/`](../docs/build/) |
 | 아직 안 고친 문제 | [docs/known-issues.md](docs/known-issues.md) |

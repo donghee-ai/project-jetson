@@ -1,6 +1,6 @@
 # OpenClaw 에이전트 게이트웨이 — 로컬 LLM 결합 기록
 
-> 작성일: 2026-08-15 / **갱신: 2026-08-21 — §5 현재 상태 정정**
+> 작성일: 2026-08-15 / **갱신: 2026-08-23 — §5 현재 상태 정정 (ctx 축소 · 게이트웨이 재기동)**
 > 상태: **구축·검증 완료, 게이트웨이 가동 중 (Slack 채널만 꺼짐)**
 > 관련: [llm-runtime.md](llm-runtime.md) · [llm-models.md](../../research/llm-models.md) ·
 > [performance.md](../../research/performance.md)
@@ -373,11 +373,28 @@ LAN 과 HTTPS 가 공존한다(operator 지정 필요: `sudo tailscale set --ope
 **스택은 살아 있다. 다만 Slack 채널만 OpenClaw 에서 떼어냈다.**
 
 ```
-llama-server.service     enabled, active   Qwen3-8B Q4_K_M, -c 40960, RSS 10.2 GB
-openclaw-gateway.service enabled, active   329 MB
+llama-server.service     enabled, active   Qwen3-8B Q4_K_M, -c 20480, RSS 6.7 GB
+llama-embed.service      enabled, active   Qwen3-Embedding-0.6B, CPU, :8081, 1.8 GB
+openclaw-gateway.service enabled, active   292 MB
 8080 포트                모델 id `qwen3-8b` 응답 중
 channels.slack.enabled   false             ← Life Trainer 가 소켓을 가져갔다
+contextWindow            20480             ← 서버의 -c 와 **반드시** 같아야 한다
 ```
+
+> ### 2026-08-23 에 바뀐 것 두 가지
+>
+> **① ctx 40960 → 20480.** KV(q8_0)는 토큰당 76.5 KiB 라 40,960 이면 2.99GB 를 시동 시
+> 전액 선불한다 — 대화 길이와 무관하다. `-c 40960` 은 `n_ctx_train` 상한이라서 고른
+> 값이었지 필요한 값이 아니었다. Life Trainer 한 턴 실측 최악이 2,980 토큰이고
+> OpenClaw 압축 설정(`maxHistoryShare 0.7` + `reserveTokens 6000`)이 재계산 없이
+> 성립하는 하한이 20,480 이다 (14,336 + 6,000 = 20,336 < 20,480).
+> 드롭인 `openclaw-setup/systemd/llama-server.service.d/ctx.conf` 로 `LLAMA_CTX` 를 준다.
+> **`openclaw.json` 의 `contextWindow` 도 같이 20480 으로 내렸다** — §4-2 그대로,
+> 한쪽만 바꾸면 조용히 잘린다. 되돌리기: `~/.openclaw/openclaw.json.bak-ctx20480`.
+>
+> **② 게이트웨이가 08-23 02:14 에 내려갔다가 17:16 에 복귀했다.** 그날 밤 임베딩
+> 서버(1.8GB)를 들이면서 메모리를 내준 것으로 보인다(정상 종료, 기록 없음).
+> ctx 축소로 4.5GB 가 확보돼 지금은 **임베딩 서버와 게이트웨이가 동시에** 돈다.
 
 > ★ **Slack 소켓은 워크스페이스 앱당 하나뿐이다.** 둘 다 켜면 서로 뺏는다.
 > 지금은 [Life Trainer](../../Life_Trainer/HANDOFF.md) 가 갖고 있고, 게이트웨이는

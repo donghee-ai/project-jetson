@@ -14,7 +14,8 @@ OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립�
 
 | 파일 | 역할 |
 |---|---|
-| `bin/llama-server-qwen3.sh` | 모델 서버 실행 래퍼 (Qwen3-8B, `-c 40960`) |
+| `bin/llama-server-qwen3.sh` | 모델 서버 실행 래퍼 (Qwen3-8B, `-c` 는 `LLAMA_CTX`, 기본 40960) |
+| `systemd/llama-server.service.d/ctx.conf` | **`LLAMA_CTX=20480`** — KV 캐시 2.99GB → 1.50GB (08-23) |
 | `systemd/llama-server.service` | 모델 백엔드 유닛 (readiness 체크 포함) |
 | `systemd/openclaw-gateway.service.d/10-depends-llama.conf` | 게이트웨이 → 백엔드 의존 |
 | `systemd/openclaw-gateway.service.d/20-system-node.conf` | 서비스 PATH 최소화 |
