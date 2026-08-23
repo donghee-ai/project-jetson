@@ -29,6 +29,7 @@ import logging
 import re
 import signal
 import threading
+import time
 from typing import Any
 
 from slack_bolt import App
@@ -176,6 +177,15 @@ _HISTORY_TURNS = 3  # (user, assistant) 쌍 기준. converse 가 다시 한 번 
 _SEEN_TTL_SEC = 300.0
 _THINKING_EMOJI = "hourglass_flowing_sand"
 
+# 스트리밍 중 메시지를 고쳐 쓰는 간격(초).
+#
+# ★ 이 기기에서 생성이 **9.4 tok/s** 다. 400토큰이면 42초고 그동안 화면이 비어 있다.
+#   총 시간은 안 줄지만 기다리는 느낌이 바뀐다.
+# ★ Slack `chat.update` 는 Tier 3(분당 약 50회) 다. 1.5초면 42초 답변에 28번이라
+#   한도 안에 든다. 더 촘촘히 하면 429 를 맞고 오히려 갱신이 끊긴다.
+_STREAM_UPDATE_SEC = 1.5
+_STREAM_CURSOR = " ▌"
+
 
 def _register_conversation(app: App, cfg: Config) -> None:
     """DM 과 멘션을 자연어 대화로 처리한다.
@@ -240,6 +250,7 @@ def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
         return
 
     _react(client, channel, event, add=True)
+    stream = _Streamer(client, channel, thread_ts)
     try:
         conn = db.open_db(cfg)  # sqlite3 커넥션은 스레드 간 공유가 안 된다
         try:
@@ -252,6 +263,7 @@ def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
                 channel=channel,
                 actor=actor,
                 history=_get_history(channel),
+                on_progress=stream.on_progress,
             )
             reply = result.text
             if result.ok:
@@ -272,7 +284,72 @@ def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
     finally:
         _react(client, channel, event, add=False)
 
-    _safe_say(say, reply, thread_ts=thread_ts)
+    # ★ 스트리밍으로 무엇이 보였든 **최종본으로 덮어쓴다.** 중간 글은 진행 표시일
+    #   뿐이고 사실은 `result.text` 다 (재생성·반복 감지가 본문을 바꿀 수 있다).
+    if not stream.finish(reply):
+        _safe_say(say, reply, thread_ts=thread_ts)
+
+
+class _Streamer:
+    """생성 중인 답을 Slack 메시지 하나에 고쳐 쓴다.
+
+    ## 왜
+
+    이 기기는 생성이 9.4 tok/s 다. 한 턴이 15~25초인데 그동안 화면이 비어 있으면
+    죽은 것처럼 보인다. **총 시간은 안 줄지만 첫 글자가 보이는 시각이 당겨진다** —
+    실측으로 12.9초 → 7.1초.
+
+    ## 지키는 것 셋
+
+    ① **실패해도 대화를 죽이지 않는다.** 스트리밍은 편의 기능이다. 게시·수정이
+       실패하면 조용히 포기하고(`self._ts = None`) 평소 경로로 한 번에 답한다.
+    ② **최종본이 사실이다.** `finish()` 가 `ConverseResult.text` 로 덮어쓴다.
+       재생성·반복 감지가 본문을 바꿀 수 있어서, 중간 글을 그대로 두면 안 된다.
+    ③ **한도를 지킨다.** `chat.update` 는 Tier 3(분당 약 50회)다. `_STREAM_UPDATE_SEC`
+       간격으로 묶어 보낸다 — 더 촘촘히 하면 429 를 맞고 갱신이 아예 끊긴다.
+    """
+
+    def __init__(self, client: Any, channel: str, thread_ts: str | None) -> None:
+        self._client = client
+        self._channel = channel
+        self._thread_ts = thread_ts
+        self._ts: str | None = None
+        self._last_sent = 0.0
+        self._last_text = ""
+
+    def on_progress(self, partial: str) -> None:
+        if not self._client or not self._channel:
+            return
+        now = time.monotonic()
+        if not partial.strip():
+            return  # 라운드 시작(빈 문자열)에는 아무것도 하지 않는다
+        if self._ts is not None and now - self._last_sent < _STREAM_UPDATE_SEC:
+            return
+        if partial == self._last_text:
+            return
+        self._last_text = partial
+        self._last_sent = now
+        self._write(partial + _STREAM_CURSOR)
+
+    def finish(self, final_text: str) -> bool:
+        """최종본으로 덮어쓴다. 게시한 적이 없으면 False — 호출부가 평소대로 답한다."""
+        if self._ts is None:
+            return False
+        return self._write(final_text)
+
+    def _write(self, text: str) -> bool:
+        try:
+            if self._ts is None:
+                kw = {"thread_ts": self._thread_ts} if self._thread_ts else {}
+                resp = self._client.chat_postMessage(channel=self._channel, text=text, **kw)
+                self._ts = (resp or {}).get("ts")
+                return self._ts is not None
+            self._client.chat_update(channel=self._channel, ts=self._ts, text=text)
+            return True
+        except Exception as exc:  # noqa: BLE001 - 스트리밍 때문에 답을 잃으면 안 된다
+            logger.debug("스트리밍 갱신 실패 (평소 경로로 넘어간다): %s", exc)
+            self._ts = None
+            return False
 
 
 def _react(client: Any, channel: str, event: dict, *, add: bool) -> None:

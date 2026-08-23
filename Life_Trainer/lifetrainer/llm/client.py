@@ -22,7 +22,7 @@ import re
 import sqlite3
 import time
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import Any, Callable, TYPE_CHECKING
 
 import requests
 
@@ -130,6 +130,72 @@ def _truncate_text(text: str, max_tokens: float) -> str:
         else:
             hi = mid - 1
     return text[:lo]
+
+
+def _consume_stream(resp, on_delta) -> dict:
+    """SSE 스트림을 읽어 **비스트리밍 응답과 같은 모양**으로 조립한다.
+
+    호출부(`chat`)가 그 뒤로는 스트리밍 여부를 몰라도 되게 하려는 것이다 —
+    툴 콜 파싱·`_strip_think`·usage 기록이 한 벌로 남는다.
+
+    ★ 툴 콜 조각은 `on_delta` 로 내보내지 않는다. 사용자에게 보일 것이 아니고,
+    그 라운드는 어차피 화면에 안 남는다.
+
+    ★ `delta.tool_calls` 는 **index 로 누적**한다. 서버가 인자를 여러 조각으로
+    쪼개 보내므로 순서대로 이어 붙이지 않으면 JSON 이 깨진다.
+    """
+    content: list[str] = []
+    calls: dict[int, dict] = {}
+    finish_reason = None
+    usage: dict = {}
+
+    # ★ **인코딩을 직접 정한다.** SSE 응답에 charset 이 없으면 requests 가
+    #   ISO-8859-1 로 넘겨준다 — 한국어가 'ì ì´ì¨' 처럼 깨진다(실측).
+    #   바이트로 받아 UTF-8 로 푸는 편이 서버 헤더에 기대지 않아 안전하다.
+    for raw_line in resp.iter_lines(decode_unicode=False):
+        if not raw_line:
+            continue
+        line = raw_line.decode("utf-8", errors="replace") if isinstance(raw_line, bytes) else raw_line
+        if not line.startswith("data:"):
+            continue
+        data = line[5:].strip()
+        if data == "[DONE]":
+            break
+        try:
+            chunk = json.loads(data)
+        except ValueError:
+            continue  # 조각난 줄 하나 때문에 턴 전체를 버리지 않는다
+
+        if chunk.get("usage"):
+            usage = chunk["usage"]
+        for ch in chunk.get("choices") or []:
+            if ch.get("finish_reason"):
+                finish_reason = ch["finish_reason"]
+            delta = ch.get("delta") or {}
+            piece = delta.get("content")
+            if piece:
+                content.append(piece)
+                on_delta(piece)
+            for tc in delta.get("tool_calls") or []:
+                idx = int(tc.get("index", 0))
+                slot = calls.setdefault(
+                    idx, {"id": "", "type": "function", "function": {"name": "", "arguments": ""}}
+                )
+                if tc.get("id"):
+                    slot["id"] = tc["id"]
+                fn = tc.get("function") or {}
+                if fn.get("name"):
+                    slot["function"]["name"] += fn["name"]
+                if fn.get("arguments"):
+                    slot["function"]["arguments"] += fn["arguments"]
+
+    message: dict = {"role": "assistant", "content": "".join(content)}
+    if calls:
+        message["tool_calls"] = [calls[i] for i in sorted(calls)]
+    return {
+        "choices": [{"message": message, "finish_reason": finish_reason}],
+        "usage": usage,
+    }
 
 
 def _message_tokens(m: dict) -> float:
@@ -389,8 +455,20 @@ class LLMClient:
         stop: list[str] | None = None,
         tools: list[dict] | None = None,
         tool_choice: str | None = None,
+        on_delta: Callable[[str], None] | None = None,
     ) -> LLMResponse:
-        """`chat/completions` 를 호출한다. 서버가 죽어 있으면 `LLMUnavailable`."""
+        """`chat/completions` 를 호출한다. 서버가 죽어 있으면 `LLMUnavailable`.
+
+        `on_delta` 를 주면 **본문 조각이 도착하는 대로** 넘긴다(SSE). 반환값은
+        스트리밍 여부와 무관하게 같다 — 호출부가 조립을 다시 하지 않아도 된다.
+
+        ★ 이 기기에서 생성이 **9.4 tok/s** 다. 400토큰이면 42초고 그동안 화면이
+        비어 있다. 총 시간은 안 줄지만 **기다리는 느낌이 바뀐다.**
+
+        ★ thinking 이 켜져 있으면 스트리밍하지 않는다 — `<think>` 블록을 조각으로
+        받으면 사고 텍스트가 그대로 사용자에게 새 나간다. 툴·JSON 경로는 어차피
+        thinking 이 꺼지므로 실사용 경로는 전부 스트리밍된다.
+        """
         if json_schema is not None:
             _check_no_pattern(json_schema)
         if tools:
@@ -439,10 +517,18 @@ class LLMClient:
                 },
             }
 
+        streaming = on_delta is not None and not enable_thinking
+        if streaming:
+            payload["stream"] = True
+            payload["stream_options"] = {"include_usage": True}
+
         start = time.monotonic()
         try:
             resp = self._session.post(
-                f"{self._base_url}/chat/completions", json=payload, timeout=self._timeout
+                f"{self._base_url}/chat/completions",
+                json=payload,
+                timeout=self._timeout,
+                stream=streaming,
             )
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
             latency_ms = int((time.monotonic() - start) * 1000)
@@ -466,12 +552,23 @@ class LLMClient:
                 raise LLMUnavailable(error_text)
             raise LLMError(error_text)
 
-        try:
-            raw = resp.json()
-        except ValueError as exc:
-            error_text = f"LLM 응답 JSON 파싱 실패: {exc}"
-            self._record_call(purpose, None, None, latency_ms, False, error_text)
-            raise LLMError(error_text) from exc
+        if streaming:
+            try:
+                raw = _consume_stream(resp, on_delta)
+            except LLMError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - 스트림이 끊겨도 문장으로 돌려준다
+                error_text = f"LLM 스트림 처리 실패: {exc}"
+                self._record_call(purpose, None, None, latency_ms, False, error_text)
+                raise LLMError(error_text) from exc
+            latency_ms = int((time.monotonic() - start) * 1000)
+        else:
+            try:
+                raw = resp.json()
+            except ValueError as exc:
+                error_text = f"LLM 응답 JSON 파싱 실패: {exc}"
+                self._record_call(purpose, None, None, latency_ms, False, error_text)
+                raise LLMError(error_text) from exc
 
         try:
             choice = raw["choices"][0]
