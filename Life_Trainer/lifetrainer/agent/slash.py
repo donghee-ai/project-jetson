@@ -218,8 +218,28 @@ def run(
 
     collector = _Collector()
     _delegate(muted, name, rest, collector, actor=actor, channel=channel, day=target_day)
-    out = collector.close()
-    return _truncate(out or "(결과 없음)")
+    out = collector.close() or "(결과 없음)"
+    return _truncate(out + _day_note(name, target_day))
+
+
+# 날짜를 안 준 채로 쓰면 **오늘**에 들어가는 명령들.
+_DAY_SENSITIVE = frozenset({"/plan", "/view", "/del", "/done", "/doing", "/defer", "/memo"})
+
+
+def _day_note(name: str, day: str | None) -> str:
+    """날짜를 안 줬을 때 **결과에** 그 사실을 적는다.
+
+    ★ 프롬프트로는 안 잡혔다. "내일 09시에 딥워크 넣어줘" 에 모델이 `day` 를 빠뜨리는
+    비율이 2회 중 1회였고(실측), 그러면 계획이 조용히 오늘에 들어간다.
+    결과에는 이미 `계획을 추가했습니다 (2026-08-23)` 처럼 날짜가 찍히는데 모델이
+    그걸 안 읽었다 — **가정을 명시적인 문장으로** 만들어 준다.
+
+    이 저장소의 규칙 그대로다: 툴 결과는 "무엇인지"와 함께 "무엇이 없는지"를 말한다.
+    모델이 이 줄을 읽고 스스로 고칠 수 있는 자리가 여기뿐이다.
+    """
+    if day is not None or name not in _DAY_SENSITIVE:
+        return ""
+    return "\n(날짜를 안 줘서 **오늘** 기준으로 처리했습니다. 다른 날이면 day 인자를 주세요.)"
 
 
 def _normalize_day(cfg: "Config", day: str | None) -> str | None:

@@ -1,7 +1,8 @@
 # OpenClaw 에이전트 게이트웨이 — 로컬 LLM 결합 기록
 
-> 작성일: 2026-08-15 / **갱신: 2026-08-23 — §5 현재 상태 정정 (ctx 축소 · 게이트웨이 재기동)**
-> 상태: **구축·검증 완료, 게이트웨이 가동 중 (Slack 채널만 꺼짐)**
+> 작성일: 2026-08-15 / **갱신: 2026-08-24 — §7 신설 (Life Trainer 를 에이전트로 결합)**
+> 상태: **구축·검증 완료, 게이트웨이 가동 중 (Slack 채널만 꺼짐).
+> 그 위에 `lifetrainer` 에이전트가 올라가 있다 — §7**
 > 관련: [llm-runtime.md](llm-runtime.md) · [llm-models.md](../../research/llm-models.md) ·
 > [performance.md](../../research/performance.md)
 > 실행 자산: [openclaw-setup/](../../openclaw-setup/)
@@ -449,3 +450,147 @@ systemctl --user enable --now openclaw-gateway
   시스템 프롬프트 12.5K 때문에 모든 턴이 깊은 컨텍스트에서 시작하는데,
   거기는 8B 가 A3B 를 앞서는 구간이다(9,603 깊이에서 7.80 vs 7.76, 이후 격차 확대).
   툴 콜링도 6/6 vs 4/6. **"할 수 있지만 할 이유가 없다."**
+
+---
+
+## 7. Life Trainer 를 에이전트로 붙이기 (2026-08-24)
+
+§5 까지는 "게이트웨이가 살아 있다" 였다. 여기서부터는 **그 위에 우리 능력을 올린
+기록**이다. 코드는 [`Life_Trainer/lifetrainer/agent/`](../../Life_Trainer/lifetrainer/agent/),
+설치는 [`scripts/install-agent.sh`](../../Life_Trainer/scripts/install-agent.sh).
+
+### 7-1. 구성
+
+```
+openclaw-gateway :18081
+  └─ agent "lifetrainer"      workspace: Life_Trainer/data/agent/workspace
+       model  llamacpp/qwen3-8b          (llama-server :8080 공유)
+       tools  allow ["lt__*"]            ← 절대 허용목록. exec·write 등 기본 툴이 사라진다
+       │
+       └─ MCP stdio "lt"     .venv/bin/python -m lifetrainer.agent.mcp_server
+            slash · read_file · list_dir · write_file
+            get_plans · get_activity_summary · search_docs · compare_days
+            schedule_reminder · list_reminders · cancel_reminder
+            web_search · fetch_url
+```
+
+**MCP 서버는 의존성이 0 이다.** 줄 단위 JSON-RPC 2.0 이고 쓰는 메서드가
+`initialize`·`tools/list`·`tools/call`·`ping` 넷뿐이라 SDK 를 안 들였다.
+
+**툴 정책은 에이전트별로 건다.** `mcp.servers` 는 전역이라 `main` 에이전트도 우리 툴을
+받게 되는데, `main` 쪽에 `tools.deny = ["lt__*"]` 를 걸어 턴마다 2,976 토큰을 안 물게 했다.
+
+### 7-2. 프롬프트를 12,541 → 5,247 토큰으로
+
+§3 의 12,541 토큰(첫 턴 41.6초)이 출발점이었다. 지금은 이렇다.
+
+| | 토큰 | 비고 |
+|---|---|---|
+| OpenClaw 골격 | 약 1,400 | 우리가 못 줄이는 부분 |
+| 툴 스키마 13개 | 2,976 | `lt agent budget` (상한 3,000, 테스트가 지킨다) |
+| 워크스페이스 `AGENTS.md` | 973 | 상한 1,000 |
+| **합계** | **약 5,247** | 첫 호출 프롬프트 처리 **17.8초** (295 tok/s) |
+
+실측 확인: 게이트웨이 트레이스의 첫 모델 호출이 `input 2,370 + cacheRead 2,842 = 5,212`.
+
+**큰 것 두 개를 줄였다.**
+
+#### ★ `agents add` 가 깔아 두는 인격 파일 6개 — 지우면 다시 생긴다
+
+새 에이전트를 만들면 워크스페이스에 `SOUL.md`·`IDENTITY.md`·`USER.md`·`TOOLS.md`·
+`HEARTBEAT.md`·`BOOTSTRAP.md` 가 깔린다. **6,122바이트고 게이트웨이가 전부 시스템
+프롬프트에 넣는다.** 범용 비서를 상정한 내용("너는 누구인가", 기억 파일 관리,
+하트비트)이라 우리 에이전트에는 해가 된다 — 특히 `BOOTSTRAP.md` 는 "정체를 찾고
+이 파일을 지워라"라고 지시해서 첫 턴에 모델이 자기소개를 시작한다.
+
+**지웠더니 재기동 때 다시 생겼다.** 없는 파일을 시드하기 때문이다. 이 저장소가
+이미 두 번 밟은 부류다 — `nvpower.sh` 가 부팅마다 심링크를 되돌리고,
+`daemon install` 이 유닛을 다시 만든다.
+
+→ **비워서 남긴다.** 한 줄짜리 안내문으로 덮어쓰면 파일이 존재하므로 시드가 안 돈다.
+`lt agent prompt` 가 이걸 한다. `BOOTSTRAP.md` 만은 원래 한 번 쓰고 지우는 파일이라
+진짜로 지운다.
+
+#### 워크스페이스 `AGENTS.md` 7,196 → 1,311바이트
+
+기본 파일은 범용 비서용이다. 우리 것은 **코드가 만든다**
+(`agent/prompt.py`) — 슬래시 명령표는 `slash.COMMANDS` 에서, 움직일 수 있는 폴더는
+살아 있는 `Sandbox` 에서 가져온다. 손으로 베끼면 같은 값을 두 곳에서 관리하게 된다.
+
+**결과: 시스템 프롬프트 23,744자 → 10,455자. 첫 턴 auto-compaction 0회**
+(전에는 1회 — §4-3 의 그 실패였다).
+
+### 7-3. ★ `experimental.localModelLean` 은 켜지 마라 (8B 기준)
+
+이름이 정확히 우리 상황을 가리켜서 켜 봤다. 골격을 23,744 → 16,927자로 줄여 준다.
+
+**대신 툴 13개가 메타툴 3개로 바뀐다** — `tool_call`·`tool_search`·`tool_describe`.
+모델이 먼저 툴을 검색하고 그 다음에 `tool_call` 로 감싸 부르는 지연 로딩 구조다.
+
+8B 가 그 간접층을 못 넘었다.
+
+```json
+{"name": "tool_call", "arguments": {"id": "get_plans", "args": {"date": "today"}}}
+```
+
+`tool_call` 을 **툴 이름 자체로** 착각해 호출이 실패했고(`failures: 1`), 모델은
+사용자에게 *"`/lt today` 를 실행해보세요"* 라고 답했다 — §4-6 의 실패 모드다.
+
+**툴이 20개를 넘는 에이전트를 위한 기능이다.** 우리 툴은 이미 13개 2,976 토큰이라
+줄일 것보다 잃을 것이 크다. 왕복도 한 번 더 는다.
+
+### 7-4. 감옥은 우리가 짠다 — `tools.fs.workspaceOnly` 를 안 믿는 이유
+
+1. **경계가 우리 것이 아니다.** 설정 하나가 바뀌면 같이 움직인다.
+2. ★ **MCP 툴은 게이트웨이의 fs 정책을 거치지 않는다.** 우리 프로세스가 직접
+   파일을 연다. 여기서 안 막으면 아무도 안 막는다.
+
+`agent/sandbox.py` 가 `realpath` 로 접은 뒤 containment 를 본다(문자열 비교 금지 —
+`/data` 허가가 `/dataX` 를 통과시킨다). 읽기(`docs/ HISTORY/ config/ data/agent/`)와
+쓰기(`data/agent/`)를 나누고, **허용 폴더 안이어도 비밀은 이름으로 거부한다**
+(`config/lifetrainer.toml` 에 Slack 토큰과 Serper 키가 있다. `*.bak-*` 백업본도).
+
+### 7-5. 8B 가 여기서 낸 실패 4가지 (전부 실측)
+
+§4-6 의 "하겠다고 말하고 끝낸다"가 형태를 바꿔 계속 나온다. **툴 이름만 채점하면
+전부 통과한다** — 답을 읽어야 보인다.
+
+| 증상 | 원인 | 손본 곳 |
+|---|---|---|
+| `/view` 로 목록만 보고 **완료는 사용자에게 시켰다** | §4-6 그대로 | 채점기가 "바꾼 흔적"을 요구 (`require_slash`) |
+| 허용 폴더에 이름을 **이어 붙여** `…/data/agent/config` 를 부르고 "config 폴더는 없다"고 답했다 | §4-4 (`workspace/workspace/`) 와 같은 부류 | 못 찾았을 때 결과에 "짧은 이름을 쓰라"를 붙이고 스키마에도 박음 |
+| **총 활동 시간을 "코딩 시간"이라고** 답했다 | 모델만의 잘못이 아니었다 — `compare_days` 가 **증감만** 주고 카테고리별 절대값을 안 줬다. 붙일 숫자가 없으니 눈에 보이는 걸 붙였다 | 툴이 `gaming 4시간 56분→52분(-4시간 4분)` 으로 양쪽을 싣는다 |
+| "내일 계획 넣어줘" 가 **오늘에** 들어갔다. 에러 없음 | `/plan` 에 날짜 자리가 없어 모델이 `@2026-08-25`(기간 토큰)에 얹었고 조용히 버려졌다 | `day` 인자 추가. **낱말로** 받는다 — 하루가 06:00 에 시작해 모델이 계산하면 이틀 뒤가 나온다 |
+
+**교훈은 하나로 모인다: 프롬프트로 안 되는 것은 구조로 막는다.** 넷 중 셋은
+프롬프트가 아니라 **툴 결과와 스키마**를 고쳐서 잡았다 — 모델이 스스로 고칠 수 있는
+자리가 거기이기 때문이다.
+
+### 7-6. 메모리 — 상주 13.9MB, 천장 약 100MB, 누수 없음
+
+| 시점 | MCP 서버 RSS |
+|---|---|
+| 유휴 (초기화 직후) | **13.9 MB** |
+| 슬래시 첫 호출 뒤 | 74.1 MB (`slack_bolt` +27MB, 리포트 모듈) |
+| RAG 검색 뒤 | 91.5 MB (numpy) |
+| 슬래시 400회 뒤 | **88.3 MB** (100 → 104 → 89 → 88) |
+
+**지연 import 가 이 숫자를 만든다.** `report.planner`(matplotlib)를 import 하면
++44MB 라서 `/view`·`/week` 은 에이전트에게 **PNG 를 안 그린다** — 텍스트 채널이라
+어차피 못 읽는다. 400회 뒤에 오히려 줄어든 것이 §5-③ 임베딩 서버 누수와의 대조점이다.
+
+★ 다만 **`openclaw agent` CLI 한 번이 node 프로세스 350MB** 다. §6 의 "게이트웨이 WS
+직결" 이 아직 유효한 숙제인 이유다.
+
+### 7-7. 채점기
+
+`scripts/eval_agent.py` — **툴 선택으로 채점한다.** 답변 문장을 문자열로 채점하면
+맞는 답이 틀린 답이 되는 것을 음성 쪽에서 이미 겪었다("이십사도"→"24도").
+
+★ **툴 인자는 응답 JSON 에 없다.** `toolSummary.tools` 가 `["lt__slash"]` 라고만
+알려 줘서, 그걸로 채점하면 위 표의 1·4번이 통과한다. 인자는 게이트웨이 트레이스
+(`~/.openclaw/agents/<id>/sessions/*.trajectory.jsonl`)에만 있어서 거기까지 읽는다.
+
+```bash
+.venv/bin/python scripts/eval_agent.py --trials 2     # 케이스 9개 × 2회, 약 20분
+```

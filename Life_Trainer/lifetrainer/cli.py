@@ -534,6 +534,16 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     except Exception as exc:  # noqa: BLE001
         warn("웹 검색", f"확인 실패: {exc}")
 
+    # 12. OpenClaw 에이전트 배선
+    #
+    # ★ 이 배선은 **저장소 밖**(`~/.openclaw/openclaw.json`)에 있다. 기기를 다시
+    #   세우거나 `openclaw` 를 재설치하면 조용히 사라지는데, 그때 증상은
+    #   "에이전트가 툴을 하나도 안 부른다" 뿐이라 원인을 찾기 어렵다. 여기서 본다.
+    try:
+        _check_agent(cfg, ok, warn)
+    except Exception as exc:  # noqa: BLE001 - 진단이 진단 때문에 죽으면 안 된다
+        warn("에이전트", f"확인 실패: {exc}")
+
     if conn is not None:
         conn.close()
 
@@ -557,6 +567,87 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         return 1
 
     return 0
+
+
+def _check_agent(cfg: Config, ok, warn) -> None:  # noqa: ANN001 - cmd_doctor 의 지역 함수
+    """에이전트 쪽 점검 — 예산 · 워크스페이스 · OpenClaw 등록.
+
+    **모델을 부르지 않는다.** `doctor` 는 빨라야 하고, 한 턴이 26초다.
+    부르지 않고 알 수 있는 것만 본다.
+    """
+    import json as _json
+
+    from lifetrainer.agent import catalog as catalog_mod
+    from lifetrainer.agent import prompt as prompt_mod
+    from lifetrainer.agent.config import build_sandbox, load_settings
+    from lifetrainer.llm.client import estimate_tokens
+
+    settings = load_settings(cfg)
+    if not settings.enabled:
+        warn("에이전트", "config 의 [agent] enabled=false — 꺼져 있다")
+        return
+
+    # ① 예산. 넘으면 첫 턴이 길어지고 ctx 20480 에서 압축이 걸린다.
+    report = catalog_mod.budget_report()
+    sandbox = build_sandbox(cfg, settings)
+    prompt_tokens = int(round(estimate_tokens(prompt_mod.build_agents_md(sandbox))))
+    over = []
+    if report["total"] > report["budget"]:
+        over.append(f"툴 {report['total']}/{report['budget']}")
+    if prompt_tokens > prompt_mod.PROMPT_TOKEN_BUDGET:
+        over.append(f"프롬프트 {prompt_tokens}/{prompt_mod.PROMPT_TOKEN_BUDGET}")
+    total = report["total"] + prompt_tokens + catalog_mod.FRAMEWORK_TOKENS
+    if over:
+        warn("에이전트 예산", f"{', '.join(over)} 초과 — lt agent budget 로 무엇이 큰지 본다")
+    else:
+        ok("에이전트 예산", f"툴 {report['count']}개 {report['total']} + 프롬프트 {prompt_tokens} → 약 {total} 토큰")
+
+    # ② 감옥이 실제로 서 있나. `Sandbox.build` 가 **없는 폴더를 버리므로**,
+    #    오타 하나로 읽기가 통째로 비어도 조용하다.
+    if not sandbox.read_roots:
+        warn("에이전트 감옥", "허용 폴더가 하나도 없다 — [agent] read_roots 경로를 확인한다")
+    elif not sandbox.write_roots:
+        warn("에이전트 감옥", "쓰기 폴더가 없다 — 메모를 남길 수 없다")
+    else:
+        ok("에이전트 감옥", sandbox.describe().replace("\n", " · "))
+
+    # ③ 워크스페이스 프롬프트가 코드와 같은가.
+    workspace = Path(settings.workspace)
+    if not workspace.is_absolute():
+        workspace = cfg.root / workspace
+    target = workspace / prompt_mod.WORKSPACE_FILE
+    if not target.is_file():
+        warn("에이전트 프롬프트", f"{target} 이 없다 — bash scripts/install-agent.sh")
+    elif target.read_text(encoding="utf-8") != prompt_mod.build_agents_md(sandbox):
+        # 게이트웨이가 워크스페이스를 다시 시드했거나 모델이 고쳐 썼을 수 있다.
+        warn("에이전트 프롬프트", "코드가 만드는 내용과 다르다 — lt agent prompt 로 다시 쓴다")
+    else:
+        ok("에이전트 프롬프트", f"{target.name} 최신")
+
+    # ④ OpenClaw 쪽 등록. 설정 파일만 읽는다 — 게이트웨이를 부르지 않는다.
+    openclaw_path = Path(cfg.slack.openclaw_config)
+    if not openclaw_path.is_file():
+        warn("에이전트 등록", f"{openclaw_path} 가 없다 — OpenClaw 가 설치되지 않았다")
+        return
+    try:
+        raw = _json.loads(openclaw_path.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        warn("에이전트 등록", f"openclaw.json 을 읽지 못했다: {exc}")
+        return
+
+    agents = [a.get("id") for a in (raw.get("agents") or {}).get("list") or []]
+    server = ((raw.get("mcp") or {}).get("servers") or {}).get(catalog_mod.SERVER_NAME)
+    missing = []
+    if settings.agent_id not in agents:
+        missing.append(f"에이전트 '{settings.agent_id}'")
+    if not server:
+        missing.append(f"MCP 서버 '{catalog_mod.SERVER_NAME}'")
+    elif server.get("enabled") is False:
+        missing.append(f"MCP 서버 '{catalog_mod.SERVER_NAME}' 가 꺼져 있다")
+    if missing:
+        warn("에이전트 등록", f"{', '.join(missing)} 없음 — bash scripts/install-agent.sh")
+    else:
+        ok("에이전트 등록", f"agent={settings.agent_id} · mcp={catalog_mod.SERVER_NAME}")
 
 
 def cmd_init_db(args: argparse.Namespace, cfg: Config) -> int:

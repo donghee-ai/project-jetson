@@ -22,6 +22,17 @@
 `no_tool` 케이스는 반대다 — **툴을 부르면 안 되는** 질문에서 모델이 툴을
 지어내지 않는지 본다.
 
+## ★ 이 스크립트는 **실데이터에 쓴다**
+
+에이전트는 게이트웨이가 띄운 MCP 서버를 통해 `data/lifetrainer.db` 를 본다.
+채점기가 그 배선을 갈아끼울 수 없으므로, `plan-write`·`plan-done` 같은 쓰기 케이스는
+**사용자의 진짜 계획 표에 들어간다.**
+
+그래서 돌기 전에 계획 인스턴스 id 를 찍어 두고, 끝나면 **그 사이에 새로 생긴 것을
+지운다** (`--keep` 로 끄면 남긴다). 상태 변경(`/done`)까지는 못 되돌린다 —
+`plan-done` 케이스가 오늘 1번을 완료로 바꾸므로, **진짜 계획이 있는 날에 돌리면
+그 하나는 사람이 되돌려야 한다.**
+
 ## 쓰는 법
 
     .venv/bin/python scripts/eval_agent.py               # 전체
@@ -271,6 +282,43 @@ def judge(
     return True, ""
 
 
+def _plan_ids() -> set[int]:
+    """지금 있는 계획 인스턴스 id 들. 채점 뒤 새로 생긴 것을 가려내는 기준선이다."""
+    from lifetrainer import db
+    from lifetrainer.config import load_config
+
+    conn = db.open_db(load_config())
+    try:
+        return {int(r[0]) for r in conn.execute("SELECT id FROM plan_instance")}
+    except Exception:  # noqa: BLE001
+        return set()
+    finally:
+        conn.close()
+
+
+def _cleanup(before: set[int]) -> int:
+    """채점 중 새로 생긴 계획을 소프트 삭제한다. `archive_instance` 를 그대로 쓴다."""
+    from lifetrainer import db
+    from lifetrainer.config import load_config
+    from lifetrainer.plan import models as plan_models
+
+    conn = db.open_db(load_config())
+    try:
+        fresh = [
+            int(r[0])
+            for r in conn.execute("SELECT id FROM plan_instance WHERE archived_at IS NULL")
+            if int(r[0]) not in before
+        ]
+        for instance_id in fresh:
+            plan_models.archive_instance(conn, instance_id)
+        return len(fresh)
+    except Exception as exc:  # noqa: BLE001 - 정리 실패가 채점 결과를 덮으면 안 된다
+        print(f"정리 실패(수동으로 확인하세요): {exc}", file=sys.stderr)
+        return 0
+    finally:
+        conn.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--trials", type=int, default=1, help="케이스마다 몇 번 (기본 1)")
@@ -278,6 +326,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=300, help="한 턴 상한 초")
     parser.add_argument("--json", dest="json_out", default="", help="결과를 이 파일에 JSON 으로")
     parser.add_argument("--show", action="store_true", help="답변 본문도 출력")
+    parser.add_argument("--keep", action="store_true", help="채점 중 만들어진 계획을 지우지 않는다")
     args = parser.parse_args(argv)
 
     cases = [c for c in CASES if args.only in c.name]
@@ -285,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"'{args.only}' 에 해당하는 케이스가 없습니다.", file=sys.stderr)
         return 2
 
+    before = _plan_ids()
     results: list[Result] = []
     for case in cases:
         for trial in range(1, args.trials + 1):
@@ -301,6 +351,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"       └ {result.reason}")
             if args.show:
                 print(f"       │ {result.text[:300]}")
+
+    if not args.keep:
+        removed = _cleanup(before)
+        if removed:
+            print(f"\n채점 중 만들어진 계획 {removed}건을 지웠습니다.")
 
     passed = sum(1 for r in results if r.ok)
     total = len(results)
