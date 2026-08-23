@@ -89,6 +89,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_synth.add_argument("--seed", type=int, default=42, help="재현용 시드")
     p_synth.set_defaults(func=cmd_synth)
 
+    p_abs = sub.add_parser(
+        "backfill-abstracts", parents=[common], help="제목뿐인 문서에 초록 채우기 (RAG 근거)"
+    )
+    p_abs.add_argument("--limit", type=int, default=50, help="이번에 처리할 문서 수")
+    p_abs.add_argument("--source", type=str, default=None, help="소스 이름으로 한정")
+    p_abs.add_argument("--dry-run", action="store_true", help="쓰지 않고 결과만 센다")
+    p_abs.set_defaults(func=cmd_backfill_abstracts)
+
+    p_embed = sub.add_parser("embed", parents=[common], help="문서 임베딩 생성 (RAG)")
+    p_embed.add_argument("--limit", type=int, default=500, help="한 번에 처리할 문서 수")
+    p_embed.add_argument("--all", action="store_true", help="남은 것을 전부 (여러 배치)")
+    p_embed.set_defaults(func=cmd_embed)
+
     p_rollup = sub.add_parser("rollup", parents=[common], help="10분 슬롯 롤업")
     rollup_group = p_rollup.add_mutually_exclusive_group()
     rollup_group.add_argument("--day", type=str, help="'YYYY-MM-DD'")
@@ -459,6 +472,21 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             warn("큐", f"조회 실패: {exc}")
 
     # 8-B. 웹 검색 키 (없으면 대화가 URL 을 추측한다 — known-issues §1)
+    # ── 임베딩 (RAG) ──
+    if cfg.embed.enabled:
+        try:
+            import requests as _rq
+
+            n_vec = conn.execute("SELECT COUNT(*) FROM doc_embedding").fetchone()[0] if conn else 0
+            n_doc = conn.execute("SELECT COUNT(*) FROM doc WHERE dup_of IS NULL").fetchone()[0] if conn else 0
+            _rq.get(cfg.embed.base_url.rstrip("/") + "/models", timeout=3).raise_for_status()
+            if n_doc and n_vec >= n_doc:
+                ok("임베딩", f"{cfg.embed.model} · 벡터 {n_vec}/{n_doc}건")
+            else:
+                warn("임베딩", f"서버는 살아 있는데 벡터가 {n_vec}/{n_doc}건 — `lt embed --all`")
+        except Exception as exc:  # noqa: BLE001
+            warn("임베딩", f"서버에 닿지 않습니다 ({cfg.embed.base_url}) — 검색이 키워드로만 간다: {exc}")
+
     try:
         from lifetrainer.llm.websearch import providers_available
 
@@ -531,16 +559,10 @@ def cmd_sync(args: argparse.Namespace, cfg: Config) -> int:
 
 
 def _days_touched(cfg: Config, result) -> set[str]:
-    """이번에 들어온 이벤트가 걸친 논리적 하루(06:00 경계) 목록.
+    """`collect/ingest.days_touched` 로 옮겼다 — 웹 수신 경로와 같은 계산을 써야 한다."""
+    from lifetrainer.collect.ingest import days_touched
 
-    폰 데이터는 **늦게 도착한다** (수집이 1시간 주기이고 Doze 에서 더 밀린다). 오늘만 롤업하면
-    어제 후반부가 영영 반영되지 않으므로, 실제로 건드린 날짜를 전부 돌려준다.
-    """
-    if result.ts_min is None or result.ts_max is None:
-        return set()
-    lo = timeutil.day_str(result.ts_min, cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
-    hi = timeutil.day_str(result.ts_max, cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
-    return set(timeutil.day_range(lo, hi))
+    return days_touched(cfg, result)
 
 
 def cmd_import(args: argparse.Namespace, cfg: Config) -> int:
@@ -634,6 +656,73 @@ def cmd_synth(args: argparse.Namespace, cfg: Config) -> int:
     try:
         n = generate(conn, cfg, days=args.days, end_day=args.end_day, seed=args.seed)
         print(f"합성 이벤트 {n}개 생성 (최근 {args.days}일)")
+        return 0
+    finally:
+        conn.close()
+
+
+def cmd_backfill_abstracts(args: argparse.Namespace, cfg: Config) -> int:
+    """제목뿐인 문서에 초록을 채운다.
+
+    ★ 채우고 나면 **임베딩을 다시 돌려야 값어치가 난다.** `abstract` 가 임베딩 원문의
+    일부라 `source_hash` 가 달라지고, 다음 `lt embed` 가 알아서 다시 만든다.
+    """
+    from lifetrainer.collect import abstracts as A
+
+    conn = db.open_db(cfg)
+    try:
+        todo = len(A.pending(conn, 10_000, source=args.source))
+        if not todo:
+            print("근거가 없는 문서가 없습니다.")
+            return 0
+        print(f"근거 없는 문서 {todo}건 · 이번에 {min(todo, args.limit)}건 처리"
+              f"{' (dry-run)' if args.dry_run else ''}")
+
+        def show(i, n, title):
+            print(f"  [{i}/{n}] {title[:56]}", flush=True)
+
+        r = A.backfill(
+            conn, cfg, limit=args.limit, source=args.source, dry_run=args.dry_run, progress=show
+        )
+        print(
+            f"초록 {r.filled}건 채움 · {r.too_short}건 너무 짧음 · "
+            f"{r.boilerplate}건 보일러플레이트 · {r.failed}건 실패 · 남은 것 {todo - r.filled}건"
+        )
+        if r.stopped_early:
+            print("상대 서버가 429 를 보내 물러났습니다. 잠시 뒤 같은 명령을 다시 돌리면 이어 합니다.")
+        if r.filled and not args.dry_run:
+            print("→ `lt embed --all` 로 벡터를 다시 만드세요 (원문이 바뀌었습니다).")
+        return 0
+    finally:
+        conn.close()
+
+
+def cmd_embed(args: argparse.Namespace, cfg: Config) -> int:
+    """수집해 둔 문서를 벡터로 만든다. 야간 배치가 부르는 것과 같은 경로다."""
+    from lifetrainer.llm import embed as E
+
+    if not cfg.embed.enabled:
+        print("임베딩이 꺼져 있습니다 (config 의 [embed] enabled = true).", file=sys.stderr)
+        return 1
+
+    conn = db.open_db(cfg)
+    try:
+        total = E.EmbedResult()
+        while True:
+            try:
+                r = E.embed_pending(conn, cfg, limit=args.limit)
+            except E.EmbedUnavailable as exc:
+                print(f"임베딩 서버에 연결할 수 없습니다: {exc}", file=sys.stderr)
+                return 1
+            total.embedded += r.embedded
+            total.skipped += r.skipped
+            total.failed += r.failed
+            print(f"  +{r.embedded}건 (누적 {total.embedded})")
+            if not args.all or r.embedded == 0:
+                break
+        left = len(E.pending_docs(conn, cfg, 10_000))
+        print(f"임베딩 {total.embedded}건 생성 · {total.skipped}건 건너뜀 · "
+              f"{total.failed}건 실패 · 남은 것 {left}건")
         return 0
     finally:
         conn.close()
@@ -829,6 +918,26 @@ def cmd_score(args: argparse.Namespace, cfg: Config) -> int:
         conn.close()
 
 
+_DIGEST_TAG_RE = __import__("re").compile(r"<[^>]+>")
+_DIGEST_WS_RE = __import__("re").compile(r"\s+")
+_DIGEST_ENTITIES = {"&nbsp;": " ", "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'"}
+
+
+def _plain_text(text: str) -> str:
+    """수집한 글의 요약·초록에 섞인 마크업을 걷어낸다.
+
+    ★ `llm/tools.py._plain` 과 같은 일을 한다. 그쪽은 툴 결과(프롬프트)용이고 여기는
+    Slack 카드용이라 호출 경로가 겹치지 않지만, **규칙이 갈라지면 같은 글이 두 화면에서
+    다르게 보인다.** 하나로 합칠 때가 오면 `text` 유틸로 빼는 게 맞다.
+    """
+    if not text:
+        return ""
+    out = _DIGEST_TAG_RE.sub(" ", text)
+    for k, v in _DIGEST_ENTITIES.items():
+        out = out.replace(k, v)
+    return _DIGEST_WS_RE.sub(" ", out).strip()
+
+
 def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
     """아침 다이제스트 — 키워드 랭킹 상위 문서만 나열한다 (LLM 없음)."""
     from lifetrainer.collect.score import top_docs
@@ -846,12 +955,30 @@ def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
                 blocks_mod.section("오늘은 새로 수집된 관심 문서가 없습니다."),
             ]
         else:
-            lines = [f"• <{d['url']}|{d['title']}>" + (f" — {d['summary']}" if d["summary"] else "") for d in docs]
+            # ★ 한 덩어리 문단이 아니라 **문서당 한 블록**으로 나눈다.
+            #
+            # 전에는 5건을 불릿으로 이어 붙여 하나의 section 에 넣었다. 요약이 3~4문장
+            # 이라 문단 다섯 개가 붙어 버려서 어디서 끊기는지 눈으로 못 찾았다.
+            # (게다가 Slack 링크 미리보기가 각 링크를 본문 카드로 펼쳐 화면 절반을 먹었다
+            #  — notify.post 에서 unfurl 을 껐다.)
+            #
+            # 지금 모양: 굵은 제목 링크 → 요약 2줄 → 출처·점수 한 줄.
+            digest_blocks = [blocks_mod.header(f"아침 다이제스트 — {today}")]
+            lines = []
+            for i, d in enumerate(docs, 1):
+                gist = _plain_text(d["summary"] or d["abstract"] or "")
+                title = f"*{i}. <{d['url']}|{blocks_mod._truncate(d['title'] or '제목 없음', 110)}>*"
+                body = title + (f"\n{blocks_mod._truncate(gist, 220)}" if gist else "")
+                digest_blocks.append(blocks_mod.section(body))
+                meta = [f"점수 {float(d['score'] or 0):.1f}"]
+                src = conn.execute("SELECT name FROM source WHERE id = ?", (d["source_id"],)).fetchone()
+                if src:
+                    meta.append(src["name"])
+                if not d["summary"]:
+                    meta.append("요약 없음 — 초록에서 발췌")
+                digest_blocks.append(blocks_mod.context([" · ".join(meta)]))
+                lines.append(f"• <{d['url']}|{d['title']}>" + (f" — {gist[:120]}" if gist else ""))
             text = f"{today} 아침 다이제스트\n" + "\n".join(lines)
-            digest_blocks = [
-                blocks_mod.header(f"아침 다이제스트 — {today}"),
-                blocks_mod.section("\n".join(lines)),
-            ]
 
         print(text)
 
@@ -899,6 +1026,23 @@ def cmd_nightly(args: argparse.Namespace, cfg: Config) -> int:
 
             dropped = cancel_pending_batch(conn)
             print(f"대기 중이던 배치 잡 {dropped}건을 큐에서 비웠습니다 (예약 알림은 그대로).")
+
+            # ★ 임베딩은 **요약이 끝난 뒤** 여기서 돈다.
+            #
+            # 왜 여기인가: 임베딩 원문이 `title + abstract + summary` 라, 요약이 붙으면
+            # 원문이 바뀌고 벡터를 다시 만들어야 한다. 배치 시작(02:00)에 돌리면 그날
+            # 새로 붙은 요약을 못 본다. 창이 닫히는 05:50 이 요약이 다 앉은 시점이다.
+            #
+            # 실패해도 종료 자체는 성공으로 둔다 — 임베딩이 없으면 검색이 키워드로
+            # 떨어질 뿐이고, 다음 밤이나 `lt embed` 로 언제든 따라잡을 수 있다.
+            if cfg.embed.enabled:
+                from lifetrainer.llm import embed as E
+
+                try:
+                    r = E.embed_pending(conn, cfg, limit=cfg.nightly.summary_limit * 2)
+                    print(f"임베딩 {r.embedded}건 생성 (실패 {r.failed}건).")
+                except E.EmbedUnavailable as exc:
+                    print(f"임베딩 서버 없음 — 건너뜁니다: {exc}")
             return 0
 
         if args.dry_run:
@@ -1081,8 +1225,11 @@ def cmd_plan_rm(args: argparse.Namespace, cfg: Config) -> int:
         existing = get_plan(conn, args.plan_id)
         if existing is None:
             raise CliError(f"계획을 찾을 수 없습니다: id={args.plan_id}")
-        delete_plan(conn, args.plan_id)
-        print(f"계획 삭제됨: id={args.plan_id} ({existing.title!r})")
+        today = timeutil.day_str(
+            timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
+        )
+        archived = delete_plan(conn, args.plan_id, from_day=today)
+        print(f"계획 삭제됨: id={args.plan_id} ({existing.title!r}) · 오늘 이후 인스턴스 {archived}건 보관")
         return 0
     finally:
         conn.close()
