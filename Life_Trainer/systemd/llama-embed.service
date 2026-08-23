@@ -33,12 +33,25 @@ ExecStart=/home/user/llama.cpp/build/bin/llama-server \
 ExecStartPost=/bin/sh -c 'until /usr/bin/curl -sf --max-time 3 http://127.0.0.1:8081/health >/dev/null 2>&1; do sleep 2; done'
 Restart=on-failure
 RestartSec=10
-# ★ 2026-08-23 저녁: 3G 로도 부족했다. 초록 백필 뒤 780건을 재임베딩하는 도중
-#   서버가 죽고 재시작됐다(연결 끊김). 유휴 상주가 1.8GB 인데 배치 중에 2.4GB 를
-#   넘는다 — 요청 크기가 제각각이라 생기는 단편화로 보인다.
-#   가용 5GB 안에서 4G 는 감당된다. 더 필요해지면 상한을 올리기 전에
-#   `--parallel`·`-b` 를 줄여 상주 자체를 낮추는 쪽을 먼저 본다.
-MemoryMax=4G
+# ★★ 2026-08-23 저녁 실측: **이 서버는 요청이 쌓이면 메모리가 계속 는다.**
+#
+#   유휴 상주는 1.8GB 인데, 초록 백필 + 재임베딩으로 약 1,380건을 처리하고 나니
+#   RSS 1.2GB + **스왑 5.5GB = 6.7GB** 였다. 610MB 모델이 그럴 이유가 없다.
+#   재시작하니 즉시 1.8GB 로 돌아왔다 — 누수지 작업량이 아니다.
+#
+#   ★ 상한을 올린 것이 오히려 해로웠다:
+#       2G → 스왑으로 2.4GB 밀림 (느려짐)
+#       3G → OOM 으로 죽고 재시작       ← **자가복구된다. 이게 낫다**
+#       4G → 스왑 7.8GB 를 전부 먹고 **8B 까지 끌어내렸다** (가용 112MB)
+#
+#   그래서 상한을 도로 낮추고, **스왑을 아예 막는다.** 누수가 나면 스왑으로
+#   기어 들어가 기기 전체를 끌어내리는 대신 빨리 죽고 빨리 살아나야 한다.
+#   `Restart=on-failure` 가 그 자리를 받는다.
+#
+#   근본 해결(llama.cpp 쪽 누수)은 아직 안 했다. 큰 배치를 돌린 뒤에는
+#   `systemctl --user restart llama-embed` 로 상주를 되돌리는 것이 안전하다.
+MemoryMax=2500M
+MemorySwapMax=0
 
 [Install]
 WantedBy=default.target
