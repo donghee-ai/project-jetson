@@ -52,6 +52,7 @@
 │   ├── build/               ✅ 가동 중
 │   │   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
 │   │   └── openclaw-agent.md    에이전트 게이트웨이 결합 · 함정 14가지
+│   │                            + §7 Life Trainer 결합 (MCP · 폴더 감옥 · 예산)
 │   ├── plans/               ⏳ 미완
 │   │   ├── voice-agent-plan.md  한국어 음성 에이전트 (Phase 0 실측 완료)
 │   │   ├── opensource-plan.md   측정 자료 공개 · whichllm 기여
@@ -85,6 +86,12 @@ RSS · arXiv ───────────────────┼─→ 
 ```
 
 설계 3원칙: **수집이 8할이다 · 집계는 SQL 문장화는 LLM · GPU 는 단일 자원이다.**
+
+**2026-08-24: 같은 물건이 OpenClaw 의 에이전트로도 돈다.** 툴을 고르는 주체가
+규칙에서 **모델**로 바뀐 경로가 하나 더 생겼다 — 슬래시 명령 10개·플래너·RAG 를
+MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 프레임워크 기본
+구성이 시스템 프롬프트 12,541 토큰이던 것을 **5,247 토큰**으로 줄인 것이 이 결합의
+대부분이었다 ([openclaw-agent.md §7](docs/build/openclaw-agent.md)).
 
 → **[Life_Trainer/HANDOFF.md](Life_Trainer/HANDOFF.md)** (지금 상태 · 이어받는다면 여기부터) ·
 [README](Life_Trainer/README.md) · [전체 설명서](Life_Trainer/docs/handbook.md) ·
@@ -181,6 +188,14 @@ RSS · arXiv ───────────────────┼─→ 
 - **`pkill -f` 자기매칭** — 자신의 셸 명령줄까지 죽인다
 - **툴 스키마의 정규식 하나가 요청 전체를 400 으로 만든다** — llama.cpp 의 GBNF 변환기가
   `pattern` 을 못 다룬다. 앵커를 붙여도 안 된다 ([docs/build/openclaw-agent.md](docs/build/openclaw-agent.md))
+- **에이전트 워크스페이스의 인격 파일은 지워도 다시 생긴다** — `openclaw agents add` 가
+  깔아 두는 6,122바이트가 시스템 프롬프트에 통째로 실리는데, 삭제하면 재기동 때
+  시드된다. **비워서 남겨야** 시드가 안 돈다 (§7-2)
+- **"툴을 불렀다"와 "일을 했다"는 다르다** — 8B 가 계획 목록만 조회하고 완료는
+  사용자에게 시켰다. 툴 이름만 채점하면 통과한다. **툴 인자까지 봐야** 잡힌다 (§7-5)
+- **소형 모델에게 선택 인자는 없는 것과 같다** — "내일 계획 넣어줘" 에서 `day` 를
+  3/3 빠뜨려 계획이 조용히 오늘에 들어갔다. 프롬프트로도 툴 결과 경고로도 안 잡혔고,
+  **스키마에서 필수로 만들자 0/3** 이 됐다 (왕복도 하나 줄었다)
 - **ActivityWatch 의 마지막 이벤트는 duration 이 자란다** — 끝 시각 기준으로 페이징하면
   진행 중인 활동이 조각나고 이중 계산된다. 시작 시각 기준 + 겹침 재조회가 정답
   ([Life_Trainer/docs/research/activitywatch.md](Life_Trainer/docs/research/activitywatch.md))
