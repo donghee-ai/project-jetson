@@ -244,6 +244,30 @@ def build_parser() -> argparse.ArgumentParser:
     p_planner.add_argument("--theme", type=str, default="light", choices=["light", "dark"], help="테마 (기본 light)")
     p_planner.set_defaults(func=cmd_planner)
 
+    # ── agent — OpenClaw 결합층 (lifetrainer/agent/) ──────────────────
+    p_agent = sub.add_parser("agent", parents=[common], help="OpenClaw 에이전트 (MCP 서버 · 설치 · 예산)")
+    agent_sub = p_agent.add_subparsers(dest="agent_cmd", required=True)
+
+    p_agent_mcp = agent_sub.add_parser("mcp", parents=[common], help="MCP stdio 서버 실행 (게이트웨이가 띄운다)")
+    p_agent_mcp.set_defaults(func=cmd_agent_mcp)
+
+    p_agent_budget = agent_sub.add_parser("budget", parents=[common], help="프롬프트 토큰 예산 실측")
+    p_agent_budget.set_defaults(func=cmd_agent_budget)
+
+    p_agent_prompt = agent_sub.add_parser("prompt", parents=[common], help="워크스페이스 AGENTS.md 를 만들어 설치")
+    p_agent_prompt.add_argument("--print", action="store_true", dest="print_only", help="쓰지 않고 표준출력으로만")
+    p_agent_prompt.add_argument(
+        "--keep-seeded",
+        action="store_true",
+        help="OpenClaw 가 깔아 둔 범용 인격 파일(SOUL/IDENTITY/BOOTSTRAP…)을 지우지 않는다",
+    )
+    p_agent_prompt.set_defaults(func=cmd_agent_prompt)
+
+    p_agent_call = agent_sub.add_parser("call", parents=[common], help="툴 하나를 직접 호출 (배선 없이 확인)")
+    p_agent_call.add_argument("tool", help="툴 이름 (예: slash)")
+    p_agent_call.add_argument("args", nargs="*", help="key=value 인자")
+    p_agent_call.set_defaults(func=cmd_agent_call)
+
     p_web = sub.add_parser("web", parents=[common], help="플래너 웹 서버 실행 (상시)")
     p_web.add_argument("--host", type=str, default=None, help="바인드 호스트 (기본: cfg.web.host)")
     p_web.add_argument("--port", type=int, default=None, help="포트 (기본: cfg.web.port)")
@@ -1378,6 +1402,115 @@ def cmd_slack_test(args: argparse.Namespace, cfg: Config) -> int:
         return 0
     print("발송 실패 또는 채널이 지정되지 않았습니다.", file=sys.stderr)
     return 1
+
+
+# ── agent ────────────────────────────────────────────────────────────
+
+
+def cmd_agent_mcp(args: argparse.Namespace, cfg: Config) -> int:
+    """MCP stdio 서버. **stdout 은 전송로다** — 여기서 print 하면 프로토콜이 깨진다."""
+    from lifetrainer.agent import mcp_server
+    from lifetrainer.agent.catalog import AgentContext
+    from lifetrainer.agent.config import build_sandbox
+
+    ctx = AgentContext(cfg=cfg, sandbox=build_sandbox(cfg), actor="agent")
+    logger.info("MCP 서버 시작 — %s", ctx.sandbox.describe().replace("\n", " · "))
+    mcp_server.serve(ctx)
+    return 0
+
+
+def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
+    """툴 스키마와 워크스페이스 프롬프트가 각각 몇 토큰인지 센다.
+
+    `openclaw-agent.md §3` 의 12,541 토큰과 같은 자리에서 비교할 수 있게
+    **한 화면에** 낸다. 눈대중으로 "이 정도면 되겠지" 하지 않기 위한 명령이다.
+    """
+    from lifetrainer.agent import catalog as catalog_mod
+    from lifetrainer.agent import prompt as prompt_mod
+    from lifetrainer.agent.config import build_sandbox
+    from lifetrainer.llm.client import estimate_tokens
+
+    report = catalog_mod.budget_report()
+    agents_md = prompt_mod.build_agents_md(build_sandbox(cfg))
+    prompt_tokens = int(round(estimate_tokens(agents_md)))
+
+    print(f"툴 {report['count']}개 — {report['total']} 토큰 (예산 {report['budget']})")
+    for name, tokens in report["per_tool"].items():
+        print(f"  {tokens:5d}  {name}")
+    print(f"워크스페이스 AGENTS.md — {prompt_tokens} 토큰 (예산 {prompt_mod.PROMPT_TOKEN_BUDGET})")
+
+    total = report["total"] + prompt_tokens
+    # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`docs/build/openclaw-agent.md §3`).
+    print(f"합계 {total} 토큰 ≈ 첫 턴 프롬프트 처리 {total / 295:.1f}초 (295 tok/s 실측 기준)")
+    print(f"참고: OpenClaw 기본 구성은 12,541 토큰 = 42.5초였다")
+
+    over = []
+    if report["total"] > report["budget"]:
+        over.append("툴")
+    if prompt_tokens > prompt_mod.PROMPT_TOKEN_BUDGET:
+        over.append("프롬프트")
+    if over:
+        print(f"예산 초과: {', '.join(over)}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def cmd_agent_prompt(args: argparse.Namespace, cfg: Config) -> int:
+    """`AGENTS.md` 를 만들어 워크스페이스에 쓴다. 게이트웨이가 그걸 읽는다."""
+    from lifetrainer.agent import prompt as prompt_mod
+    from lifetrainer.agent.config import build_sandbox, load_settings
+
+    settings = load_settings(cfg)
+    body = prompt_mod.build_agents_md(build_sandbox(cfg, settings))
+    if getattr(args, "print_only", False):
+        print(body)
+        return 0
+
+    workspace = Path(settings.workspace)
+    if not workspace.is_absolute():
+        workspace = cfg.root / workspace
+    workspace.mkdir(parents=True, exist_ok=True)
+    target = workspace / prompt_mod.WORKSPACE_FILE
+    target.write_text(body, encoding="utf-8")
+    print(f"{target} 에 썼습니다 ({len(body)}자)")
+
+    if not getattr(args, "keep_seeded", False):
+        stubbed = []
+        for name in prompt_mod.SEEDED_FILES:
+            path = workspace / name
+            # 없어도 만든다 — 있으면 게이트웨이가 시드를 안 돌린다 (prompt.py 주석).
+            if not path.is_file() or path.read_text(encoding="utf-8") != prompt_mod.STUB_BODY:
+                path.write_text(prompt_mod.STUB_BODY, encoding="utf-8")
+                stubbed.append(name)
+        boot = workspace / prompt_mod.BOOTSTRAP_FILE
+        if boot.is_file():
+            boot.unlink()
+            stubbed.append(prompt_mod.BOOTSTRAP_FILE + "(삭제)")
+        if stubbed:
+            print(f"범용 인격 파일 {len(stubbed)}개 비움: {', '.join(stubbed)}")
+    return 0
+
+
+def cmd_agent_call(args: argparse.Namespace, cfg: Config) -> int:
+    """툴 하나를 직접 부른다. 게이트웨이·모델 없이 몸통만 확인할 때 쓴다."""
+    from lifetrainer.agent import catalog as catalog_mod
+    from lifetrainer.agent.config import build_sandbox
+
+    tools = {t.name: t for t in catalog_mod.build_tools()}
+    tool = tools.get(args.tool)
+    if tool is None:
+        raise CliError(f"'{args.tool}' 이라는 툴은 없습니다. 있는 것: {', '.join(sorted(tools))}")
+
+    call_args: dict = {}
+    for item in args.args:
+        key, sep, value = item.partition("=")
+        if not sep:
+            raise CliError(f"인자는 key=value 모양이어야 합니다: {item!r}")
+        call_args[key] = value
+
+    ctx = catalog_mod.AgentContext(cfg=cfg, sandbox=build_sandbox(cfg), actor="cli")
+    print(tool.handler(ctx, call_args))
+    return 0
 
 
 # ── 진입점 ────────────────────────────────────────────────────────────
