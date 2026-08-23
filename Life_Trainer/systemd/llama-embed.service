@@ -1,0 +1,39 @@
+[Unit]
+Description=llama.cpp embedding server (Qwen3-Embedding-0.6B) — Life Trainer RAG
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# 대화 모델(:8080)과 **다른 프로세스**다. llama.cpp 는 프로세스당 모델 하나라
+# 임베딩 전용 서버를 따로 띄운다. 0.6B Q8_0 이 약 610MB 라 8B(10.2GB) 옆에 든다.
+#
+# --embedding : 생성 경로를 막고 /v1/embeddings 만 연다
+# ★ -ngl 0 : **CPU 로 돌린다.** GPU 에 올렸더니(-ngl 99) 상주가 3,144MB 로 불어
+#   8B 가 CUDA 버퍼 4.67GB 를 못 잡고 기동에 실패했다. 모델 파일은 610MB 인데
+#   컨텍스트·계산 버퍼가 그만큼 붙는다. 8B 가 이 기기의 주인공이므로 임베딩이 양보한다.
+#   임베딩은 질의 1건이 수백 ms, 야간 배치도 밤에 도는 일이라 CPU 로 충분하다.
+# ★ -t 3 : 8코어를 8B 와 나눠 쓴다. 스레드를 안 묶었더니 8B(67% CPU)와 붙어
+#   부하가 20 까지 올라가고 임베딩 한 건이 15초까지 늘었다(실측).
+# ★ -c 는 **슬롯 전체 합**이다. --parallel N 이면 슬롯당 -c/N 토큰만 쓴다.
+#   처음에 `-c 2048 --parallel 4` 로 뒀더니 슬롯당 512 토큰이 되어, 1600자(≈800토큰)
+#   짜리 문서 하나조차 "exceeds the available context size (512 tokens)" 로 거부됐다.
+#   8192/4 = 슬롯당 2048 토큰 — 상한 1600자에 여유가 있다.
+#   더 크게(16384/8 · -b 16384) 잡았더니 MemoryMax=2G 에 걸려 OOM 으로 죽었다.
+# -b 는 한 요청에 들어오는 **총 토큰**이다. 16건 × 800토큰이 한 번에 오므로 넉넉히 준다.
+ExecStart=/home/user/llama.cpp/build/bin/llama-server \
+  -m /home/user/project/project-jetson/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
+  --alias qwen3-embedding-0.6b \
+  --embedding \
+  -ngl 0 \
+  -c 4096 \
+  --parallel 2 \
+  -t 3 \
+  -b 2048 -ub 512 \
+  --host 127.0.0.1 --port 8081
+ExecStartPost=/bin/sh -c 'until /usr/bin/curl -sf --max-time 3 http://127.0.0.1:8081/health >/dev/null 2>&1; do sleep 2; done'
+Restart=on-failure
+RestartSec=10
+MemoryMax=3G
+
+[Install]
+WantedBy=default.target
