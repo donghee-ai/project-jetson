@@ -111,8 +111,43 @@ class Sandbox:
         return self._resolve(raw, self.read_roots, "읽을")
 
     def resolve_write(self, raw: str) -> Path:
-        """쓰기용으로 경로를 해석한다. 허용 밖이면 `SandboxError`."""
+        """쓰기용으로 경로를 해석한다. 허용 밖이면 `SandboxError`.
+
+        ★ **조용히 다른 곳에 쓰지 않는다.** 상대 경로는 쓰기 폴더 기준으로 풀리므로
+        `docs/x.md` 는 그냥 두면 `data/agent/docs/x.md` 에 **성공적으로** 써진다.
+        모델은 `docs/` 에 썼다고 믿고, 사람은 한참 뒤에야 그림자 사본을 발견한다.
+        읽기 전용 폴더를 가리킨 것이 분명하면(그 폴더가 실재하면) 거부한다 —
+        이 저장소가 반복해서 배운 것: 조용히 성공하는 것이 실패보다 나쁘다.
+        """
+        candidate = Path(os.path.expanduser((raw or "").strip()))
+        # 폴더를 **명시했을 때만** 본다. 맨 파일 이름(`memo.md`)에는 위치 의도가
+        # 없으므로 쓰기 폴더로 보내는 것이 맞다 — 여기까지 거부하면 모델이
+        # 메모 하나를 못 남긴다.
+        named_a_folder = candidate.parent != Path(".")
+        if named_a_folder and not candidate.is_absolute() and self.base is not None:
+            meant = Path(os.path.realpath(self.base / candidate))
+            if meant.parent.is_dir() and not self._inside(meant, self.write_roots):
+                return _reject(
+                    f"쓸 수 없는 경로입니다: {self._short(meant)}\n"
+                    f"허용된 폴더: {', '.join(self._short(p) for p in self.write_roots) or '(없음)'}"
+                )
         return self._resolve(raw, self.write_roots, "쓸")
+
+    def _inside(self, path: Path, roots: tuple[Path, ...]) -> bool:
+        return any(path == root or root in path.parents for root in roots)
+
+    def hint(self) -> str:
+        """못 찾았을 때 붙이는 한 줄.
+
+        ★ 이 한 줄이 필요한 이유가 실측에 있다. "config 폴더 보여줘" 에 8B 가
+        `/…/data/agent/config` 를 만들어 불렀다 — 프롬프트에서 본 허용 폴더
+        (`data/agent`)에 `config` 를 **이어 붙인** 것이다. 같은 부류가
+        `openclaw-agent.md §4-4` 에 이미 기록돼 있다 (`workspace/workspace/`).
+        절대 경로를 조립하지 말고 짧은 이름을 쓰라고 결과에서 가르친다 —
+        거부만 하면 모델은 다음 턴에 또 조립한다.
+        """
+        names = ", ".join(self._short(p) for p in self.read_roots) or "(없음)"
+        return f"경로는 짧은 이름으로 쓰세요 (예: {names}). 절대 경로를 조립하지 마세요."
 
     def describe(self) -> str:
         """모델에게 보여줄 범위 설명. 프롬프트에 실리므로 짧게 쓴다."""
@@ -149,9 +184,8 @@ class Sandbox:
         if _is_denied_name(resolved):
             return _reject(f"'{resolved.name}' 은(는) 비밀이 들어 있어 열 수 없습니다.")
 
-        for root in roots:
-            if resolved == root or root in resolved.parents:
-                return resolved
+        if self._inside(resolved, roots):
+            return resolved
 
         # 허용 폴더를 base 기준 상대경로로 보여 준다. 절대경로를 그대로 실으면
         # 거부 한 번이 100토큰이 넘는데, 그 글자는 전부 다음 턴의 입력이 된다.
@@ -211,9 +245,9 @@ def read_text(sandbox: Sandbox, raw: str, *, max_bytes: int = MAX_READ_BYTES) ->
     """
     path = sandbox.resolve_read(raw)
     if not path.exists():
-        raise SandboxError(f"파일이 없습니다: {path}")
+        raise SandboxError(f"파일이 없습니다: {sandbox._short(path)}\n{sandbox.hint()}")
     if path.is_dir():
-        raise SandboxError(f"{path} 은(는) 폴더입니다. list_dir 을 쓰세요.")
+        raise SandboxError(f"{sandbox._short(path)} 은(는) 폴더입니다. list_dir 을 쓰세요.")
 
     data = path.read_bytes()
     text = data[:max_bytes].decode("utf-8", errors="replace")
@@ -226,9 +260,9 @@ def list_dir(sandbox: Sandbox, raw: str, *, max_entries: int = MAX_LIST_ENTRIES)
     """허용된 폴더의 목록. 폴더는 `/` 를 붙이고 파일은 크기를 붙인다."""
     path = sandbox.resolve_read(raw)
     if not path.exists():
-        raise SandboxError(f"폴더가 없습니다: {path}")
+        raise SandboxError(f"폴더가 없습니다: {sandbox._short(path)}\n{sandbox.hint()}")
     if not path.is_dir():
-        raise SandboxError(f"{path} 은(는) 파일입니다. read_file 을 쓰세요.")
+        raise SandboxError(f"{sandbox._short(path)} 은(는) 파일입니다. read_file 을 쓰세요.")
 
     entries = sorted(path.iterdir(), key=lambda p: (not p.is_dir(), p.name))
     shown, hidden = entries[:max_entries], len(entries) - max_entries

@@ -190,28 +190,58 @@ def usage() -> str:
     return "쓸 수 있는 명령:\n" + "\n".join(f"  {k} {v}" for k, v in COMMANDS.items())
 
 
-def run(cfg: "Config", line: str, *, actor: str = "agent", channel: str | None = None) -> str:
+def run(
+    cfg: "Config",
+    line: str,
+    *,
+    actor: str = "agent",
+    channel: str | None = None,
+    day: str | None = None,
+) -> str:
     """슬래시 명령 한 줄을 실행하고 결과 텍스트를 돌려준다.
 
     `channel` 은 받되 **발송에는 쓰지 않는다** (위 docstring). 예약 알림처럼
     "어디로 보낼지"를 기록해 두는 툴이 나중에 쓸 수 있게 자리만 남긴다.
+
+    `day` 는 `/plan` 이 **어느 날짜에** 넣을지다. 없으면 논리적 오늘.
+    ★ 이것이 없을 때 "내일 09시에 딥워크 넣어줘" 가 **오늘에 들어갔다.**
+    에러가 안 나고 "추가했습니다" 라고 답해서, 툴 이름만 보는 채점은 통과했다.
     """
     name, rest = parse(line)
     muted = _mute_slack(cfg)
+    target_day = _normalize_day(cfg, day)
 
     if name == "/view":
-        return _truncate(_view_text(muted, rest))
+        return _truncate(_view_text(muted, rest or (day or "")))
     if name == "/week":
         return _truncate(_week_text(muted))
 
     collector = _Collector()
-    _delegate(muted, name, rest, collector, actor=actor, channel=channel)
+    _delegate(muted, name, rest, collector, actor=actor, channel=channel, day=target_day)
     out = collector.close()
     return _truncate(out or "(결과 없음)")
 
 
+def _normalize_day(cfg: "Config", day: str | None) -> str | None:
+    """'내일' 같은 말도 날짜로 바꿔 준다. 못 읽으면 `SlashError`.
+
+    모델은 `day="내일"` 을 넘긴다. 여기서 안 받으면 `plan_instance.day` 에
+    '내일' 이라는 문자열이 들어가고, 그 계획은 **어느 날짜에도 안 뜬다.**
+    """
+    if not day or not str(day).strip():
+        return None
+    return _resolve_day(cfg, str(day))
+
+
 def _delegate(
-    cfg: "Config", name: str, rest: str, collector: _Collector, *, actor: str, channel: str | None
+    cfg: "Config",
+    name: str,
+    rest: str,
+    collector: _Collector,
+    *,
+    actor: str,
+    channel: str | None,
+    day: str | None = None,
 ) -> None:
     """`slackio.app` 의 dispatch 함수를 부른다. **import 는 여기서** (아래 참고)."""
     # ★ 지연 import. `slackio.app` 은 slack_bolt 를 끌어오고 그것만으로 상주가
@@ -225,8 +255,10 @@ def _delegate(
         sub = rest.split(maxsplit=1)[0].lower() if rest else "ping"
         slack_app._dispatch_lt(cfg, sub, collector)
     elif kind == "text":
-        handler = {"/plan": slack_app._dispatch_plan, "/memo": slack_app._dispatch_memo}[name]
-        handler(cfg, rest, collector)
+        if name == "/plan":
+            slack_app._dispatch_plan(cfg, rest, collector, day)
+        else:
+            slack_app._dispatch_memo(cfg, rest, collector)
     elif kind == "status":
         slack_app._dispatch_set_status(cfg, name.lstrip("/"), rest, collector, actor)
     else:  # "command"
@@ -299,18 +331,35 @@ def _instances(conn: "sqlite3.Connection", cfg: "Config", day: str) -> list:
         return []
 
 
+# 모델이 실제로 쓰는 낱말들. 하루 계산은 `llm/tools._shift_day` 하나만 쓴다.
+#
+# ★ `today`/`오늘` 을 받는 이유는 실측이다. 모델이 `/view today` 를 불렀다가
+#   거부당하고 `/view 2026-08-23` 으로 고쳐 부르느라 왕복을 한 번 더 돌았다.
+#   이 기기에서 왕복 하나가 수 초다 — 거부할 이유가 없는 표현은 받는다.
+_DAY_WORDS: dict[str, int] = {
+    "오늘": 0, "today": 0,
+    "어제": -1, "yesterday": -1,
+    "내일": 1, "tomorrow": 1,
+    "모레": 2,
+}
+
+
 def _resolve_day(cfg: "Config", arg: str) -> str:
-    """'어제' · 'YYYY-MM-DD' · 빈 값(오늘) 를 날짜 문자열로."""
+    """'어제' · '오늘' · 'YYYY-MM-DD' · 빈 값(오늘) 을 날짜 문자열로."""
     text = (arg or "").strip()
     if not text:
         return _today(cfg)
-    if text in {"어제", "yesterday"}:
+    delta = _DAY_WORDS.get(text.lower())
+    if delta is not None:
         from lifetrainer.llm.tools import _shift_day  # 하루 계산을 두 번 쓰지 않는다
 
-        return _shift_day(_today(cfg), -1)
+        return _shift_day(_today(cfg), delta)
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
         return text
-    raise SlashError(f"날짜를 해석할 수 없습니다: {text!r} (예: '어제' 또는 '2026-08-23')")
+    raise SlashError(
+        f"날짜를 해석할 수 없습니다: {text!r} "
+        f"(쓸 수 있는 말: {', '.join(sorted(_DAY_WORDS))} 또는 2026-08-23 모양)"
+    )
 
 
 def _week_text(cfg: "Config") -> str:

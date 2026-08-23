@@ -1439,10 +1439,16 @@ def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
         print(f"  {tokens:5d}  {name}")
     print(f"워크스페이스 AGENTS.md — {prompt_tokens} 토큰 (예산 {prompt_mod.PROMPT_TOKEN_BUDGET})")
 
-    total = report["total"] + prompt_tokens
+    # ★ 우리 몫만 세면 안 된다. OpenClaw 골격이 프롬프트의 절반 가까이를 차지하고,
+    #   그것까지 합친 값이 실제 첫 턴 지연을 정한다. 게이트웨이 트레이스에서 잰
+    #   실측 첫 호출이 5,212 토큰이었고 우리 몫 추정이 3,826 이라, 차액이 골격이다.
+    #   `estimate_tokens` 가 실제보다 크게 잡으므로 이 골격 값은 보수적인 하한이다.
+    ours = report["total"] + prompt_tokens
+    total = ours + catalog_mod.FRAMEWORK_TOKENS
+    print(f"우리 몫 {ours} 토큰 + OpenClaw 골격 약 {catalog_mod.FRAMEWORK_TOKENS} = 약 {total}")
     # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`docs/build/openclaw-agent.md §3`).
-    print(f"합계 {total} 토큰 ≈ 첫 턴 프롬프트 처리 {total / 295:.1f}초 (295 tok/s 실측 기준)")
-    print(f"참고: OpenClaw 기본 구성은 12,541 토큰 = 42.5초였다")
+    print(f"→ 첫 호출 프롬프트 처리 약 {total / 295:.1f}초 (295 tok/s 실측 기준)")
+    print("참고: OpenClaw 기본 구성은 12,541 토큰 = 42.5초, 첫 턴부터 압축이 걸렸다")
 
     over = []
     if report["total"] > report["budget"]:

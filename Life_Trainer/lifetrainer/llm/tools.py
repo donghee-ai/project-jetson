@@ -155,10 +155,17 @@ def _tool_compare_days(ctx: ToolContext, args: dict) -> str:
         reverse=True,
     )[:MAX_CATEGORIES]
     if deltas:
+        # ★ 증감만 주면 안 된다. 실측 사고: "어제랑 오늘 중 뭐가 더 코딩을 많이
+        #   했어?" 에 8B 가 **총 활동 시간을 코딩 시간이라고** 답했다 — 결과에
+        #   카테고리별 절대값이 없으니 눈에 보이는 숫자를 가져다 붙인 것이다.
+        #   양쪽 절대값을 같이 실으면 붙일 숫자가 제자리에 있다.
+        #   증감도 계속 싣는다 — 모델에게 뺄셈을 시키지 않는다 (CLAUDE.md).
         moved = ", ".join(
-            f"{cat} {'+' if d >= 0 else '-'}{format_hm(abs(d))}" for cat, d in deltas
+            f"{cat} {format_hm(a_map.get(cat, 0.0))}→{format_hm(b_map.get(cat, 0.0))}"
+            f"({'+' if d >= 0 else '-'}{format_hm(abs(d))})"
+            for cat, d in deltas
         )
-        lines.append(f"카테고리 변화({day_b} 기준): {moved}")
+        lines.append(f"카테고리별 {day_a}→{day_b}: {moved}")
     return " / ".join(lines)
 
 

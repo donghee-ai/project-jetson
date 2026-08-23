@@ -633,7 +633,14 @@ def _expire_undo(respond, text: str) -> None:
 # ── /plan 처리 ────────────────────────────────────────────────────────
 
 
-def _dispatch_plan(cfg: Config, text: str, respond) -> None:
+def _dispatch_plan(cfg: Config, text: str, respond, day: str | None = None) -> None:
+    """`/plan` 처리. `day` 를 주면 그 날짜에 넣는다 (기본은 논리적 오늘).
+
+    ★ `day` 는 Slack 이 아니라 **에이전트를 위해** 있다. Slack 에서 `/plan` 을 치는
+    사람은 오늘 것을 넣지만, 에이전트는 "내일 09시에 딥워크 넣어줘" 를 받는다.
+    이 인자가 없을 때 그 요청이 **오늘에 조용히 들어갔다** — 에러도 안 났고
+    "추가했습니다" 라고 답했다. `agent/slash.py` 가 넘긴다.
+    """
     try:
         if not text:
             respond(_PLAN_USAGE)
@@ -650,7 +657,7 @@ def _dispatch_plan(cfg: Config, text: str, respond) -> None:
 
         conn = db.open_db(cfg)
         try:
-            day = _today(cfg)
+            day = day or _today(cfg)
             now_dt = _dt.datetime.fromtimestamp(timeutil.now_ts(), tz=cfg.tz)
             default_start = now_dt.hour * 60 + now_dt.minute
 

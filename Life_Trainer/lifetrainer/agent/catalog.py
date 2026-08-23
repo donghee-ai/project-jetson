@@ -58,11 +58,31 @@ REUSED_TOOLS: tuple[str, ...] = (
 
 # 시스템 프롬프트에서 툴 스키마가 차지해도 되는 상한(토큰).
 #
-# 근거: ctx 20,480. OpenClaw 압축 설정이 `maxHistoryShare 0.7` + `reserveTokens 6000`
-# 이라 히스토리에 14,336, 예비에 6,000 이 잡힌다. 시스템 프롬프트는 히스토리 몫에서
-# 나가므로, 워크스페이스(약 700) + 툴 + 프레임워크 골격(약 1,500)을 합쳐 4,000 을
-# 넘기지 않게 잡았다. 4,000 토큰이면 첫 턴 프롬프트 처리가 295 tok/s 로 13.6초다.
-TOOL_TOKEN_BUDGET = 2000
+# ## 실측에서 나온 숫자다 (2026-08-24, 게이트웨이 트레이스)
+#
+#     첫 모델 호출의 프롬프트   5,212 토큰   (input 2,370 + cacheRead 2,842)
+#     그중 툴 스키마 추정치      2,853       (`estimate_tokens`, 실제보다 크게 잡는다)
+#     워크스페이스 AGENTS.md      973
+#     나머지가 OpenClaw 골격
+#
+# ## 왜 3,000 인가 — 두 개의 천장이 있다
+#
+# ① **지연.** 프롬프트 처리 295 tok/s (`openclaw-agent.md §3`). 첫 호출 프롬프트를
+#    6,000 토큰 아래로 묶으면 20.3초다. 툴 3,000 + 프롬프트 1,000 + 골격 2,300 이
+#    그 선에 딱 든다. 참고로 OpenClaw 기본 구성은 12,541 토큰 = 42.5초였다.
+# ② **압축.** ctx 20,480 에 `maxHistoryShare 0.7` 이라 히스토리 몫이 14,336 이다.
+#    시스템 프롬프트가 그 안에서 나가므로, 23,744자짜리 기본 프롬프트로는
+#    **첫 턴부터 auto-compaction 이 걸렸다** (실측). 지금 구성에서는 0회다.
+#
+# ★ 지금 2,853 이라 **남은 자리가 약 150 토큰뿐이다.** 툴을 더 붙이고 싶으면
+#   무엇을 뺄지 먼저 정한다. 이 상수는 그 대화를 강제하려고 있다.
+TOOL_TOKEN_BUDGET = 3000
+
+# OpenClaw 골격(툴 목록 안내 · 실행 지침 · 안전 · 런타임 정보)이 차지하는 몫.
+# 실측 첫 호출 5,212 에서 우리 몫 추정 3,826 을 뺀 값이다. 우리가 못 줄이는
+# 부분이라 상수로 박아 두고, `lt agent budget` 이 합계를 낼 때 더한다.
+# 워크스페이스의 범용 인격 파일을 비우기 전에는 이 값이 약 4,000 이었다.
+FRAMEWORK_TOKENS = 1400
 
 
 @dataclass(frozen=True)
@@ -97,7 +117,9 @@ def _handle_slash(ctx: AgentContext, args: dict) -> str:
     if not line:
         return "오류: command 가 비었습니다.\n" + slash_mod.usage()
     try:
-        return slash_mod.run(ctx.cfg, line, actor=ctx.actor, channel=ctx.channel)
+        return slash_mod.run(
+            ctx.cfg, line, actor=ctx.actor, channel=ctx.channel, day=args.get("day")
+        )
     except slash_mod.SlashError as exc:
         return f"오류: {exc}"
 
@@ -136,7 +158,8 @@ def _slash_description() -> str:
     lines = [f"{name} {desc}" for name, desc in slash_mod.COMMANDS.items()]
     return (
         "Life Trainer 슬래시 명령을 실행한다. 계획 추가·조회·완료·삭제·기록은 "
-        "이 툴이 가장 빠르고 정확하다(밀리초, DB 직접). 명령표:\n" + "\n".join(lines)
+        "이 툴이 가장 빠르고 정확하다(밀리초, DB 직접). 오늘이 아닌 날은 day 로 준다. "
+        "명령표:\n" + "\n".join(lines)
     )
 
 
@@ -150,7 +173,24 @@ NEW_TOOLS: tuple[AgentTool, ...] = (
                 "command": {
                     "type": "string",
                     "description": "실행할 명령 한 줄. 예: /plan 프로젝트 보고서 @90m",
-                }
+                },
+                # ★ 이 인자가 없을 때 "내일 09시에 딥워크 넣어줘" 가 **오늘에**
+                #   들어갔다. 명령 문자열 안에 날짜를 쓸 자리가 없어서 모델이
+                #   `@2026-08-25` 처럼 엉뚱한 토큰에 얹었고, 에러도 안 났다.
+                #
+                # ★★ 낱말을 먼저 쓰라고 하는 이유: **이 시스템의 하루는 06:00 에
+                #   시작한다.** 00:00~06:00 사이에는 벽시계 날짜가 논리적 하루보다
+                #   하루 앞서서, 모델이 프레임워크가 준 현재 날짜로 "내일"을 직접
+                #   계산하면 **이틀 뒤**가 나온다 (실측: 논리적 08-23 에 08-25 를
+                #   넘겼다). 낱말을 넘기면 `agent/slash._resolve_day` 가 논리적
+                #   하루 기준으로 푼다 — 모델에게 산술을 시키지 않는다.
+                "day": {
+                    "type": "string",
+                    "description": (
+                        "오늘이 아닌 날일 때만. 오늘/어제/내일/모레 중 하나를 쓴다. "
+                        "날짜를 직접 계산하지 마라 — 하루가 06:00 에 시작해 어긋난다."
+                    ),
+                },
             },
             "required": ["command"],
         },
@@ -161,7 +201,10 @@ NEW_TOOLS: tuple[AgentTool, ...] = (
         description="허용된 폴더 안의 파일을 읽는다. 밖은 거부된다.",
         schema={
             "type": "object",
-            "properties": {"path": {"type": "string", "description": "파일 경로"}},
+            # ★ "짧게 쓰라"를 스키마에 박는다. 절대 경로를 조립하는 실패가 실측으로
+            #   나왔다 (`sandbox.Sandbox.hint` 주석). 툴 결과로 고치는 것보다
+            #   애초에 안 만들게 하는 쪽이 한 왕복 싸다.
+            "properties": {"path": {"type": "string", "description": "짧은 경로. 예: docs/handbook.md"}},
             "required": ["path"],
         },
         handler=_handle_read_file,
@@ -171,7 +214,7 @@ NEW_TOOLS: tuple[AgentTool, ...] = (
         description="허용된 폴더의 파일 목록을 본다.",
         schema={
             "type": "object",
-            "properties": {"path": {"type": "string", "description": "폴더 경로"}},
+            "properties": {"path": {"type": "string", "description": "짧은 폴더 이름. 예: config"}},
             "required": ["path"],
         },
         handler=_handle_list_dir,

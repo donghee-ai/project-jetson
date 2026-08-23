@@ -55,6 +55,8 @@ class Case:
     message: str
     expect_tool: tuple[str, ...] = ()  # 이 중 하나라도 부르면 통과
     expect_slash: tuple[str, ...] = ()  # slash 를 부른다면 이 명령이어야 한다
+    require_slash: tuple[str, ...] = ()  # 이 명령을 **반드시** 실행해야 한다
+    expect_day: bool = False  # slash 툴에 `day` 를 넘겨야 한다 (오늘이 아닌 날)
     forbid_tool: tuple[str, ...] = ()
     no_tool: bool = False
 
@@ -75,17 +77,27 @@ CASES: list[Case] = [
         #   혼동의 거울상이다 — 그때는 계획만 싣고 실측을 지어냈다.
         forbid_tool=("get_activity_summary",),
     ),
+    # ★ `expect_day` 가 필요했던 이유. `/plan` 만 부르면 통과하던 시절, 모델이
+    #   `/plan 딥워크 @2026-08-25 09:00-11:00` 을 불렀다 — `@` 는 **기간** 토큰이라
+    #   날짜가 조용히 버려지고 계획이 **오늘에** 들어갔다. "추가했습니다" 라고
+    #   답했고 에러는 없었다. 어느 날짜에 들어갔는지까지 봐야 잡힌다.
     Case(
         "plan-write",
         "내일 09시부터 11시까지 딥워크 계획 하나 넣어줘",
         expect_tool=("slash",),
         expect_slash=("/plan",),
+        expect_day=True,
     ),
+    # ★ `require_slash` 가 필요했던 이유. 처음에는 "slash 를 불렀으면 통과" 였는데,
+    #   모델이 `/view` 로 목록만 보고 **완료는 사용자에게 시켰다** — "다음 명령을
+    #   실행해보세요" 로 끝냈다. 툴 이름만 채점하면 이게 통과한다.
+    #   `openclaw-agent.md §4-6` 의 "하겠다고 말하고 끝낸다" 가 채점표를 빠져나간
+    #   순간이었다. **바꾸라고 시켰으면 바꾼 흔적이 있어야 한다.**
     Case(
         "plan-done",
         "오늘 계획 목록 보여주고 1번을 완료로 바꿔줘",
         expect_tool=("slash",),
-        expect_slash=("/view", "/done", "/lt today"),
+        require_slash=("/done",),
     ),
     # ② 실측은 실측 툴로. 계획 툴로 가면 안 된다 (①의 반대 방향).
     Case(
@@ -116,6 +128,7 @@ class Result:
     seconds: float
     tools: list[str] = field(default_factory=list)
     slash: list[str] = field(default_factory=list)
+    days: list[str] = field(default_factory=list)
     reason: str = ""
     text: str = ""
     usage: dict = field(default_factory=dict)
@@ -145,37 +158,88 @@ def run_case(case: Case, trial: int, *, timeout: int) -> Result:
     summary = meta.get("toolSummary") or {}
     tools = [t.removeprefix(PREFIX) for t in (summary.get("tools") or [])]
     text = "".join(p.get("text", "") for p in payload.get("payloads") or [])
-    slash = _slash_args(payload)
+    slash, days = _slash_args(key)
 
-    ok, reason = judge(case, tools, slash, summary)
+    ok, reason = judge(case, tools, slash, days, summary)
     return Result(
-        case=case.name, trial=trial, ok=ok, seconds=elapsed, tools=tools, slash=slash,
+        case=case.name, trial=trial, ok=ok, seconds=elapsed, tools=tools, slash=slash, days=days,
         reason=reason, text=text, usage=(meta.get("agentMeta") or {}).get("usage") or {},
         compactions=int((meta.get("contextManagement") or {}).get("lastTurnCompactions") or 0),
     )
 
 
-def _slash_args(payload: dict) -> list[str]:
-    """이번 턴에 실제로 실행된 슬래시 명령들. 트레이스가 아니라 응답에서 캔다."""
-    found: list[str] = []
-
-    def walk(node: object) -> None:
-        if isinstance(node, dict):
-            if node.get("name", "").endswith("slash"):
-                args = node.get("arguments") or node.get("args") or {}
-                if isinstance(args, dict) and isinstance(args.get("command"), str):
-                    found.append(args["command"].strip())
-            for value in node.values():
-                walk(value)
-        elif isinstance(node, list):
-            for item in node:
-                walk(item)
-
-    walk(payload)
-    return found
+# 게이트웨이가 세션마다 남기는 트레이스. 여기에만 **툴 인자**가 있다.
+TRAJECTORY_GLOB = str(Path.home() / ".openclaw/agents" / AGENT_ID / "sessions" / "*.trajectory.jsonl")
 
 
-def judge(case: Case, tools: list[str], slash: list[str], summary: dict) -> tuple[bool, str]:
+def _slash_args(session_key: str) -> tuple[list[str], list[str]]:
+    """이번 턴에 실제로 실행된 슬래시 명령들.
+
+    ★ **응답 JSON 에는 툴 이름만 있고 인자가 없다.** `toolSummary.tools` 가
+    `["lt__slash"]` 라고만 알려 주므로, 그걸로 채점하면 "`/view` 로 목록만 보고
+    완료는 사용자에게 시킨" 답이 통과한다 (실제로 통과시켰다). 인자는 게이트웨이
+    트레이스에만 있어서 거기까지 읽는다.
+    """
+    import glob
+
+    for path in sorted(glob.glob(TRAJECTORY_GLOB), key=os.path.getmtime, reverse=True)[:12]:
+        commands: list[str] = []
+        days: list[str] = []
+        matched = False
+        try:
+            with open(path, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if event.get("sessionKey") != session_key:
+                        break  # 첫 줄에 이미 세션이 박혀 있다 — 아니면 다음 파일로
+                    matched = True
+                    if event.get("type") != "model.completed":
+                        continue
+                    for message in event["data"].get("messagesSnapshot") or []:
+                        for chunk in message.get("content") or []:
+                            if not isinstance(chunk, dict) or chunk.get("type") != "toolCall":
+                                continue
+                            if not str(chunk.get("name", "")).endswith("slash"):
+                                continue
+                            command, day = _command_of(chunk)
+                            if command:
+                                commands.append(command)
+                            if day:
+                                days.append(day)
+        except OSError:
+            continue
+        if matched:
+            # 같은 호출이 스냅샷마다 반복해서 실린다 — 순서를 지키며 중복만 뺀다
+            return list(dict.fromkeys(commands)), list(dict.fromkeys(days))
+    return [], []
+
+
+def _command_of(chunk: dict) -> tuple[str, str]:
+    """toolCall 에서 `command` 를 꺼낸다.
+
+    ★ `arguments` 가 `{"truncated": true, "reason": "trajectory-depth-limit"}` 로
+    잘려 있을 때가 있다. 그때는 옆에 남은 `partialArgs` 원문에서 판다 —
+    잘렸다고 채점을 포기하면 그 케이스가 조용히 통과한다.
+    """
+    for source in (chunk.get("arguments"), chunk.get("partialArgs")):
+        parsed = source
+        if isinstance(source, str):
+            try:
+                parsed = json.loads(source)
+            except json.JSONDecodeError:
+                continue
+        if isinstance(parsed, dict) and isinstance(parsed.get("command"), str):
+            day = parsed.get("day")
+            return parsed["command"].strip(), (day.strip() if isinstance(day, str) else "")
+    return "", ""
+
+
+def judge(
+    case: Case, tools: list[str], slash: list[str], days: list[str], summary: dict
+) -> tuple[bool, str]:
     """툴 선택으로 채점한다. 답변 문장은 안 본다 (모듈 docstring)."""
     if summary.get("failures"):
         return False, f"툴 호출 실패 {summary['failures']}건 (부른 것: {tools or '없음'})"
@@ -189,6 +253,15 @@ def judge(case: Case, tools: list[str], slash: list[str], summary: dict) -> tupl
 
     if case.expect_tool and not any(t in tools for t in case.expect_tool):
         return False, f"기대 {case.expect_tool} 중 아무것도 안 불렀다 (부른 것: {tools or '없음'})"
+
+    if case.require_slash:
+        heads = [c.split()[0] for c in slash if c]
+        missing = [w for w in case.require_slash if not any(h.startswith(w) for h in heads)]
+        if missing:
+            return False, f"{missing} 를 실행하지 않았다 (실행한 것: {heads or '없음'})"
+
+    if case.expect_day and not days:
+        return False, f"오늘이 아닌 날인데 day 를 안 넘겼다 (실행한 것: {slash or '없음'})"
 
     if case.expect_slash and slash:
         heads = [c.split()[0] for c in slash if c]
@@ -218,7 +291,11 @@ def main(argv: list[str] | None = None) -> int:
             result = run_case(case, trial, timeout=args.timeout)
             results.append(result)
             mark = "OK  " if result.ok else "FAIL"
-            detail = f"tools={result.tools}" + (f" slash={result.slash}" if result.slash else "")
+            detail = f"tools={result.tools}"
+            if result.slash:
+                detail += f" slash={result.slash}"
+            if result.days:
+                detail += f" day={result.days}"
             print(f"{mark} {result.seconds:6.1f}s  {case.name:14s} {detail}")
             if not result.ok:
                 print(f"       └ {result.reason}")
