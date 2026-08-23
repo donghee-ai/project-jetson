@@ -144,10 +144,28 @@ CREATE TABLE IF NOT EXISTS slot_breakdown (
     app       TEXT NOT NULL DEFAULT '',
     device_id INTEGER REFERENCES device(id) ON DELETE SET NULL,
     seconds   REAL NOT NULL,
-    PRIMARY KEY (day, slot, category, app)
+    -- ★ device_id 가 키에 들어간다. 같은 슬롯에서 폰과 노트북이 같은 앱 이름을
+    -- 만들면(양쪽 'Chrome' → browsing) 기기가 키에 없을 때 두 번째 행이 충돌한다.
+    PRIMARY KEY (day, slot, category, app, device_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_breakdown_day_cat ON slot_breakdown(day, category);
+CREATE INDEX IF NOT EXISTS idx_breakdown_day_dev ON slot_breakdown(day, device_id);
+
+
+-- 문서 임베딩 (RAG). 모델이 바뀌면 통째로 재생성하는 파생물이라 doc 과 분리한다.
+-- vec 는 float32 리틀엔디언 raw. 4천 건 × 1024차원 = 16MB 라 numpy 로 전수 계산한다.
+CREATE TABLE IF NOT EXISTS doc_embedding (
+    doc_id      INTEGER PRIMARY KEY REFERENCES doc(id) ON DELETE CASCADE,
+    model       TEXT NOT NULL,
+    dim         INTEGER NOT NULL,
+    vec         BLOB NOT NULL,
+    source_hash TEXT NOT NULL,
+    created_at  REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_doc_embedding_model ON doc_embedding(model);
+
 
 -- 미분류 지문의 날짜별 누적. 롤업의 멱등성을 위해 존재한다.
 --

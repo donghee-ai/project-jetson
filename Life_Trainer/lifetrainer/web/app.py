@@ -41,6 +41,7 @@ from lifetrainer.plan.models import (
     set_check,
     skip_plan,
     update_plan,
+    sync_instances_from_plan,
 )
 from lifetrainer.plan.override import clear_override_range, list_overrides, set_override_range
 from lifetrainer.report.palette import Palette, css_variables, load_palette
@@ -920,6 +921,15 @@ def create_app(cfg: Any) -> Flask:
                 update_plan(conn, plan_id, **fields)
             except ValueError as exc:
                 abort(400, description=str(exc))
+
+            # ★ 템플릿만 고치면 **화면이 안 바뀐다.** `materialize_day` 가
+            #   (plan_id, day) 기준 멱등이라 이미 만들어진 오늘 인스턴스는 옛 값을
+            #   그대로 들고 있고, 화면은 `plan_instance` 를 읽는다.
+            #   사용자에게는 "수정이 저장이 안 된다" 로 보인다(실측 사고 2026-08-23).
+            today = timeutil.day_str(
+                timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
+            )
+            sync_instances_from_plan(conn, cfg, plan_id, from_day=today)
             plan = get_plan(conn, plan_id)
         finally:
             conn.close()

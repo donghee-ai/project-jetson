@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
+import time
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -238,10 +239,31 @@ def update_plan(conn: sqlite3.Connection, plan_id: int, **fields) -> None:
         )
 
 
-def delete_plan(conn: sqlite3.Connection, plan_id: int) -> None:
-    """계획을 지운다. `plan_skip`/`plan_check` 는 FK CASCADE 로 함께 지워진다."""
+def delete_plan(conn: sqlite3.Connection, plan_id: int, *, from_day: str | None = None) -> int:
+    """계획을 지운다. `plan_skip`/`plan_check` 는 FK CASCADE 로 함께 지워진다.
+
+    ★ **인스턴스도 같이 정리해야 한다.** `plan_instance.plan_id` 는 `ON DELETE SET NULL`
+    이라, 계획만 지우면 그날의 인스턴스가 `plan_id=NULL` 로 살아남는다. 표시 기준이
+    `archived_at IS NULL` 이므로 **지운 계획이 화면에 계속 뜬다** — 실제로 그랬다.
+
+    `from_day` 이후의 인스턴스만 보관 처리한다. **과거는 남긴다** — 이미 지나간 날의
+    달성 기록까지 지우면 주간 통계가 소급해서 바뀐다. 지운다는 것은 "앞으로 안 한다"
+    이지 "그때도 안 했다"가 아니다.
+
+    반환: 보관 처리한 인스턴스 수.
+    """
+    now = time.time()
     with db.transaction(conn) as tx:
+        archived = 0
+        if from_day is not None:
+            cur = tx.execute(
+                "UPDATE plan_instance SET archived_at = ?, updated_at = ? "
+                "WHERE plan_id = ? AND day >= ? AND archived_at IS NULL",
+                (now, now, plan_id, from_day),
+            )
+            archived = cur.rowcount or 0
         tx.execute("DELETE FROM plan WHERE id = ?", (plan_id,))
+    return archived
 
 
 def get_plan(conn: sqlite3.Connection, plan_id: int) -> Plan | None:
@@ -435,6 +457,53 @@ def materialize_day(conn: sqlite3.Connection, cfg, day: str) -> int:
     if created:
         renumber(conn, day)
     return created
+
+
+def sync_instances_from_plan(conn: sqlite3.Connection, cfg, plan_id: int, *, from_day: str) -> int:
+    """계획 템플릿이 바뀌면 **아직 안 지난 인스턴스**를 따라가게 한다.
+
+    ## 왜 필요한가
+
+    `materialize_day` 는 `(plan_id, day)` 기준으로 **멱등**이다 — 한 번 만들어진
+    인스턴스는 다시 만들지 않는다(사용자가 지운 것이 10분마다 되살아나면 안 되므로).
+    그 결과 **계획을 고쳐도 이미 만들어진 오늘 인스턴스는 옛 값을 그대로 들고 있었다.**
+    화면은 `plan_instance` 를 읽으므로 사용자에게는 "수정이 저장이 안 된다" 로 보인다 —
+    실제로는 `plan` 은 바뀌고 `plan_instance` 만 안 바뀐 것이었다(실측 사고 2026-08-23).
+
+    ## 무엇을 건드리고 무엇을 안 건드리나
+
+    - **`from_day` 이후만.** 과거는 기록이다 — `delete_plan` 과 같은 원칙으로,
+      "앞으로 이렇게 한다" 이지 "그때도 그랬다" 가 아니다
+    - **`source='template'` 만.** 사용자가 손으로 만든/옮긴 인스턴스(`manual`)를
+      템플릿으로 덮으면 그 사람의 편집이 조용히 사라진다
+    - **`status`·`note`·`ordinal` 은 그대로.** 시간을 옮겼다고 완료 표시가 풀리면 안 된다
+    - 보관된 것(`archived_at IS NOT NULL`)은 건드리지 않는다
+
+    반환: 갱신한 인스턴스 수.
+    """
+    plan = get_plan(conn, plan_id)
+    if plan is None:
+        return 0
+
+    slot_minutes = cfg.rollup.slot_minutes
+    start_min = _snap_to_slot(int(plan.start_min), slot_minutes)
+    end_min = _snap_to_slot(int(plan.end_min), slot_minutes)
+    now = timeutil.now_ts()
+
+    with db.transaction(conn) as tx:
+        cur = tx.execute(
+            "UPDATE plan_instance SET title = ?, category = ?, start_min = ?, end_min = ?, "
+            "planned_min = ?, updated_at = ? "
+            "WHERE plan_id = ? AND day >= ? AND archived_at IS NULL AND source = 'template'",
+            (
+                plan.title, plan.category, start_min, end_min,
+                end_min - start_min, now, plan_id, from_day,
+            ),
+        )
+        changed = cur.rowcount or 0
+    if changed:
+        renumber(conn, from_day)
+    return changed
 
 
 def add_instance(

@@ -84,6 +84,10 @@ def load_sources(conn: sqlite3.Connection, cfg: Config) -> int:
             tags = str(entry.get("tags", ""))
             interval_sec = int(entry.get("interval_sec", 3600))
             respect_robots = bool(entry.get("respect_robots", True))
+            # ★ 목록에서 지우는 것만으로는 수집이 멈추지 않는다 — 이 함수는 upsert 라
+            #   DB 행이 `enabled=1` 로 남는다. 끄려면 파일에 `enabled: false` 로 남겨야
+            #   한다. 그래야 sources.yaml 이 "무엇을 모으는가"의 단일 원본이 된다.
+            enabled = 1 if bool(entry.get("enabled", True)) else 0
         except Exception as exc:  # noqa: BLE001
             logger.warning("잘못된 source 항목 무시: %r (%s)", entry, exc)
             continue
@@ -95,11 +99,12 @@ def load_sources(conn: sqlite3.Connection, cfg: Config) -> int:
             tag_list.append(ROBOTS_EXEMPT_TAG)
         tags = ",".join(tag_list)
         conn.execute(
-            "INSERT INTO source(kind, name, url, tags, interval_sec, next_fetch_at, created_at) "
-            "VALUES (?, ?, ?, ?, ?, 0, ?) "
+            "INSERT INTO source(kind, name, url, tags, interval_sec, enabled, next_fetch_at, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, 0, ?) "
             "ON CONFLICT(url) DO UPDATE SET kind=excluded.kind, name=excluded.name, "
+            "enabled=excluded.enabled, "
             "tags=excluded.tags, interval_sec=excluded.interval_sec",
-            (kind, name, url, tags, interval_sec, now),
+            (kind, name, url, tags, interval_sec, enabled, now),
         )
         count += 1
 

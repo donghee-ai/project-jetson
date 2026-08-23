@@ -151,7 +151,16 @@ class SlackNotifier:
             return ""
         try:
             resp = self._call_with_retry(
-                self.client.chat_postMessage, channel=target, text=text, blocks=blocks, thread_ts=thread_ts
+                self.client.chat_postMessage,
+                channel=target,
+                text=text,
+                blocks=blocks,
+                thread_ts=thread_ts,
+                # ★ 링크 미리보기를 끈다. 다이제스트가 링크 5개를 싣는데 Slack 이 각각을
+                #   본문 수백 자짜리 카드로 펼쳐서 **화면의 절반 이상**을 먹었다.
+                #   우리가 이미 제목·요약·출처를 블록에 담으므로 미리보기는 중복이다.
+                unfurl_links=False,
+                unfurl_media=False,
             )
         except SlackError as exc:
             retry_blocks = _blocks_without_slack_file_images(blocks) if _is_invalid_blocks(exc) else None
@@ -167,6 +176,8 @@ class SlackNotifier:
                 channel=target,
                 text=text,
                 blocks=retry_blocks,
+                unfurl_links=False,
+                unfurl_media=False,
                 thread_ts=thread_ts,
             )
         return str(resp.get("ts", ""))

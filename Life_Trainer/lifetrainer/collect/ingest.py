@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from lifetrainer.collect.aw_client import AWEvent
 from lifetrainer.collect.aw_sync import bucket_type, device_kind_for, upsert_bucket, upsert_events
 from lifetrainer.db import upsert_device
+from lifetrainer import timeutil
 from lifetrainer.timeutil import parse_iso
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,23 @@ class IngestResult:
     # 호출자가 "오늘"이 아니라 실제로 건드린 날짜를 다시 롤업해야 한다.
     ts_min: float | None = None
     ts_max: float | None = None
+
+
+def days_touched(cfg, result: "IngestResult") -> set[str]:
+    """이번에 들어온 이벤트가 걸친 논리적 하루(06:00 경계) 목록.
+
+    폰 데이터는 **늦게 도착한다** (Doze 에서 밀리고, 5분 주기라도 재시도가 겹친다).
+    오늘만 롤업하면 어제 후반부가 영영 반영되지 않으므로 실제로 건드린 날짜를 전부 돌려준다.
+
+    ★ CLI(`lt import --rollup`)와 웹 수신(`POST /ingest/aw`)이 **같은 이 함수**를 쓴다.
+    두 경로가 각자 날짜를 계산하면 "파일로는 반영되는데 네트워크로는 안 되는" 상황이 난다.
+    """
+    if result.ts_min is None or result.ts_max is None:
+        return set()
+    boundary = cfg.rollup.day_boundary_hour
+    lo = timeutil.day_str(result.ts_min, cfg.tz, boundary_hour=boundary)
+    hi = timeutil.day_str(result.ts_max, cfg.tz, boundary_hour=boundary)
+    return set(timeutil.day_range(lo, hi))
 
 
 def _require_mapping(value: object, what: str) -> dict:
