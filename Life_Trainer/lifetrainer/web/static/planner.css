@@ -431,3 +431,37 @@ button.activity-marker:focus-visible {
     transform: none;
   }
 }
+
+/* ── 저장 뒤 화면 교체를 부드럽게 ───────────────────────────────────────
+   `location.reload()` 를 그냥 부르면 흰 화면이 번쩍이고 스크롤이 튄다.
+   저장은 하루에 여러 번 하는 동작이라 그 한 번이 계속 쌓인다(사용자 보고: 눈이 아프다).
+
+   ★ 흰색으로 날리지 않고 **살짝 흐려지기만** 한다. 화면을 밝게 바꾸면
+     그것 자체가 또 하나의 번쩍임이 된다 — 줄이려던 것을 늘리는 셈이다. */
+body.page-leaving {
+  opacity: 0.72;
+  transition: opacity 190ms ease-out;
+  pointer-events: none;
+}
+
+body.page-entering {
+  animation: pageEnter 240ms ease-out;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.page-leaving,
+  body.page-entering {
+    opacity: 1;
+    transition: none;
+    animation: none;
+  }
+}
