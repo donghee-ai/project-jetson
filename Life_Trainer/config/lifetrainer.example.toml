@@ -12,7 +12,7 @@ log_level = "INFO"
 
 [activitywatch]
 # PC(Windows) 의 aw-server. Tailscale 주소를 쓴다.
-base_url          = "http://100.64.0.3:5600"
+base_url          = "http://100.64.0.3:35600"
 # aw-server v0.14.0b1+ 의 [auth] api_key. 비-loopback 바인드에서는 반드시 설정할 것
 # (비-loopback 이면 Host 헤더 검사가 조용히 꺼진다 — docs/research/activitywatch.md §4)
 api_key           = ""

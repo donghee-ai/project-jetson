@@ -7,7 +7,7 @@
     이 스크립트는 다음을 한다:
 
       1. ActivityWatch v0.14.0b3 (베타) 설치 — 이미 있으면 건너뜀
-      2. aw-server 를 0.0.0.0:5600 에 바인딩
+      2. aw-server 를 0.0.0.0:35600 에 바인딩
       3. Windows 방화벽 인바운드 규칙을 Tailscale 대역(100.64.0.0/10)으로만 허용
       4. 자동시작 확인
       5. 젯슨에서 접근 가능한지 확인용 명령 출력
@@ -52,7 +52,7 @@ $ErrorActionPreference = 'Stop'
 $AW_VERSION   = 'v0.14.0b3'
 $AW_INSTALLER = "activitywatch-$AW_VERSION-windows-x86_64-setup.exe"
 $AW_URL       = "https://github.com/ActivityWatch/activitywatch/releases/download/$AW_VERSION/$AW_INSTALLER"
-$AW_PORT      = 5600
+$AW_PORT      = 35600
 
 function Write-Step($msg) { Write-Host "`n=== $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
@@ -203,7 +203,7 @@ if (Test-Path $cfgPath) {
 }
 
 # 왜 0.0.0.0 인가 —
-#   Tailscale IP 에만 바인딩하면 이 PC 에서 도는 워처들(localhost:5600 으로 붙는다)이
+#   Tailscale IP 에만 바인딩하면 이 PC 에서 도는 워처들(localhost:35600 으로 붙는다)이
 #   서버를 찾지 못해 수집이 통째로 멈춘다. 그래서 0.0.0.0 으로 열고,
 #   외부 노출은 방화벽 규칙으로 Tailscale 대역만 남긴다.
 $apiKeyLine = ''
