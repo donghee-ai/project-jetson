@@ -706,12 +706,14 @@ def _dispatch_plan(cfg: Config, text: str, respond, day: str | None = None) -> N
 # ── /del 처리 (SPEC §7-2) ────────────────────────────────────────────
 
 
-def _dispatch_del(cfg: Config, command: dict, respond) -> None:
+def _dispatch_del(cfg: Config, command: dict, respond, day: str | None = None) -> None:
+    """`day` 를 주면 그 날짜의 목록을 대상으로 한다 (기본은 논리적 오늘).
+    `_dispatch_plan` 과 같은 이유로 있다 — 에이전트는 다른 날을 다룬다."""
     try:
         text = (command.get("text") or "").strip()
         conn = db.open_db(cfg)
         try:
-            day = _today(cfg)
+            day = day or _today(cfg)
 
             if text:
                 try:
@@ -865,7 +867,11 @@ def _dispatch_view(cfg: Config, command: dict, respond) -> None:
 
 # ── /done · /doing · /defer 처리 ────────────────────────────────────
 
-def _dispatch_set_status(cfg: Config, command_name: str, text: str, respond, actor: str | None) -> None:
+def _dispatch_set_status(
+    cfg: Config, command_name: str, text: str, respond, actor: str | None, day: str | None = None
+) -> None:
+    """`day` 를 주면 그 날짜의 번호를 바꾼다 (기본은 논리적 오늘).
+    `_dispatch_plan` 과 같은 이유로 있다 — 에이전트는 다른 날을 다룬다."""
     try:
         if not text:
             respond(f"사용법: /{command_name} <번호>  예) /{command_name} 3")
@@ -879,7 +885,7 @@ def _dispatch_set_status(cfg: Config, command_name: str, text: str, respond, act
         status = _STATUS_BY_COMMAND[command_name]
         conn = db.open_db(cfg)
         try:
-            day = _today(cfg)
+            day = day or _today(cfg)
             target = next(
                 (
                     row
@@ -908,7 +914,9 @@ def _dispatch_set_status(cfg: Config, command_name: str, text: str, respond, act
 # ── /memo 처리 ────────────────────────────────────────────────────────
 
 
-def _dispatch_memo(cfg: Config, text: str, respond) -> None:
+def _dispatch_memo(cfg: Config, text: str, respond, day: str | None = None) -> None:
+    """`day` 를 주면 그 날짜의 메모다 (기본은 논리적 오늘).
+    `_dispatch_plan` 과 같은 이유로 있다 — 에이전트는 다른 날을 다룬다."""
     try:
         if not text:
             respond(_MEMO_USAGE)
@@ -916,7 +924,7 @@ def _dispatch_memo(cfg: Config, text: str, respond) -> None:
 
         conn = db.open_db(cfg)
         try:
-            day = _today(cfg)
+            day = day or _today(cfg)
             now = timeutil.now_ts()
             # `day` 테이블은 이미 스키마에 있다(계약서-v2 §3-B) — memo 컬럼에 upsert 만 한다.
             with db.transaction(conn) as tx:

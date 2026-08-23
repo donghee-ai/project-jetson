@@ -212,7 +212,9 @@ def run(
     target_day = _normalize_day(cfg, day)
 
     if name == "/view":
-        return _truncate(_view_text(muted, rest or (day or "")))
+        # 인자로 준 날짜(`/view 어제`)가 우선이고, 없으면 `day` 를 쓴다.
+        # `target_day` 는 이미 해석된 YYYY-MM-DD 라 여기서 두 번 풀지 않는다.
+        return _truncate(_view_text(muted, rest or (target_day or "")))
     if name == "/week":
         return _truncate(_week_text(muted))
 
@@ -270,6 +272,10 @@ def _delegate(
     from lifetrainer.slackio import app as slack_app
 
     command = {"text": rest, "user_id": actor, "channel_id": channel}
+    # ★ **`day` 를 전부에 넘긴다.** `/plan` 에만 넘겼을 때 `/done 1` 은 `day` 를
+    #   조용히 버리고 **오늘의 1번**을 바꿨다 — 모델이 `day="내일"` 을 함께 보내는데도.
+    #   `/plan` 에서 고친 것과 똑같은 버그를 옆 명령들이 그대로 갖고 있었다.
+    #   `/lt`(요약)·`/log`(기록 시각을 본문에서 받는다)만 날짜를 안 쓴다.
     kind = _DELEGATED[name]
     if kind == "sub":
         sub = rest.split(maxsplit=1)[0].lower() if rest else "ping"
@@ -278,12 +284,13 @@ def _delegate(
         if name == "/plan":
             slack_app._dispatch_plan(cfg, rest, collector, day)
         else:
-            slack_app._dispatch_memo(cfg, rest, collector)
+            slack_app._dispatch_memo(cfg, rest, collector, day)
     elif kind == "status":
-        slack_app._dispatch_set_status(cfg, name.lstrip("/"), rest, collector, actor)
-    else:  # "command"
-        handler = {"/log": slack_app._dispatch_log, "/del": slack_app._dispatch_del}[name]
-        handler(cfg, command, collector)
+        slack_app._dispatch_set_status(cfg, name.lstrip("/"), rest, collector, actor, day)
+    elif name == "/del":
+        slack_app._dispatch_del(cfg, command, collector, day)
+    else:  # "/log" — 기록 시각은 본문의 `at HH:MM` 로 받는다
+        slack_app._dispatch_log(cfg, command, collector)
 
 
 def _mute_slack(cfg: "Config") -> "Config":
