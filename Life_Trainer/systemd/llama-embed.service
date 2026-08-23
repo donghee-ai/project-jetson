@@ -33,7 +33,12 @@ ExecStart=/home/user/llama.cpp/build/bin/llama-server \
 ExecStartPost=/bin/sh -c 'until /usr/bin/curl -sf --max-time 3 http://127.0.0.1:8081/health >/dev/null 2>&1; do sleep 2; done'
 Restart=on-failure
 RestartSec=10
-MemoryMax=3G
+# ★ 2026-08-23 저녁: 3G 로도 부족했다. 초록 백필 뒤 780건을 재임베딩하는 도중
+#   서버가 죽고 재시작됐다(연결 끊김). 유휴 상주가 1.8GB 인데 배치 중에 2.4GB 를
+#   넘는다 — 요청 크기가 제각각이라 생기는 단편화로 보인다.
+#   가용 5GB 안에서 4G 는 감당된다. 더 필요해지면 상한을 올리기 전에
+#   `--parallel`·`-b` 를 줄여 상주 자체를 낮추는 쪽을 먼저 본다.
+MemoryMax=4G
 
 [Install]
 WantedBy=default.target
