@@ -157,6 +157,7 @@ class Sandbox:
 
     # ── 내부 ──────────────────────────────────────────────────────────
     def _resolve(self, raw: str, roots: tuple[Path, ...], verb: str) -> Path:
+        """감옥의 심장 — 경로 하나를 절대 경로로 접고 `roots` 안인지 판정한다."""
         if not raw or not raw.strip():
             return _reject("경로가 비었습니다.")
         if "\x00" in raw:

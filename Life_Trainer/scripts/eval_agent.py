@@ -167,6 +167,8 @@ MIN_ANSWER_CHARS = 10
 
 
 def run_case(case: Case, trial: int, *, timeout: int) -> Result:
+    """케이스 하나를 새 세션에서 한 번 돌린다. 세션 키를 매번 새로 만드는 이유는
+    이전 턴의 히스토리가 다음 채점에 섞이면 안 되기 때문이다."""
     key = f"agent:{AGENT_ID}:eval-{case.name}-{trial}-{int(time.time() * 1000)}"
     cmd = [
         "openclaw", "agent", "--agent", AGENT_ID,

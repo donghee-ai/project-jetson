@@ -90,6 +90,7 @@ class Server:
         return {"jsonrpc": "2.0", "id": req_id, "result": result}
 
     def _initialize(self, params: dict) -> dict:
+        """프로토콜 판본을 협상하고 우리가 광고하는 기능(툴)만 알린다."""
         wanted = params.get("protocolVersion")
         version = wanted if wanted in SUPPORTED_PROTOCOLS else SUPPORTED_PROTOCOLS[0]
         return {
@@ -99,6 +100,7 @@ class Server:
         }
 
     def _call(self, params: dict) -> dict:
+        """`tools/call` — 툴 하나를 실행한다. 실패도 결과 텍스트로 돌려준다."""
         name = params.get("name")
         args = params.get("arguments")
         if not isinstance(args, dict):
