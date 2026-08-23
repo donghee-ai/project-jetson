@@ -26,7 +26,9 @@ user 메시지는 어차피 매 턴 새것이라 손해가 0이다.
 from __future__ import annotations
 
 import logging
+import re
 import sqlite3
+from datetime import date, timedelta
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -126,8 +128,71 @@ def build_day_context(conn: sqlite3.Connection, cfg: "Config", day: str) -> DayC
     return DayContext(day=day, plans=plans, interests=interests, truncated_plans=truncated)
 
 
+# 지금 시간대 계획을 **실을 만한** 말인가.
+#
+# ★ 왜 가리나: 잡담에도 계획이 실려 있으면 8B 가 그걸 답으로 삼는다. "심심해" 에
+#   "지금은 문서 정리 시간입니다" 를 읊었다(2026-08-22 실측). 프롬프트로 "먼저 꺼내지
+#   마라"를 넣어도 줄어들 뿐 안 없어졌다 — 프롬프트로 안 되는 것은 구조로 막는다.
+#
+# ★ 못 걸러도 안전한 이유: 조회 툴(`get_plans`)은 트리거와 무관하게 **항상** 실린다.
+#   주입은 툴 한 바퀴를 아끼는 최적화지 유일한 경로가 아니다. 그래서 재현율보다
+#   "안 물었으면 안 싣는다"를 우선한다.
+# 사용자가 **오늘이 아닌 날**을 가리켰는지. 가리켰으면 그 날 계획을 함께 싣는다.
+#
+# ★ 실측 사고 (2026-08-23): "내일 계획 뭐 있어?" 에 8B 가 `get_plans` 를 안 부르고
+#   시스템 프롬프트의 `[오늘 … 계획 — 사람이 세운 의도]` 블록을 **그대로 베껴** 답했다.
+#   내일 계획이 DB 에 4건 있는데 오늘 것을 읊었고, 프롬프트 라벨까지 같이 나갔다.
+#   "내일 일정 알려줘" 는 툴을 부른다 — 질문의 "계획" 이 주입 라벨의 "계획" 과 겹치는
+#   순간에만 깨진다.
+#
+#   고치는 방향은 툴을 강제하는 것이 아니라 **물어본 날의 계획을 눈앞에 놓는 것**이다.
+#   이 저장소의 원칙 그대로 — "항상 필요한 정보는 툴이 아니라 주입". 그러면 베껴도
+#   맞는 것을 베낀다. 턴 단위 배경이라 하루 단위 프롬프트 캐시를 안 깬다.
+_OTHER_DAY_OFFSETS = {"그저께": -2, "그제": -2, "어제": -1, "내일": 1, "모레": 2, "글피": 3}
+_OTHER_DAY_RE = re.compile(
+    r"(그저께|그제|어제|내일|모레|글피)|(\d{4}-\d{2}-\d{2})|(\d{1,2})\s*월\s*(\d{1,2})\s*일"
+)
+
+
+def referenced_day(today: str, user_text: str) -> str | None:
+    """사용자가 가리킨 **오늘이 아닌** 날. 없으면 None.
+
+    "오늘" 은 일부러 안 잡는다 — 이미 시스템 프롬프트에 실려 있다.
+    """
+    m = _OTHER_DAY_RE.search(user_text or "")
+    if not m:
+        return None
+    if m.group(1):
+        day = _shift(today, _OTHER_DAY_OFFSETS[m.group(1)])
+    elif m.group(2):
+        day = m.group(2)
+    else:
+        y = int(today.split("-")[0])
+        try:
+            day = date(y, int(m.group(3)), int(m.group(4))).isoformat()
+        except ValueError:
+            return None
+    return day if day != today else None
+
+
+def _shift(day: str, delta: int) -> str:
+    y, mo, d = (int(x) for x in day.split("-"))
+    return (date(y, mo, d) + timedelta(days=delta)).isoformat()
+
+
+_PLAN_CONTEXT = re.compile(
+    r"(계획|일정|스케줄|플래너|할\s*일|해야|남았|남은|진행|달성|목표|집중|"
+    r"지금|이따|오늘|내일|어제|뭐\s*하|뭐\s*해|시간)"
+)
+
+
 def build_turn_context(
-    conn: sqlite3.Connection, cfg: "Config", day: str, *, now: float | None = None
+    conn: sqlite3.Connection,
+    cfg: "Config",
+    day: str,
+    *,
+    now: float | None = None,
+    user_text: str = "",
 ) -> str:
     """매 턴 변하는 것 — 현재 시각, 지금 시간대 계획, **오늘 실제 활동 요약**.
 
@@ -151,11 +216,42 @@ def build_turn_context(
         plans = []
 
     current = [pi for pi in plans if pi.plan.start_min <= wall_min < pi.plan.end_min]
+    # 계획을 물어보지 않은 턴에는 싣지 않는다 (위 `_PLAN_CONTEXT` 주석 참조).
+    if user_text and not _PLAN_CONTEXT.search(user_text):
+        current = []
     if current:
-        titles = ", ".join(pi.plan.title for pi in current)
+        # ★ 남은 시간을 **코드가 계산해서 적는다.** 계획 시간대와 현재 시각만 주고
+        #   빼기를 시키면 8B 가 틀린다 — 실측으로 세 번 연속 틀렸고 시간이 갈수록
+        #   남은 시간이 늘어나기까지 했다 (20:19 "20분", 20:20 "40분", 21:04 "46분").
+        #   계약서의 "모델에게 산술을 시키지 않는다" 가 이 경우다.
+        titles = ", ".join(
+            f"{pi.plan.title} ({_hhmm(pi.plan.start_min)}~{_hhmm(pi.plan.end_min)}, "
+            f"{pi.plan.end_min - wall_min}분 남음)"
+            for pi in current
+        )
         parts.append(f"지금 시간대 계획: {titles}")
 
     parts.append(f"[오늘 실제 활동 — 기계 측정] {_today_activity(conn, cfg, day)}")
+
+    # ★ 사용자가 다른 날을 물었으면 **그 날 계획을 여기 싣는다.** 없으면 8B 가
+    #   오늘 블록을 베낀다 (`_OTHER_DAY_RE` 주석의 실측 사고).
+    other = referenced_day(day, user_text)
+    if other:
+        try:
+            rows = plans_for_day(conn, cfg, other)
+        except sqlite3.Error as exc:
+            logger.warning("다른 날 계획 조회 실패 (day=%s): %s", other, exc)
+            rows = []
+        if rows:
+            items = "; ".join(
+                f"{_hhmm(pi.plan.start_min)}~{_hhmm(pi.plan.end_min)} {pi.plan.title}"
+                f" ({_STATUS_KO.get(pi.status, pi.status)})"
+                for pi in rows[:MAX_PLANS]
+            )
+            parts.append(f"[{other} 계획 — 사람이 세운 의도] {items}")
+        else:
+            parts.append(f"[{other} 계획] 등록된 계획 없음")
+
     return "\n".join(parts)
 
 
