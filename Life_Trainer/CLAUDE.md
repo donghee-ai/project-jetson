@@ -91,7 +91,7 @@
 ## 검증
 
 ```bash
-.venv/bin/python -m pytest tests/ -q     # 기준선 989개 (2026-08-23). 아래로 내려가면 안 된다
+.venv/bin/python -m pytest tests/ -q     # 기준선 1018개 (2026-08-23). 아래로 내려가면 안 된다
 .venv/bin/lt doctor                       # 11항목 점검 (임베딩 포함)
 ```
 
