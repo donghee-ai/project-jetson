@@ -5,6 +5,12 @@
 // 순서대로 불러 클라이언트에서 직접 합산한다 — "없으면 기존 /api/day 만으로
 // 할 수 있는 범위까지만 하라"는 지시를 그대로 따른 것이다. 지어낸 통계는
 // 없다: 전부 매일의 실제 응답을 더한 값이다.
+// ★ 앱이 `/planner` 아래에 mount 될 수 있다 — 절대 경로로 부르면 접두사 밖으로 나간다.
+var BASE = (function () {
+  var el = document.getElementById("app-base");
+  return (el && el.dataset.base) || "";
+})();
+
 (function () {
   "use strict";
 
@@ -43,7 +49,7 @@
 
   Promise.all(
     days.map(function (d) {
-      return fetch("/api/day/" + d)
+      return fetch(BASE + "/api/day/" + d)
         .then(function (res) {
           return res.ok ? res.json() : null;
         })

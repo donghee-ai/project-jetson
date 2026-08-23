@@ -15,7 +15,7 @@
   {{ dark_css_vars | safe }}
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css', v=asset_v) }}">
 </head>
 <body data-day="{{ day }}" data-today="{{ today }}" data-read-only="{{ 'true' if read_only else 'false' }}"
       data-slot-minutes="{{ data.slot_minutes }}" data-grid-start-hour="{{ data.grid_start_hour }}">
@@ -33,7 +33,8 @@
     </div>
   </header>
 
-  <main class="page-shell">
+  <div id="app-base" data-base="{{ url_prefix }}" hidden></div>
+<main class="page-shell">
     <section class="page-heading" aria-labelledby="page-title">
       <div>
         <p class="eyebrow" id="day-eyebrow">DAILY PLANNER</p>
@@ -79,6 +80,7 @@
             {% endfor %}
             {% if "away" in used_structural %}<span class="legend-item structural"><span class="legend-swatch structural-away-swatch"></span>자리비움</span>{% endif %}
             {% if "unknown" in used_structural %}<span class="legend-item structural"><span class="legend-swatch" style="background: var(--structural-unknown)"></span>미분류</span>{% endif %}
+            {% if has_phone_cells %}<span class="legend-item structural" title="같은 카테고리라도 폰에서 한 것은 옅게 칠한다"><span class="legend-swatch legend-phone-swatch"></span>폰</span>{% endif %}
           </div>
         </div>
         {% if not read_only %}
@@ -95,7 +97,8 @@
               {% for cell in row.cells %}
               <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}"
                    data-slot="{{ cell.slot }}" data-category="{{ cell.category }}"
-                   title="{{ cell.tooltip }}" style="background-color: var({{ cell.css_var }})">
+                   title="{{ cell.tooltip }}"{% if cell.device_kind %} data-device="{{ cell.device_kind }}"{% endif %}
+                   style="--cell-color: var({{ cell.css_var }})">
                 {% if cell.label_text %}<span class="cell-label">{{ cell.label_text }}</span>{% endif %}
               </div>
               {% endfor %}
@@ -129,7 +132,11 @@
                 <div class="plan-bar"><div class="plan-bar-fill" style="width: {{ (p.achievement * 100) | round | int }}%"></div></div>
               </div>
               {% if not read_only %}
-              <details class="plan-actions"><summary aria-label="{{ p.title }} 계획 메뉴">•••</summary><div class="plan-action-menu"><button type="button" class="btn-icon btn-skip" data-plan-id="{{ p.id }}">오늘만 건너뛰기</button><button type="button" class="btn-icon btn-delete" data-plan-id="{{ p.id }}" data-plan-title="{{ p.title }}">계획 삭제</button></div></details>
+              <details class="plan-actions"><summary aria-label="{{ p.title }} 계획 메뉴">•••</summary><div class="plan-action-menu"><button type="button" class="btn-icon btn-edit"
+                data-plan-id="{{ p.id }}" data-plan-title="{{ p.title }}" data-plan-category="{{ p.category or '' }}"
+                data-plan-start="{{ hhmm(p.start_min) }}" data-plan-end="{{ hhmm(p.end_min) }}"
+                data-plan-kind="{{ p.kind }}" data-plan-weekdays="{{ p.weekdays or '' }}"
+                data-plan-day="{{ p.day or '' }}">수정</button><button type="button" class="btn-icon btn-skip" data-plan-id="{{ p.id }}">오늘만 건너뛰기</button><button type="button" class="btn-icon btn-delete" data-plan-id="{{ p.id }}" data-plan-title="{{ p.title }}">계획 삭제</button></div></details>
               {% endif %}
             </li>
             {% else %}<li class="empty">오늘 계획이 없습니다.</li>{% endfor %}
@@ -137,27 +144,68 @@
 
           {% if not read_only %}
           <details class="add-plan" id="add-plan">
-            <summary>계획 추가</summary>
+            <summary id="plan-form-summary">계획 추가</summary>
             <form id="plan-form">
+              <input type="hidden" name="plan_id" value="">
               <label>제목 <input type="text" name="title" required maxlength="80" placeholder="무엇을 할까요?"></label>
               <label>카테고리<select name="category"><option value="">카테고리 없음</option>{% for cat_id in palette.order %}<option value="{{ cat_id }}">{{ palette.labels[cat_id] }}</option>{% endfor %}</select></label>
-              <div class="time-row"><label>시작 <input type="time" name="start" step="600" required></label><label>종료 <input type="time" name="end" step="600" required></label></div>
+              {# ★ `<input type="time">` 을 쓰지 않는다.
+                 안드로이드 네이티브 피커가 `step` 을 무시해 09:13 같은 값을 만들 수 있고,
+                 그 값은 `step="600"` 에 걸려 **브라우저가 제출 자체를 막는다** —
+                 JS submit 핸들러가 아예 안 불려서 "수정이 안 된다" 로 보인다(실측).
+                 기기 로케일이 12시간제면 오전/오후까지 붙는다.
+                 셀렉트 두 개면 24시간·10분 단위가 기기와 무관하게 강제된다. #}
+              <div class="time-row">
+                <label>시작
+                  <span class="time-select">
+                    <select name="start_h" required aria-label="시작 시">{% for h in range(24) %}<option value="{{ "%02d" | format(h) }}">{{ "%02d" | format(h) }}</option>{% endfor %}</select><span class="time-colon">:</span><select name="start_m" required aria-label="시작 분">{% for m in range(0, 60, 10) %}<option value="{{ "%02d" | format(m) }}">{{ "%02d" | format(m) }}</option>{% endfor %}</select>
+                  </span>
+                </label>
+                <label>종료
+                  <span class="time-select">
+                    <select name="end_h" required aria-label="종료 시">{% for h in range(24) %}<option value="{{ "%02d" | format(h) }}"{% if h == 1 %} selected{% endif %}>{{ "%02d" | format(h) }}</option>{% endfor %}</select><span class="time-colon">:</span><select name="end_m" required aria-label="종료 분">{% for m in range(0, 60, 10) %}<option value="{{ "%02d" | format(m) }}">{{ "%02d" | format(m) }}</option>{% endfor %}</select>
+                  </span>
+                </label>
+              </div>
               <p class="field-hint">시각은 10분 단위로 저장됩니다.</p>
               <fieldset class="mode-fieldset"><legend>반복</legend><label><input type="radio" name="mode" value="recurring" checked> 매주</label><label><input type="radio" name="mode" value="oneoff"> 이 날짜만</label></fieldset>
               <div class="weekday-picker" id="weekday-picker"><div class="preset-row"><button type="button" class="preset" data-preset="12345">평일</button><button type="button" class="preset" data-preset="67">주말</button><button type="button" class="preset" data-preset="1234567">매일</button></div>{% for d, label in [("1","월"),("2","화"),("3","수"),("4","목"),("5","금"),("6","토"),("7","일")] %}<label class="wd-chip"><input type="checkbox" name="weekday" value="{{ d }}" {% if d in "12345" %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
               <label class="day-picker" id="day-picker" hidden>날짜 <input type="date" name="day" value="{{ day }}"></label>
-              <button type="submit" class="btn-primary">계획 저장</button><p class="form-error" id="plan-form-error" role="alert" hidden></p>
+              <div class="form-actions"><button type="submit" class="btn-primary" id="plan-submit">계획 저장</button>
+              <button type="button" class="secondary-button" id="plan-cancel" hidden>수정 취소</button></div>
+              <p class="form-error" id="plan-form-error" role="alert" hidden></p>
             </form>
           </details>
           {% endif %}
         </section>
+
+        {% if data.devices | length > 1 %}
+        <section class="device-panel app-card" aria-labelledby="device-title">
+          <div class="section-header compact"><div><p class="section-kicker">BY DEVICE</p><h2 id="device-title">어디서 썼나</h2></div></div>
+          <ul class="device-list">
+            {% for dev in data.devices %}
+            <li class="device-row">
+              <div class="device-line">
+                <span class="device-name">{{ dev.label }}<small>{{ dev.name }}</small></span>
+                <span class="device-time">{{ dev.hm }}</span>
+              </div>
+              <div class="device-bar" role="img" aria-label="{{ dev.label }} {{ (dev.share * 100) | round | int }}%">
+                <span class="device-bar-fill device-{{ dev.kind }}" style="width: {{ (dev.share * 100) | round(1) }}%"></span>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
 
         <section class="activity-panel app-card" aria-labelledby="activity-title">
           <div class="section-header compact"><div><p class="section-kicker">ACTUAL TIMELINE</p><h2 id="activity-title">오늘의 기록</h2></div><span class="count-badge">{{ activity_runs | length }}</span></div>
           <ol class="activity-feed">
             {% for run in activity_runs | reverse %}
             <li class="activity-item">
-              <span class="activity-marker" style="--run-color: var({{ run.css_var }})"></span>
+              <button type="button" class="activity-marker" style="--run-color: var({{ run.css_var }})"
+                      data-slot-start="{{ run.slot_start }}" data-slot-end="{{ run.slot_end }}"
+                      aria-label="{{ run.start }}–{{ run.end }} {{ run.label }} — 격자에서 보기"></button>
               <div class="activity-time">{{ run.start }}–{{ run.end }}</div>
               <div class="activity-copy"><strong>{{ run.label }}</strong><span>{{ run.duration_min }}분</span>{% if run.detail %}<p>{{ run.detail }}</p>{% endif %}</div>
             </li>
@@ -183,6 +231,6 @@
   {% endif %}
 
   <script id="lt-initial-data" type="application/json">{{ data_json | safe }}</script>
-  <script src="{{ url_for('static', filename='planner.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='planner.js', v=asset_v) }}" defer></script>
 </body>
 </html>

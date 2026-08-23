@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import logging
 import re
 import sqlite3
 from datetime import date, timedelta
@@ -43,8 +44,12 @@ from lifetrainer.plan.models import (
 )
 from lifetrainer.plan.override import clear_override_range, list_overrides, set_override_range
 from lifetrainer.report.palette import Palette, css_variables, load_palette
-from lifetrainer.report.stats import compute_daily, format_hm
+from lifetrainer.rollup.classify import Classifier
+from lifetrainer.rollup.rollup import rollup_day
+from lifetrainer.report.stats import compute_daily, device_breakdown, format_hm
 from lifetrainer.web import auth
+
+logger = logging.getLogger(__name__)
 
 _DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -200,7 +205,35 @@ def _mask_external(payload: dict[str, Any]) -> dict[str, Any]:
         item.pop("app", None)
         item.pop("title", None)
 
+    # 기기 이름은 사람이 붙인 것이라("phone-example") 바깥에서는 종류만 남긴다.
+    for dev in payload.get("devices", ()):
+        dev["name"] = dev.get("label") or dev.get("kind") or "기기"
+
     return payload
+
+
+def _should_mask(cfg: Any) -> bool:
+    """창 제목·앱 이름을 지울지. 인터넷에서 온 요청에만, 그리고 설정이 켜져 있을 때만."""
+    if cfg.web.external:
+        return True
+    return _request_is_external(cfg) and cfg.web.external_mask
+
+
+def _request_is_external(cfg: Any) -> bool:
+    """이 요청이 **인터넷(터널)** 에서 온 것인가.
+
+    tailnet 직결(100.x IP:8770)과 구분한다. 예전에는 `cfg.web.external` 하나가
+    인증·Secure 쿠키·마스킹 세 가지를 한꺼번에 켰는데, 그러면 tailnet 에서도 창
+    제목이 사라지고, 반대로 tailnet 이 http 라서 Secure 쿠키를 못 걸었다.
+    셋은 서로 다른 질문이라 따로 답한다.
+    """
+    host = (request.host or "").split(":")[0].lower()
+    return bool(cfg.web.external_host) and host == cfg.web.external_host
+
+
+def _request_is_https() -> bool:
+    """터널은 앞단이 HTTPS 다. cloudflared 가 X-Forwarded-Proto 를 붙여 준다."""
+    return request.headers.get("X-Forwarded-Proto", request.scheme).lower() == "https"
 
 
 def _build_day_payload(
@@ -213,6 +246,7 @@ def _build_day_payload(
     함수 하나에 숨어 있지 않고 라우트에서 명시적으로 보이게 하기 위함).
     """
     stats = compute_daily(conn, cfg, day)
+    devices = device_breakdown(conn, cfg, day)
     overall, achieved_n, total_n = day_achievement(conn, cfg, day)
     instances = plans_for_day(conn, cfg, day)
     overrides = list_overrides(conn, day)
@@ -238,6 +272,7 @@ def _build_day_payload(
         )
 
     pal = load_palette(palette_path, theme)
+    total_device_sec = sum(d.seconds for d in devices)
 
     return {
         "day": day,
@@ -259,16 +294,60 @@ def _build_day_payload(
             "total_count": total_n,
             "top_apps": [{"app": app, "seconds": sec} for app, sec in stats.top_apps],
         },
+        # 기기별 활동. 폰이 들어오기 전에는 항상 한 줄이었다.
+        "devices": [
+            {
+                "name": d.name,
+                "kind": d.kind,
+                "label": _DEVICE_LABELS.get(d.kind, d.kind),
+                "seconds": d.seconds,
+                "hm": format_hm(d.seconds),
+                "share": (d.seconds / total_device_sec) if total_device_sec else 0.0,
+            }
+            for d in devices
+        ],
         "palette": dataclasses.asdict(pal),
     }
+
+
+_DEVICE_LABELS = {"laptop": "노트북", "phone": "폰", "tablet": "태블릿", "manual": "수동 입력"}
 
 
 def _label_for(pal: Palette, category: str) -> str:
     return pal.labels.get(category) or _STRUCTURAL_LABELS.get(category) or category
 
 
+def _fetch_slot_devices(conn: sqlite3.Connection, day: str) -> dict[int, str]:
+    """슬롯마다 **그 칸의 색을 만든 기기**의 종류. 없으면 빠진다.
+
+    칸 색은 승자 카테고리다. 그래서 기기도 "그 카테고리에 가장 많이 기여한 기기"로
+    고른다 — 슬롯 전체에서 최다인 기기를 쓰면 색과 톤이 서로 다른 것을 가리킬 수 있다.
+    """
+    rows = conn.execute(
+        """
+        SELECT b.slot, d.kind AS kind, SUM(b.seconds) AS secs
+        FROM slot_breakdown b
+        JOIN slot sl ON sl.day = b.day AND sl.slot = b.slot AND sl.category = b.category
+        LEFT JOIN device d ON d.id = b.device_id
+        WHERE b.day = ? AND d.kind IS NOT NULL
+        GROUP BY b.slot, d.kind
+        """,
+        (day,),
+    ).fetchall()
+    best: dict[int, tuple[str, float]] = {}
+    for r in rows:
+        cur = best.get(r["slot"])
+        if cur is None or r["secs"] > cur[1]:
+            best[r["slot"]] = (r["kind"], float(r["secs"]))
+    return {slot: kind for slot, (kind, _) in best.items()}
+
+
 def _build_grid_rows(
-    cfg: Any, slots: list[dict[str, Any]], pal: Palette, instances: list[PlanInstance]
+    cfg: Any,
+    slots: list[dict[str, Any]],
+    pal: Palette,
+    instances: list[PlanInstance],
+    slot_devices: dict[int, str] | None = None,
 ) -> list[dict[str, Any]]:
     """24행(시간) × N열(슬롯) 격자를 렌더링용 구조로 만든다.
 
@@ -323,6 +402,8 @@ def _build_grid_rows(
                     "css_var": css_var,
                     "overridden": s["overridden"],
                     "has_plan": slot_idx in plan_slots,
+                    # 구조 상태(빈칸·자리비움)는 활동이 아니라 기기를 붙이지 않는다.
+                    "device_kind": None if is_structural else (slot_devices or {}).get(slot_idx),
                 }
             )
         rows.append({"hour": hour, "cells": cells})
@@ -362,6 +443,11 @@ def _build_activity_runs(
                     "label": _label_for(pal, category),
                     "start": _hhmm(start_clock_min),
                     "end": _hhmm(end_clock_min),
+                    # 격자 칸(`cell.slot`)과 이어 주려고 슬롯 번호를 함께 싣는다.
+                    # 시각 문자열만 주면 클라이언트가 시각→슬롯 변환을 또 구현해야 하고,
+                    # 그러면 하루 경계(06:00) 규칙이 두 벌이 된다(반복 실패 2번).
+                    "slot_start": index,
+                    "slot_end": end - 1,
                     "duration_min": (end - index) * slot_minutes,
                     "detail": detail,
                     "css_var": (
@@ -462,6 +548,51 @@ def _json_script(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
 
 
+class _PrefixMiddleware:
+    """앱을 `prefix` 아래에도 응답하게 한다 (예: `/planner/d/2026-08-22`).
+
+    ## 왜 접두사가 필요한가
+
+    터널·Cloudflare Access 를 **경로 하나로** 막기 위해서다. 접두사가 없으면
+    `/d/` `/w/` `/api/` `/static/` `/auth/` 를 하나씩 열거해야 하고, 나중에 라우트를
+    추가하면서 그 목록 갱신을 잊으면 **조용히 인터넷에 노출된다.** 경계는 한 줄이어야 한다.
+
+    ## 왜 접두사 없는 경로도 계속 받나
+
+    tailnet 직결은 예전 주소(`http://100.64.0.2:8770/d/...`)를 그대로 쓴다.
+    인터넷 쪽 경계는 터널 ingress 와 Access 가 지키므로, 앱이 둘 다 받아도 노출이
+    늘지 않는다. 북마크와 Slack 링크를 깨뜨리지 않는 쪽을 택했다.
+    """
+
+    def __init__(self, wsgi_app, prefix: str) -> None:
+        self.wsgi_app = wsgi_app
+        self.prefix = prefix.rstrip("/")
+
+    def __call__(self, environ, start_response):
+        path = environ.get("PATH_INFO", "")
+        if self.prefix and (path == self.prefix or path.startswith(self.prefix + "/")):
+            environ["SCRIPT_NAME"] = self.prefix + environ.get("SCRIPT_NAME", "")
+            environ["PATH_INFO"] = path[len(self.prefix) :] or "/"
+        return self.wsgi_app(environ, start_response)
+
+
+def _asset_version(app: Flask) -> str:
+    """정적 파일의 최신 수정 시각. `?v=` 로 붙여 브라우저 캐시를 깬다.
+
+    ★ 왜 필요한가: `planner.js` 를 고쳐도 브라우저가 옛 파일을 들고 있으면 화면은
+    멀쩡한데 **버튼만 안 먹는다.** 서버 쪽 `no-cache` 헤더로는 부족했다 — 이미
+    캐시에 앉은 사본은 그대로 쓰인다. 실제로 `/planner` 접두사 수정을 배포한 뒤에도
+    같은 404 가 이어졌다.
+
+    mtime 이라 파일을 고칠 때만 값이 바뀐다 — 재시작만으로는 안 바뀐다.
+    """
+    root = Path(app.static_folder or ".")
+    try:
+        return str(int(max(f.stat().st_mtime for f in root.glob("*") if f.is_file())))
+    except (ValueError, OSError):
+        return "0"
+
+
 def create_app(cfg: Any) -> Flask:
     """Flask 앱 팩토리. 테스트는 이 함수로 `test_client()` 를 만든다."""
     app = Flask(
@@ -470,6 +601,10 @@ def create_app(cfg: Any) -> Flask:
         static_folder=str(Path(__file__).parent / "static"),
     )
     palette_path = cfg.root / "config" / "palette.yaml"
+    asset_v = _asset_version(app)
+
+    if cfg.web.url_prefix:
+        app.wsgi_app = _PrefixMiddleware(app.wsgi_app, cfg.web.url_prefix)
 
     @app.errorhandler(HTTPException)
     def _json_errors(exc: HTTPException) -> Response:
@@ -486,7 +621,10 @@ def create_app(cfg: Any) -> Flask:
         요구사항 그대로: 인증은 "선택해서 켜는" 것이 아니라 "외부에 열 때만
         자동으로 켜지는" 것이다.
         """
-        if not cfg.web.external:
+        # ★ 외부 호스트로 들어온 요청은 `cfg.web.external` 과 무관하게 **항상** 세션을
+        #   요구한다. 전에는 이 플래그 하나에 걸려 있어서, 터널만 열고 플래그를 깜빡하면
+        #   플래너가 통째로 공개되는 구조였다.
+        if not (cfg.web.external or _request_is_external(cfg)):
             return
         path = request.path
         if path in _AUTH_EXEMPT_PATHS or path.startswith(_AUTH_EXEMPT_PREFIXES):
@@ -501,6 +639,36 @@ def create_app(cfg: Any) -> Flask:
             abort(405, description="읽기 전용 모드입니다 (cfg.web.read_only=True)")
 
     # ── 수신 (폰 → 젯슨) ────────────────────────────────────────────────
+
+    def _rollup_after_ingest(conn, cfg, result) -> set[str]:
+        """받은 이벤트가 걸친 날짜를 **그 자리에서** 다시 롤업한다.
+
+        ## 왜 여기서 하는가
+
+        전에는 `apply_payload` 만 하고 끝냈다. 표에 반영되는 것은 10분마다 도는
+        `lifetrainer-sync.timer` 에 의존했는데, 그 타이머는 **오늘만** 롤업한다.
+        폰은 Doze 때문에 늦게 도착해서 어제 후반부를 실어 오는 일이 흔하고,
+        그 구간은 **아무도 다시 롤업하지 않아 영영 표에 안 나타났다.**
+
+        ## 실패해도 200 을 돌려준다
+
+        이벤트는 이미 커밋됐다. 롤업은 언제든 다시 돌릴 수 있는 파생 계산이라,
+        여기서 실패했다고 폰에게 재전송을 시키면 같은 데이터가 또 올 뿐이다.
+        대신 로그에 남기고 다음 sync 타이머가 오늘치를 다시 맞춘다.
+        """
+        days = ingest.days_touched(cfg, result)
+        if not days:
+            return set()
+        try:
+            classifier = Classifier.from_yaml(cfg.rollup.rules_path)
+            for day in sorted(days):
+                rollup_day(conn, cfg, classifier, day)
+        except Exception as exc:  # noqa: BLE001 - 수신 자체는 이미 성공했다
+            logger.warning("수신 후 롤업 실패 (days=%s): %s", sorted(days), exc)
+            return set()
+        return days
+
+
 
     @app.post("/ingest/aw")
     def ingest_aw() -> Response:
@@ -544,6 +712,8 @@ def create_app(cfg: Any) -> Flask:
             except ingest.IngestError as exc:
                 abort(400, description=str(exc))
 
+            rolled = _rollup_after_ingest(conn, cfg, result)
+
             return jsonify(
                 {
                     "ok": True,
@@ -551,6 +721,7 @@ def create_app(cfg: Any) -> Flask:
                     "buckets": result.buckets,
                     "events": result.events,
                     "skipped": result.skipped,
+                    "rolled": sorted(rolled),
                 }
             )
         finally:
@@ -586,7 +757,10 @@ def create_app(cfg: Any) -> Flask:
         )
         resp = redirect(url_for("day_page", day=target_day))
         resp.set_cookie(
-            auth.SESSION_COOKIE_NAME, auth.make_session_cookie(cfg, user_id), **auth.session_cookie_kwargs(cfg)
+            auth.SESSION_COOKIE_NAME,
+            auth.make_session_cookie(cfg, user_id),
+            # HTTPS 로 들어온 요청이면 Secure. 전역 external 모드는 예전 계약대로 항상 Secure.
+            **auth.session_cookie_kwargs(cfg, secure=_request_is_https() or cfg.web.external),
         )
         return resp
 
@@ -605,11 +779,12 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             data = _build_day_payload(conn, cfg, day, palette_path)
-            if cfg.web.external:
+            if _should_mask(cfg):
                 _mask_external(data)
             pal_light = load_palette(palette_path, "light")
             instances = plans_for_day(conn, cfg, day)
-            grid_rows = _build_grid_rows(cfg, data["slots"], pal_light, instances)
+            slot_devices = _fetch_slot_devices(conn, day)
+            grid_rows = _build_grid_rows(cfg, data["slots"], pal_light, instances, slot_devices)
         finally:
             conn.close()
 
@@ -638,6 +813,12 @@ def create_app(cfg: Any) -> Flask:
             used_categories=used_categories,
             used_structural=used_structural,
             minute_labels=minute_labels,
+            has_phone_cells=any(k == "phone" for k in slot_devices.values()),
+            # ★ JS 가 API 를 부를 때 붙일 접두사. 절대 경로(`/api/...`)로 부르면
+            #   터널(`lt.example.com/planner/...`)에서 접두사 밖으로 나가 404 가 난다 —
+            #   실제로 계획 수정·삭제·체크가 전부 조용히 실패했다.
+            url_prefix=request.script_root or "",
+            asset_v=asset_v,
             activity_runs=activity_runs,
             light_css_vars=light_css,
             dark_css_vars=dark_css,
@@ -665,6 +846,8 @@ def create_app(cfg: Any) -> Flask:
 
         return render_template(
             "week.html",
+            url_prefix=request.script_root or "",
+            asset_v=asset_v,
             end_day=end_day,
             today=today,
             prev_end_day=_shift_day(end_day, -7),
@@ -687,7 +870,7 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             data = _build_day_payload(conn, cfg, day, palette_path, theme)
-            if cfg.web.external:
+            if _should_mask(cfg):
                 _mask_external(data)
         finally:
             conn.close()
@@ -748,10 +931,15 @@ def create_app(cfg: Any) -> Flask:
         try:
             if get_plan(conn, plan_id) is None:
                 abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
-            delete_plan(conn, plan_id)
+            # 오늘부터의 인스턴스를 함께 보관 처리한다 — 안 하면 지운 계획이
+            # 오늘 목록에 그대로 남는다. 과거는 남긴다(주간 통계 보존).
+            today = timeutil.day_str(
+                timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
+            )
+            archived = delete_plan(conn, plan_id, from_day=today)
         finally:
             conn.close()
-        return jsonify({"ok": True, "id": plan_id, "deleted": True})
+        return jsonify({"ok": True, "id": plan_id, "deleted": True, "archived": archived})
 
     @app.post("/api/plan/<int:plan_id>/check")
     def api_plan_check(plan_id: int) -> Response:

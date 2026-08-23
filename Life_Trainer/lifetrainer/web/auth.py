@@ -297,17 +297,20 @@ def verify_session_cookie(cfg: Any, raw: str) -> str | None:
     return user_id if isinstance(user_id, str) and user_id else None
 
 
-def session_cookie_kwargs(cfg: Any) -> dict[str, Any]:
+def session_cookie_kwargs(cfg: Any, *, secure: bool | None = None) -> dict[str, Any]:
     """Flask `Response.set_cookie(**kwargs)` 에 그대로 넘길 옵션.
 
-    `HttpOnly`/`SameSite=Lax` 는 항상 걸고, `Secure` 는 `cfg.web.external` 일 때만
-    건다 (로컬 http 개발 환경에서는 Secure 쿠키가 브라우저에 아예 저장되지 않는다).
+    `HttpOnly`/`SameSite=Lax` 는 항상 건다. `Secure` 는 **그 요청이 HTTPS 였는지**로
+    정한다 — 호출부가 `secure=` 로 넘긴다. 같은 프로세스가 터널(HTTPS)과
+    tailnet(HTTP)을 동시에 서빙하기 때문이다. 설정 하나로 정하면 한쪽이 깨진다:
+    켜면 tailnet 브라우저가 쿠키를 아예 저장하지 않고, 끄면 인터넷 구간에서
+    쿠키가 평문으로 다닌다. 안 넘기면 예전처럼 `cfg.web.external` 로 떨어진다.
     """
     return {
         "max_age": cfg.web.session_ttl_sec,
         "httponly": True,
         "samesite": "Lax",
-        "secure": bool(cfg.web.external),
+        "secure": bool(cfg.web.external) if secure is None else bool(secure),
         "path": "/",
     }
 

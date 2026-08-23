@@ -15,9 +15,10 @@
   {{ dark_css_vars | safe }}
 }
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='planner.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='planner.css', v=asset_v) }}">
 </head>
 <body data-end-day="{{ end_day }}" data-today="{{ today }}" data-read-only="{{ 'true' if read_only else 'false' }}">
+<div id="app-base" data-base="{{ url_prefix }}" hidden></div>
   <header class="topbar">
     <nav class="day-nav" aria-label="주 이동">
       <a href="/w/{{ prev_end_day }}" class="nav-btn" aria-label="이전 주">◀</a>
@@ -67,6 +68,6 @@
     </article>
   </div>
 
-  <script src="{{ url_for('static', filename='week.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='week.js', v=asset_v) }}" defer></script>
 </body>
 </html>

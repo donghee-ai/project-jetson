@@ -105,7 +105,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .side-column { display: grid; gap: 18px; min-width: 0; }
 .app-card, .paper-card { border: 1px solid var(--ink-gridline); border-radius: var(--radius-xl); background: var(--ui-card); box-shadow: var(--shadow-card); }
 .grid-panel { min-width: 0; padding: 24px; }
-.plan-panel, .activity-panel { padding: 20px; }
+.plan-panel, .activity-panel, .device-panel { padding: 20px; }
 .section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .section-header.compact { align-items: center; }
 .section-header h2, .plan-panel h2, .activity-panel h2 { margin: 0; font-size: 1.18rem; line-height: 1.2; letter-spacing: -0.035em; }
@@ -127,7 +127,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .grid-hour, .grid-corner, .grid-minute { display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; border-bottom: 1px solid var(--ink-gridline); color: var(--ink-muted); font-size: 0.62rem; font-variant-numeric: tabular-nums; }
 .grid-corner, .grid-minute { min-height: 25px; border-bottom-color: var(--ink-baseline); font-size: 0.56rem; font-weight: 700; }
 .grid-minute { justify-content: center; padding: 0; }
-.cell { position: relative; border-right: 1px dashed color-mix(in srgb, var(--ink-gridline) 68%, transparent); border-bottom: 1px solid var(--ink-gridline); cursor: pointer; }
+.cell { position: relative; background-color: var(--cell-color); border-right: 1px dashed color-mix(in srgb, var(--ink-gridline) 68%, transparent); border-bottom: 1px solid var(--ink-gridline); cursor: pointer; }
 .grid-row .cell:nth-child(3) { border-right-style: solid; border-right-color: var(--ink-baseline); }
 .grid-row .cell:last-child { border-right: 0; }
 .grid-row[data-hour="9"] .cell, .grid-row[data-hour="12"] .cell, .grid-row[data-hour="15"] .cell, .grid-row[data-hour="18"] .cell, .grid-row[data-hour="21"] .cell, .grid-row[data-hour="0"] .cell, .grid-row[data-hour="3"] .cell { border-bottom-color: var(--ink-baseline); border-bottom-width: 2px; }
@@ -267,7 +267,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
   .metric-card strong { font-size: 1.4rem; }
   .dashboard-layout, .side-column { grid-template-columns: minmax(0, 1fr); }
   .now-card { grid-column: auto; }
-  .grid-panel, .plan-panel, .activity-panel { padding: 18px; border-radius: var(--radius-lg); }
+  .grid-panel, .plan-panel, .activity-panel, .device-panel { padding: 18px; border-radius: var(--radius-lg); }
   .section-header { display: block; }
   .section-header.compact { display: flex; }
   .legend { justify-content: flex-start; max-width: none; margin-top: 13px; }
@@ -283,4 +283,131 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
   .metric-card small { display: none; }
   .grid-panel { padding-inline: 14px; }
   .activity-item { grid-template-columns: 13px 67px minmax(0, 1fr); gap: 7px; }
+}
+
+/* ── 기기별 (폰이 들어온 뒤에만 뜬다) ─────────────────────────────────
+   ★ 카테고리 팔레트 색을 쓰지 않는다. 저 9색은 "무엇을 했나"의 정체이고
+   기기는 다른 축이라, 같은 색을 쓰면 격자의 색과 뜻이 충돌한다.
+   그래서 잉크 계열 명도로만 구분하고 이름을 항상 함께 적는다
+   (config/palette.yaml 의 2차 인코딩 규칙과 같은 이유). */
+.device-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.device-line { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.device-name { font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
+.device-name small { font-weight: 400; opacity: 0.55; font-size: 0.78em; }
+.device-time { font-variant-numeric: tabular-nums; opacity: 0.75; }
+.device-bar {
+  margin-top: 6px; height: 6px; border-radius: 3px;
+  background: var(--ink-gridline); overflow: hidden;
+}
+.device-bar-fill { display: block; height: 100%; border-radius: 3px; background: var(--ink-secondary); }
+.device-phone { opacity: 0.55; }
+.device-manual { opacity: 0.35; }
+
+/* ── 폰이 만든 칸 (2026-08-22) ─────────────────────────────────────
+   같은 카테고리인데 **어느 기기에서 했는지**를 한 축 더 얹는다.
+   hue 는 그대로 두고 표면 쪽으로 섞어 톤만 올린다.
+
+   ★ 비율 35% 는 눈대중이 아니라 계산해서 골랐다 (OKLab ΔE, 라이트·다크 양쪽):
+
+       파스텔 ↔ 자기 원색      18.0 / 23.3   ← 기기가 구분된다
+       파스텔 ↔ 남의 원색      12.2 / 21.2   ← 다른 카테고리로 오인되지 않는다
+       파스텔 ↔ 파스텔(인접)    6.9 /  6.7   ← ★ 부족하다
+
+   마지막 줄이 이 표식을 색에만 맡길 수 없는 이유다. 톤을 올리면 모든 차이가 같이
+   눌리고, 원본 팔레트부터 all-pairs 최소가 7.1 이라(palette.yaml 참조) 어떤 비율을
+   골라도 파스텔끼리는 12 를 못 넘는다. 그래서 **오른쪽 위 점**을 함께 찍는다 —
+   색이 아닌 채널이라 톤 압축의 영향을 받지 않는다. 범례에도 견본을 띄운다. */
+.cell[data-device="phone"] {
+  background-color: color-mix(in oklab, var(--cell-color) 35%, var(--surface));
+  background-image: radial-gradient(
+    circle at calc(100% - 3.5px) 3.5px,
+    var(--ink-secondary) 0 1.6px, transparent 1.7px
+  );
+}
+.legend-phone-swatch {
+  display: inline-block; width: 0.72rem; height: 0.72rem; border-radius: 3px;
+  background-color: color-mix(in oklab, var(--cat-gaming) 35%, var(--surface));
+  background-image: radial-gradient(
+    circle at calc(100% - 2px) 2px, var(--ink-secondary) 0 1.3px, transparent 1.4px
+  );
+  border: 1px solid var(--ink-gridline);
+}
+
+/* 계획 폼의 버튼 줄 — 수정 모드에서 '취소'가 함께 뜬다 */
+.form-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ── 오늘의 기록 → 격자 반짝임 ─────────────────────────────────────────
+   기록 목록의 점을 누르면 격자에서 그 시간대가 반짝인다.
+   ★ 배경색을 건드리지 않는다 — 칸 색이 곧 카테고리라, 잠깐이라도 바꾸면
+     "무슨 활동이었나" 가 그 사이에 거짓이 된다. 테두리와 밝기만 쓴다. */
+.cell.flash {
+  animation: cellFlash 0.45s ease-in-out 3;
+  position: relative;
+  z-index: 4;
+}
+
+@keyframes cellFlash {
+  0%,
+  100% {
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    filter: none;
+  }
+  50% {
+    outline: 2px solid var(--ui-accent);
+    outline-offset: -2px;
+    filter: brightness(1.35);
+  }
+}
+
+/* 기록 마커가 이제 버튼이다 — 눌리는 것으로 보이게 하되 원래 모양을 지킨다. */
+button.activity-marker {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+button.activity-marker:hover,
+button.activity-marker:focus-visible {
+  transform: scale(1.25);
+}
+
+button.activity-marker:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 3px;
+}
+
+/* 시간 셀렉트 — 24시간·10분 단위 */
+.time-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.time-select select {
+  font-variant-numeric: tabular-nums;
+  padding: 0.45rem 0.35rem;
+  min-width: 3.6rem;
+  text-align: center;
+}
+
+.time-colon {
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell.flash {
+    animation: none;
+    outline: 2px solid var(--ui-accent);
+    outline-offset: -2px;
+    filter: brightness(1.35);
+  }
+  button.activity-marker:hover,
+  button.activity-marker:focus-visible {
+    transform: none;
+  }
 }
