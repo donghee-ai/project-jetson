@@ -20,6 +20,16 @@
 같은 능력을 두 경로로 주면 스키마 토큰을 두 번 내고, 소형 모델은 둘 중 뭘 쓸지
 헷갈린다. **슬래시로 되는 것은 슬래시로 간다.**
 
+## ★ 에이전트도 Slack 을 울릴 수 있다 — 예약 알림 하나만
+
+`agent/slash.py` 는 발송 경로를 코드로 지웠지만, **`schedule_reminder` 는 다르다.**
+예약된 시각에 워커가 `notifier.post` 로 보낸다 (`llm/worker.send_reminder`).
+채널을 안 주면 `cfg.slack.default_channel`(사용자 DM)로 간다.
+
+**이건 버그가 아니라 그 툴의 목적이다** — 알림은 도착해야 알림이다. 다만
+"에이전트는 아무것도 안 보낸다"고 믿으면 안 되므로 여기 적어 둔다. 즉시 발송은
+없고, 예약된 것만 나중에 나간다. 취소는 `cancel_reminder` 다.
+
 ## 왜 우리 `web_search` 를 쓰는가
 
 OpenClaw 도 `web_search`·`web_fetch` 를 갖고 있다. 우리 것을 쓰는 이유는 이미

@@ -25,6 +25,11 @@ OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립�
 | `patch-cron-schema.sh` | cron 툴 스키마 호환 패치 (**openclaw 업그레이드마다 재실행**) |
 | `slack-app-manifest.json` | Slack 앱 생성용 매니페스트 (플러그인 내장본 추출) |
 
+★ **`lifetrainer` 에이전트 배선은 여기 없다.** Life Trainer 쪽에 있다 —
+`Life_Trainer/scripts/install-agent.sh` (에이전트 등록 · MCP 서버 · 툴 정책).
+게이트웨이가 살아 있는 것이 선행 조건이라 이 폴더의 `install.sh` 를 먼저 돌린다.
+자세한 것은 [openclaw-agent.md §7](../docs/build/openclaw-agent.md).
+
 ---
 
 ## 자주 쓰는 것
@@ -35,6 +40,10 @@ bash install.sh
 
 # openclaw 업그레이드 후 — dist 가 교체되므로 패치 재적용
 bash patch-cron-schema.sh
+
+# ★ 업그레이드는 에이전트 배선도 지울 수 있다 (openclaw.json 은 남지만
+#   워크스페이스 시드가 다시 돈다). 뒤이어 한 번 돌린다:
+bash ../Life_Trainer/scripts/install-agent.sh
 
 # 상태 확인은 openclaw daemon status 가 아니라 systemd 에게
 systemctl --user show openclaw-gateway -p ExecStart -p Environment

@@ -249,10 +249,17 @@ def read_text(sandbox: Sandbox, raw: str, *, max_bytes: int = MAX_READ_BYTES) ->
     if path.is_dir():
         raise SandboxError(f"{sandbox._short(path)} 은(는) 폴더입니다. list_dir 을 쓰세요.")
 
-    data = path.read_bytes()
+    # ★ **통째로 읽지 않는다.** `read_bytes()` 는 자르기 전에 파일 전체를 메모리에
+    #   올린다 — 상주 300MB 예산에서 감옥 안의 큰 파일 하나가 그걸 넘길 수 있다
+    #   (`data/agent/` 는 에이전트가 쓰는 곳이라 커질 수 있다). 필요한 만큼 + 1바이트만
+    #   읽어서 "더 있는지"까지 같이 안다.
+    with path.open("rb") as fh:
+        data = fh.read(max_bytes + 1)
+    truncated = len(data) > max_bytes
     text = data[:max_bytes].decode("utf-8", errors="replace")
-    if len(data) > max_bytes:
-        text += f"\n\n... (앞 {max_bytes}바이트만 실었습니다. 전체 {len(data)}바이트)"
+    if truncated:
+        total = path.stat().st_size
+        text += f"\n\n... (앞 {max_bytes}바이트만 실었습니다. 전체 {total}바이트)"
     return text
 
 
@@ -270,10 +277,14 @@ def list_dir(sandbox: Sandbox, raw: str, *, max_entries: int = MAX_LIST_ENTRIES)
     for entry in shown:
         if _is_denied_name(entry):
             continue  # 목록에서도 감춘다 — 이름만으로도 힌트가 된다
-        if entry.is_dir():
-            lines.append(f"{entry.name}/")
-        else:
-            lines.append(f"{entry.name}  ({entry.stat().st_size}B)")
+        try:
+            if entry.is_dir():
+                lines.append(f"{entry.name}/")
+            else:
+                lines.append(f"{entry.name}  ({entry.stat().st_size}B)")
+        except OSError:
+            # 끊긴 심링크·권한 없는 항목. 목록 하나 때문에 폴더 전체를 못 보면 안 된다.
+            lines.append(f"{entry.name}  (읽을 수 없음)")
     if hidden > 0:
         lines.append(f"... 외 {hidden}개")
     return f"{path}:\n" + ("\n".join(lines) if lines else "(비어 있음)")
