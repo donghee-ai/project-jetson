@@ -99,12 +99,26 @@ def embed_texts(cfg: "Config", texts: list[str]) -> list[list[float]]:
     return out
 
 
+def query_text(cfg: "Config", query: str) -> str:
+    """질의를 임베딩에 넣을 형태로. **문서 쪽(`source_text`)과 다르다.**
+
+    Qwen3-Embedding 계열은 질의에만 지시문 접두를 붙이는 전제로 학습됐다.
+    안 붙이면 질의 벡터가 문서 벡터와 어긋난 자리에 놓인다 — 실측으로
+    엔티티 질의 hit@5 가 벡터 단독 44%, 하이브리드 76%(키워드 단독 96%보다 나쁨)였다.
+    붙인 뒤 86% / 98%. `scripts/eval_search.py` 로 언제든 다시 잰다.
+
+    ★ 접두는 **자르기 전의 질의**에 붙인다. 지시문이 max_chars 를 먹으면 안 된다.
+    """
+    q = query[: cfg.embed.max_chars]
+    return f"{cfg.embed.query_instruct}{q}" if cfg.embed.query_instruct else q
+
+
 def embed_query(cfg: "Config", query: str) -> list[float] | None:
     """질의어 하나를 벡터로. 실패하면 None — 검색은 키워드로 계속 간다."""
     if not cfg.embed.enabled or not query.strip():
         return None
     try:
-        vecs = embed_texts(cfg, [query[: cfg.embed.max_chars]])
+        vecs = embed_texts(cfg, [query_text(cfg, query)])
     except EmbedError as exc:
         logger.warning("질의 임베딩 실패 (키워드 검색으로 계속): %s", exc)
         return None

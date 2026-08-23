@@ -42,7 +42,7 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "log_level": "INFO",
     },
     "activitywatch": {
-        "base_url": "http://127.0.0.1:5600",
+        "base_url": "http://127.0.0.1:35600",
         "api_key": "",
         "timeout_sec": 10.0,
         "poll_interval_sec": 600,
@@ -109,6 +109,20 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "link_ttl_sec": 600,
         "session_ttl_sec": 2592000,
         "external": False,
+        "external_host": "",
+        "url_prefix": "",
+        "external_mask": True,
+    },
+    "embed": {
+        "enabled": False,
+        "base_url": "http://127.0.0.1:8081/v1",
+        "model": "qwen3-embedding-0.6b",
+        "query_instruct": "Instruct: Given a search query, retrieve relevant articles\nQuery:",
+        "dim": 1024,
+        "timeout_sec": 30.0,
+        "batch_size": 16,
+        "max_chars": 1600,
+        "vector_weight": 0.5,
     },
     "ingest": {
         "enabled": False,
@@ -181,6 +195,39 @@ class LLMConfig:
 
 
 @dataclass(frozen=True)
+class EmbedConfig:
+    """문서 임베딩 서버 (RAG). 대화 모델과 **다른 프로세스**다.
+
+    llama.cpp 는 프로세스당 모델 하나라 임베딩 전용 서버를 따로 띄운다.
+    0.6B Q8_0 이 약 640MB 라 8B(10.2GB) 옆에 상주시켜도 여유 안에 든다.
+    꺼져 있으면 검색이 키워드(FTS5)만으로 떨어진다 — 죽지 않는다.
+    """
+
+    enabled: bool = False
+    base_url: str = "http://127.0.0.1:8081/v1"
+    model: str = "qwen3-embedding-0.6b"
+    dim: int = 1024
+    timeout_sec: float = 30.0
+    batch_size: int = 16  # 한 번에 보낼 문서 수. 젯슨 메모리를 고려한 값
+    max_chars: int = 1600  # 임베딩할 원문 상한. 길면 잘라 넣는다
+    # 하이브리드 융합에서 벡터 쪽 가중치 (0=키워드만, 1=벡터만)
+    vector_weight: float = 0.5
+    # ★ **질의에만** 붙이는 지시문. 문서 쪽에는 절대 붙이지 않는다.
+    #
+    # Qwen3-Embedding 계열은 질의를 `Instruct: {task}\nQuery:{q}` 로 받는 전제로
+    # 학습됐다. 안 붙이면 질의 벡터가 문서 벡터와 어긋난 자리에 놓인다.
+    # 실측(scripts/eval_search.py · 엔티티 20질의 hit@5):
+    #   벡터 단독  44% → 86%   ·   하이브리드 76% → 98%
+    # 붙이기 전에는 **하이브리드(76%)가 키워드 단독(96%)보다 나빴다.**
+    #
+    # 모델을 바꾸면 이 문자열도 바뀐다. 빈 문자열이면 접두 없이 맨 질의로 간다.
+    # 문서 벡터는 접두와 무관하므로 이 값을 바꿔도 **재색인이 필요 없다.**
+    query_instruct: str = (
+        "Instruct: Given a search query, retrieve relevant articles\nQuery:"
+    )
+
+
+@dataclass(frozen=True)
 class CollectConfig:
     user_agent: str
     per_domain_min_interval_sec: float
@@ -230,6 +277,19 @@ class WebConfig:
     link_ttl_sec: int = 600
     session_ttl_sec: int = 2592000
     external: bool = False
+    # ── 인터넷 노출 (2026-08-22) ──────────────────────────────────────
+    # external_host  이 호스트로 들어온 요청은 **인터넷에서 온 것**으로 본다.
+    #                (Cloudflare Tunnel 의 호스트명). 비어 있으면 그런 요청이 없다는 뜻.
+    #                tailnet 직결(IP:포트)과 구분하려고 있는 값이다 —
+    #                `external` 하나로 묶어 두면 tailnet 에서도 제목이 사라지고,
+    #                반대로 http 인 tailnet 때문에 Secure 쿠키를 못 건다.
+    # url_prefix     앱을 이 경로 아래로 mount 한다 (예: "/planner").
+    #                터널·Access 를 **경로 하나로** 막기 위한 것이다 — 새 라우트를
+    #                추가했을 때 공개 목록 갱신을 잊어 노출되는 사고를 막는다.
+    # external_mask  인터넷 요청에 창 제목·앱 이름을 지울지. 기본은 지운다.
+    external_host: str = ""
+    url_prefix: str = ""
+    external_mask: bool = True
 
 
 @dataclass(frozen=True)
@@ -265,6 +325,8 @@ class Config:
     collect: CollectConfig
     web: WebConfig = WebConfig()  # 새로 추가된 필드 — 기본값으로 기존 생성 코드와 호환 유지
     nightly: NightlyConfig = NightlyConfig()
+    # 기본값을 준다 — 기존 생성 코드(테스트 포함)를 깨지 않는다. 끄면 검색이 키워드로 간다.
+    embed: EmbedConfig = EmbedConfig()
     search: SearchConfig = SearchConfig()
     ingest: IngestConfig = IngestConfig()
 
@@ -444,6 +506,18 @@ def load_config(path: str | Path | None = None) -> Config:
         enable_thinking=bool(raw["llm"]["enable_thinking"]),
     )
 
+    embed = EmbedConfig(
+        enabled=bool(raw["embed"]["enabled"]),
+        base_url=str(raw["embed"]["base_url"]),
+        model=str(raw["embed"]["model"]),
+        dim=int(raw["embed"]["dim"]),
+        timeout_sec=float(raw["embed"]["timeout_sec"]),
+        batch_size=int(raw["embed"]["batch_size"]),
+        max_chars=int(raw["embed"]["max_chars"]),
+        vector_weight=float(raw["embed"]["vector_weight"]),
+        query_instruct=str(raw["embed"]["query_instruct"]),
+    )
+
     collect = CollectConfig(
         user_agent=str(raw["collect"]["user_agent"]),
         per_domain_min_interval_sec=float(raw["collect"]["per_domain_min_interval_sec"]),
@@ -476,6 +550,9 @@ def load_config(path: str | Path | None = None) -> Config:
         link_ttl_sec=int(raw["web"]["link_ttl_sec"]),
         session_ttl_sec=int(raw["web"]["session_ttl_sec"]),
         external=bool(raw["web"]["external"]),
+        external_host=str(raw["web"]["external_host"]).strip().lower(),
+        url_prefix="/" + str(raw["web"]["url_prefix"]).strip().strip("/") if str(raw["web"]["url_prefix"]).strip().strip("/") else "",
+        external_mask=bool(raw["web"]["external_mask"]),
     )
 
     ingest = IngestConfig(
@@ -496,6 +573,7 @@ def load_config(path: str | Path | None = None) -> Config:
         report=report,
         slack=slack,
         llm=llm,
+        embed=embed,
         collect=collect,
         web=web,
         nightly=nightly,
