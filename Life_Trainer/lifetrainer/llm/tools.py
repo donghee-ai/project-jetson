@@ -58,6 +58,10 @@ class ToolContext:
 
     `channel` 은 이 대화가 오가는 Slack 대상이다 — 예약 알림이 "어디로" 갈지는
     대화가 일어난 자리에서 정해져야 하므로 모델 인자로 받지 않는다.
+
+    `user_text` 는 이번 턴의 사용자 발화 원문이다. **모델이 낸 인자를 검증하는 데
+    쓴다** — 모델이 "시점을 말했을 때만" 같은 스키마 지시를 지켰는지는 사용자가
+    실제로 무슨 말을 했는지를 봐야 알 수 있다 (`_tool_search_docs` 의 기간 게이트).
     """
 
     conn: sqlite3.Connection
@@ -65,6 +69,7 @@ class ToolContext:
     today: str
     actor: str = "user"
     channel: str | None = None
+    user_text: str = ""
 
 
 @dataclass
@@ -173,6 +178,178 @@ def _tool_get_plans(ctx: ToolContext, args: dict) -> str:
     return f"{day} 계획 {total}건, 전체 달성률 {overall * 100:.0f}% ({achieved}건 완료): {items}"
 
 
+MAX_DOC_GIST_CHARS = 220  # 툴 결과 길이가 곧 다음 턴의 입력이다
+
+# ── 기간 필터 ───────────────────────────────────────────────────────
+#
+# ★ **모델에게 날짜를 계산시키지 않는다.** 라벨만 받고 실제 경계는 파이썬이 만든다.
+# 8B 에게 "이번 주"를 YYYY-MM-DD 로 바꾸게 하면 조용히 틀린 날짜를 넣는다
+# (이 저장소의 반복 실패 3번: 계산 가능한 것을 눈대중으로 정했다).
+#
+# ★ **`pattern` 을 쓰지 않는다.** 날짜 문자열을 정규식으로 받고 싶어지지만,
+# llama.cpp 의 GBNF 변환기가 정규식을 못 다뤄 **요청 전체가 400 이 된다**
+# (`client._check_no_pattern` 이 전송 전에 막는다 · contracts.md §하드웨어 제약).
+# 그래서 자유 문자열이 아니라 `enum` 이다.
+#
+# 값을 4개로 묶은 이유: 스키마 설명은 그대로 프롬프트 토큰이고, 소형 모델은
+# 선택지가 적을수록 잘 고른다. 달력 주(월~일)가 아니라 **굴러가는 창**이다 —
+# "이번 주에 나온 글" 을 묻는 사람은 보통 최근 며칠을 뜻한다.
+DOC_PERIODS = ("today", "week", "month", "all")
+
+# 사용자가 시점을 말했는지 판정하는 낱말. **모델이 기간을 마음대로 붙이는 것을 막는다.**
+#
+# ★ 실측 사고: "젯슨 관련해서 읽을 만한 글 있어?" 에 8B 가 `period=week` 을 붙여
+# 코퍼스 4,431건 중 1,636건만 보고 답했다. 스키마에 "시점을 말했을 때만 쓴다" 고
+# 적어 뒀는데도 그랬다. 이 저장소가 반복해서 배운 것 — **프롬프트로 안 되는 것은
+# 구조로 막는다** (converse.py 의 `_must_refuse_web` 과 같은 부류).
+#
+# 기간이 조용히 걸리는 것은 빈손보다 나쁘다: 결과가 나오므로 아무도 눈치채지 못한 채
+# 63% 가 사라진다.
+_TIME_WORDS = (
+    "오늘", "어제", "그제", "이번 주", "이번주", "지난 주", "지난주", "이번 달", "이번달",
+    "지난 달", "지난달", "최근", "요즘", "요새", "며칠", "근래", "새로", "신규", "최신",
+    "today", "yesterday", "this week", "last week", "this month", "recent", "latest", "new",
+)
+
+
+def _mentions_time(text: str) -> bool:
+    low = (text or "").lower()
+    return any(w in low for w in _TIME_WORDS)
+_PERIOD_DAYS = {"week": 7, "month": 30}
+_PERIOD_LABEL = {"today": "오늘", "week": "최근 7일", "month": "최근 30일"}
+
+
+def _period_bounds(ctx: ToolContext, period: str) -> tuple[float, float] | None:
+    """기간 라벨 → `[시작, 끝)` epoch. `all`(또는 미지정)이면 None = 제한 없음.
+
+    끝을 '지금'이 아니라 **논리적 하루의 끝**으로 잡는다. 그래야 새벽 2시에 물어도
+    "오늘"이 그 전날 06:00 부터로 잡혀 사용자의 하루 감각과 맞는다.
+    """
+    if period not in _PERIOD_DAYS and period != "today":
+        return None
+    boundary = ctx.cfg.rollup.day_boundary_hour
+    start, end = timeutil.day_bounds(ctx.today, ctx.cfg.tz, boundary_hour=boundary)
+    if period == "today":
+        return start, end
+    return end - _PERIOD_DAYS[period] * 86400.0, end
+
+
+def _period_ids(ctx: ToolContext, bounds: tuple[float, float]) -> set[int]:
+    """기간 안에 발행된 문서 id. 벡터 쪽 후보를 좁히는 데 쓴다."""
+    lo, hi = bounds
+    return {
+        int(r[0])
+        for r in ctx.conn.execute(
+            "SELECT id FROM doc WHERE dup_of IS NULL AND published_at >= ? AND published_at < ?",
+            (lo, hi),
+        ).fetchall()
+    }
+
+
+def _hybrid_search(
+    ctx: ToolContext, query: str, match: str, limit: int, bounds: tuple[float, float] | None = None
+) -> list:
+    """키워드(FTS5 BM25) + 벡터(코사인)를 융합해 상위 N.
+
+    ## 융합 방식 — RRF (Reciprocal Rank Fusion)
+
+    두 점수의 **눈금이 다르다.** BM25 는 음수 로그 스케일이고 코사인은 0~1 이다.
+    정규화해서 더하면 질의마다 분포가 달라 가중치가 의미를 잃는다. RRF 는 점수 대신
+    **순위**만 쓰므로 눈금 문제가 없다: `1 / (k + rank)`.
+
+    ## 임베딩이 없으면
+
+    벡터 쪽이 빈손이면 키워드 순위가 그대로 최종 순위가 된다 — **검색이 죽지 않는다.**
+    임베딩 서버를 내려도, 아직 임베딩 안 된 문서라도 찾을 수 있어야 한다.
+    """
+    from lifetrainer.llm import embed as E
+
+    K = 60  # RRF 상수. 관례값 — 상위권 차이를 과장하지 않는다
+    pool = max(limit * 5, 20)
+
+    if bounds is None:
+        kw = ctx.conn.execute(
+            "SELECT d.id FROM doc_fts f JOIN doc d ON d.id = f.rowid "
+            "WHERE doc_fts MATCH ? AND d.dup_of IS NULL "
+            "ORDER BY bm25(doc_fts) LIMIT ?",
+            (match, pool),
+        ).fetchall()
+    else:
+        kw = ctx.conn.execute(
+            "SELECT d.id FROM doc_fts f JOIN doc d ON d.id = f.rowid "
+            "WHERE doc_fts MATCH ? AND d.dup_of IS NULL "
+            "AND d.published_at >= ? AND d.published_at < ? "
+            "ORDER BY bm25(doc_fts) LIMIT ?",
+            (match, bounds[0], bounds[1], pool),
+        ).fetchall()
+    kw_rank = {r[0]: i for i, r in enumerate(kw)}
+
+    vec_rank: dict[int, int] = {}
+    qvec = E.embed_query(ctx.cfg, query)
+    if qvec:
+        try:
+            allowed = _period_ids(ctx, bounds) if bounds is not None else None
+            vec_rank = {
+                doc_id: i
+                for i, (doc_id, _) in enumerate(
+                    E.nearest(ctx.conn, ctx.cfg, qvec, pool, allowed_ids=allowed)
+                )
+            }
+        except Exception as exc:  # noqa: BLE001 - 벡터가 없어도 키워드로 간다
+            logger.warning("벡터 검색 실패 (키워드로 계속): %s", exc)
+
+    if not kw_rank and not vec_rank:
+        return []
+
+    w = ctx.cfg.embed.vector_weight
+    scores: dict[int, float] = {}
+    for doc_id, rank in kw_rank.items():
+        scores[doc_id] = scores.get(doc_id, 0.0) + (1 - w) / (K + rank)
+    for doc_id, rank in vec_rank.items():
+        scores[doc_id] = scores.get(doc_id, 0.0) + w / (K + rank)
+
+    how = "키워드+벡터" if vec_rank and kw_rank else ("벡터" if vec_rank else "키워드")
+    top = sorted(scores, key=lambda d: -scores[d])[:limit]
+    if not top:
+        return []
+
+    placeholders = ",".join("?" * len(top))
+    rows = ctx.conn.execute(
+        f"SELECT id, title, url, summary, abstract FROM doc WHERE id IN ({placeholders})",
+        top,
+    ).fetchall()
+    by_id = {r["id"]: r for r in rows}
+    out = []
+    for doc_id in top:
+        r = by_id.get(doc_id)
+        if r is None:
+            continue
+        item = dict(r)
+        item["how"] = how
+        out.append(item)
+    return out
+
+
+_TAG_RE = re.compile(r"<[^>]+>")
+_WS_RE = re.compile(r"\s+")
+_ENTITIES = {"&nbsp;": " ", "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'"}
+
+
+def _plain(text: str) -> str:
+    """요약·초록에서 마크업을 걷어낸다.
+
+    ★ 수집한 글의 요약에 `<ul><li><strong>` 이 그대로 들어 있다. 그대로 프롬프트에
+    실으면 (a) 토큰을 태그가 먹고 (b) 8B 가 태그를 본문으로 착각해 따라 쓴다.
+    실측에서 툴 결과 한 건이 태그만 60자를 차지했다.
+    """
+    if not text:
+        return ""
+    out = _TAG_RE.sub(" ", text)
+    for k, v in _ENTITIES.items():
+        out = out.replace(k, v)
+    return _WS_RE.sub(" ", out).strip()
+
+
 def _tool_search_docs(ctx: ToolContext, args: dict) -> str:
     query = str(args.get("query") or "").strip()
     if not query:
@@ -188,13 +365,22 @@ def _tool_search_docs(ctx: ToolContext, args: dict) -> str:
         raise ToolError(f"검색어에서 쓸 수 있는 단어를 찾지 못했습니다: {query!r}")
     match = " OR ".join(f'"{w}"' for w in words[:8])
 
+    # ★ 모르는 값은 조용히 `all` 로 떨어뜨린다. 8B 가 "이번주"·"this week" 같은
+    #   변형을 넣어도 검색이 실패하는 것보다 전체에서 찾아 주는 편이 낫다.
+    period = str(args.get("period") or "all").strip().lower()
+    if period not in DOC_PERIODS:
+        period = "all"
+    # ★ **사용자가 시점을 말하지 않았으면 기간을 걸지 않는다.** 스키마 지시를
+    #   모델이 지키지 않는 것을 실측했다 (`_TIME_WORDS` 주석 참조).
+    #   `user_text` 가 비어 있으면(테스트·직접 호출) 게이트를 적용하지 않는다 —
+    #   툴을 단독으로 쓰는 경로까지 막을 이유는 없다.
+    if period != "all" and ctx.user_text and not _mentions_time(ctx.user_text):
+        logger.info("기간 %r 을 무시한다 — 사용자가 시점을 말하지 않았다: %r", period, ctx.user_text[:40])
+        period = "all"
+    bounds = _period_bounds(ctx, period)
+
     try:
-        rows = ctx.conn.execute(
-            "SELECT d.title, d.score, d.url FROM doc_fts f JOIN doc d ON d.id = f.rowid "
-            "WHERE doc_fts MATCH ? AND d.dup_of IS NULL "
-            "ORDER BY d.score DESC LIMIT ?",
-            (match, limit),
-        ).fetchall()
+        rows = _hybrid_search(ctx, query, match, limit, bounds)
     except sqlite3.Error as exc:
         logger.warning("문서 검색 실패 (query=%r): %s", query, exc)
         raise ToolError(f"문서 검색에 실패했습니다: {exc}") from exc
@@ -207,12 +393,37 @@ def _tool_search_docs(ctx: ToolContext, args: dict) -> str:
         #
         # 대체하지 않는다. **없으면 없다고 하고, 다시 검색할 재료만 준다.**
         # 추천이 목적이었다면 모델이 관심사 낱말로 한 번 더 부르면 된다.
+        # ★ **왜 없는지를 구분해서 말한다.** 기간 때문에 0건인 것과 아예 없는 것은
+        #   다음 수가 다르다 — 전자는 기간을 넓히면 되고 후자는 검색어를 바꿔야 한다.
+        #   구분하지 않으면 모델이 "그런 문서는 없습니다" 로 단정한다.
+        if bounds is not None:
+            total = _hybrid_search(ctx, query, match, limit)
+            if total:
+                return (
+                    f"'{query}' 로 {_PERIOD_LABEL[period]} 안에 발행된 문서는 없습니다 "
+                    f"(기간 제한을 빼면 {len(total)}건 있습니다). "
+                    "기간이 필요 없으면 period 를 all 로 다시 검색하세요."
+                )
         terms = _interest_terms(ctx, 6)
         hint = f" 관심사 기반 추천이 필요하면 이 낱말로 다시 검색하세요: {', '.join(terms)}." if terms else ""
-        return f"'{query}' 로 검색된 문서가 없습니다.{hint}"
+        scope = f" ({_PERIOD_LABEL[period]} 범위)" if bounds is not None else ""
+        return f"'{query}' 로 검색된 문서가 없습니다{scope}.{hint}"
 
-    items = "; ".join(f"{r[0]} (점수 {float(r[1] or 0):.1f}, {r[2]})" for r in rows)
-    return f"'{query}' 검색 결과 {len(rows)}건: {items}"
+    # ★ 요약을 함께 싣는다 (rag-plan 2단계). 전에는 제목·점수·URL 만 줘서
+    #   모델이 "링크 목록"만 받았다 — 내용을 근거로 답할 수가 없었다.
+    lines = []
+    for i, r in enumerate(rows, 1):
+        head = f"{i}. {r['title']}"
+        gist = _plain(r["summary"] or r["abstract"] or "")
+        if gist:
+            head += f"\n   {gist[:MAX_DOC_GIST_CHARS]}"
+        lines.append(f"{head}\n   {r['url']}")
+    body = "\n".join(lines)
+    scope = f", {_PERIOD_LABEL[period]}" if bounds is not None else ""
+    return (
+        f"'{query}' 검색 결과 {len(rows)}건 (검색 방식: {rows[0]['how']}{scope}):\n{body}\n"
+        "위 결과에 있는 내용만 근거로 답하고 출처 URL 을 함께 적는다."
+    )
 
 
 def _interest_terms(ctx: ToolContext, limit: int) -> list[str]:
@@ -588,6 +799,14 @@ _register(
                         "limit": {
                             "type": "integer",
                             "description": f"결과 개수, 1~{MAX_DOC_RESULTS}. 기본 3.",
+                        },
+                        "period": {
+                            "type": "string",
+                            "enum": list(DOC_PERIODS),
+                            "description": (
+                                "발행 시점 제한. 사용자가 '오늘'·'이번 주'·'최근' 처럼 "
+                                "시점을 말했을 때만 쓴다. 기본 all."
+                            ),
                         },
                     },
                     "required": ["query"],
