@@ -112,7 +112,7 @@ def _parse_single(text: str) -> ParsedTask:
         priority = m.group(1).strip().lower()
         remaining = _strip_span(remaining, m.start(), m.end())
 
-    title = re.sub(r"\s+", " ", remaining).strip()
+    title = _clean_title(remaining)
     return ParsedTask(
         title=title,
         subject=subject,
@@ -121,6 +121,19 @@ def _parse_single(text: str) -> ParsedTask:
         start_min=start_min,
         end_min=end_min,
     )
+
+
+# 토큰을 떼어내고 남은 홀 기호. `@2h` 는 `@(\S+)` 로 잡히지만 **`@09:00-11:00` 은
+# 시각 범위가 먼저 떨어져 나가서 `@` 하나만 남는다** — 그게 제목에 붙어
+# "딥워크 @" 가 됐다 (에이전트가 실제로 그렇게 썼다. 시각은 제대로 들어갔고
+# 제목만 지저분해진다). 사람이 `/plan 회의 #` 처럼 쳐도 같은 자리다.
+_DANGLING_SIGIL_RE = re.compile(r"(?<!\S)[#@!]+(?!\S)")
+
+
+def _clean_title(remaining: str) -> str:
+    """토큰을 뗀 나머지를 제목으로 정리한다. 홀로 남은 기호는 버린다."""
+    without_sigils = _DANGLING_SIGIL_RE.sub(" ", remaining)
+    return re.sub(r"\s+", " ", without_sigils).strip()
 
 
 def parse_plan_text(text: str) -> list[ParsedTask]:
