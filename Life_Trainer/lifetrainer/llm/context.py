@@ -46,7 +46,14 @@ MAX_PLANS = 12
 MAX_INTERESTS = 10
 MAX_ACTIVITY_CATEGORIES = 5
 
-_STATUS_KO = {
+# 상태를 사람 말로. **모델에게 영어 토큰을 주면 자기 식으로 번역한다** —
+# `get_plans` 가 `todo` 를 그대로 실었더니 8B 가 "진행 중"이라고 옮겨 적었다.
+# 아직 시작도 안 한 일이 진행 중이 된다.
+#
+# ★ 공개 이름인 이유: `llm/tools._tool_get_plans` 와 `agent/slash._view_text` 가
+#   같은 지도를 써야 한다. 상태 낱말을 세 곳에서 각자 옮기면 세 곳이 조용히
+#   달라진다 — 이 저장소의 반복된 실패 2번이다.
+STATUS_KO = {
     "todo": "예정",
     "doing": "진행 중",
     "done": "완료",
@@ -54,6 +61,13 @@ _STATUS_KO = {
     "deferred": "연기",
     "canceled": "취소",
 }
+
+_STATUS_KO = STATUS_KO  # 이 모듈 안의 기존 호출부 유지
+
+
+def status_ko(status: str) -> str:
+    """상태 코드를 사람 말로. 모르는 값은 그대로 돌려준다 (스키마가 늘어도 안 죽는다)."""
+    return STATUS_KO.get(status, status)
 
 
 def _hhmm(minute: int) -> str:

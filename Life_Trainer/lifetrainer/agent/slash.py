@@ -323,6 +323,7 @@ def _view_text(cfg: "Config", arg: str) -> str:
     읽고 3번을 지웠는데 다른 게 지워진다. `plan_instance.id` 를 보여 주고 싶어지지만
     (`llm/tools._tool_get_plans` 는 그쪽이다) 슬래시 경로에서는 틀린 번호다.
     """
+    from lifetrainer.llm.context import status_ko
     from lifetrainer.plan import models as plan_models
     from lifetrainer.plan.achieve import day_achievement
 
@@ -347,7 +348,7 @@ def _view_text(cfg: "Config", arg: str) -> str:
             f"~{row.end_min // 60:02d}:{row.end_min % 60:02d}"
         )
         tail = f" 달성 {ratio * 100:.0f}%" if ratio is not None else ""
-        lines.append(f"  {row.ordinal}. {span} {row.title} ({row.status}){tail}")
+        lines.append(f"  {row.ordinal}. {span} {row.title} ({status_ko(row.status)}){tail}")
     return "\n".join(lines)
 
 

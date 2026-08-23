@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import Any, Callable, TYPE_CHECKING
 
 from lifetrainer import timeutil
+from lifetrainer.llm.context import status_ko
 from lifetrainer.plan.achieve import day_achievement, plans_for_day
 from lifetrainer.report.stats import compute_daily, format_hm
 
@@ -179,7 +180,7 @@ def _tool_get_plans(ctx: ToolContext, args: dict) -> str:
     items = "; ".join(
         f"[{pi.instance_id}] {pi.plan.start_min // 60:02d}:{pi.plan.start_min % 60:02d}"
         f"~{pi.plan.end_min // 60:02d}:{pi.plan.end_min % 60:02d} {pi.plan.title}"
-        f" ({pi.status}, 달성 {pi.achievement * 100:.0f}%)"
+        f" ({status_ko(pi.status)}, 달성 {pi.achievement * 100:.0f}%)"
         for pi in instances
     )
     return f"{day} 계획 {total}건, 전체 달성률 {overall * 100:.0f}% ({achieved}건 완료): {items}"
