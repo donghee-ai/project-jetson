@@ -89,13 +89,31 @@ class LLMResponse:
     finish_reason: str | None = None
 
 
+# 문자당 토큰 계수. **반드시 실제보다 웃돌아야 한다** — 이 추정으로 입력을 자르므로,
+# 밑돌면 `max_input_tokens` 가 이름만 남고 실제 프롬프트가 훨씬 길어진다.
+# 프롬프트 처리가 330 tok/s 라 그 차이가 그대로 첫 응답 지연이 된다.
+#
+# ★ 2026-08-23 실측으로 고쳤다. 옛 값(한글 0.6 · 그 외 0.15)은 "넉넉하게 잡는다" 고
+# 적어 놓고 **실제로는 밑돌았다** — 문서 요약·초록 60건에서 실제/추정이 최악 3.23배였다.
+#
+#   계수(한글, 그외)   최악 실제/추정   평균
+#   (0.60, 0.15)          3.23         1.98   ← 옛 값. 3배 넘게 밑돈다
+#   (0.90, 0.15)          3.23         1.77   ← 한글만 올려서는 안 고쳐진다
+#   (1.00, 0.55)          0.88         0.69   ← 지금 값. 60건 전부 웃돈다
+#
+# **영문 쪽이 더 심했다.** 실측 영문은 문자당 0.42 토큰인데 0.15 로 잡고 있었다.
+# 한글만 손보라는 진단으로는 안 고쳐지는 이유다.
+_TOK_PER_HANGUL = 1.0
+_TOK_PER_OTHER = 0.55
+
+
 def estimate_tokens(text: str) -> float:
-    """대략적인 토큰 수 추정. 한국어는 문자당 0.6, 그 외는 0.15 로 넉넉하게 잡는다."""
+    """대략적인 토큰 수 추정. **항상 실제보다 크게** 잡는다 (`_TOK_PER_*` 주석 참조)."""
     if not text:
         return 0.0
     hangul = len(_HANGUL_RE.findall(text))
     other = len(text) - hangul
-    return hangul * 0.6 + other * 0.15
+    return hangul * _TOK_PER_HANGUL + other * _TOK_PER_OTHER
 
 
 def _truncate_text(text: str, max_tokens: float) -> str:
