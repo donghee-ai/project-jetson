@@ -380,9 +380,20 @@ def _resolve_config_path(path: str | Path | None, root: Path) -> Path | None:
     return default if default.exists() else None
 
 
+# 이 파일이 `Config` 로 안 옮기고, **그 모듈이 직접 읽는** 섹션들.
+#
+# `[agent]` 는 `lifetrainer/agent/config.py` 가 읽는다. 여기 dataclass 에 안 넣은
+# 이유는 그 파일 주석에 있다 — `Config` 는 테스트 수십 개가 직접 생성한다.
+# 다만 **모른다고 경고하면 안 된다**: 설정은 멀쩡한데 서비스 로그마다 경고가
+# 찍히면, 진짜 오타를 잡으라고 만든 이 경고가 무시당하게 된다.
+_SECTIONS_OWNED_ELSEWHERE = frozenset({"agent"})
+
+
 def _merge_toml(raw: dict[str, dict[str, Any]], loaded: dict[str, Any]) -> None:
     """TOML 에서 읽은 값을 raw 에 in-place 로 덮어쓴다. 알려진 section/key 만 반영한다."""
     for section, values in loaded.items():
+        if section in _SECTIONS_OWNED_ELSEWHERE:
+            continue  # 다른 모듈이 직접 읽는다 (아래 상수 주석)
         if section not in raw:
             logger.warning("알 수 없는 설정 섹션 무시: [%s]", section)
             continue

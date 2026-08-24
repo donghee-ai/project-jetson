@@ -49,6 +49,14 @@ class AgentSettings:
     enabled: bool = True
     read_roots: tuple[str, ...] = DEFAULT_READ_ROOTS
     write_roots: tuple[str, ...] = DEFAULT_WRITE_ROOTS
+    # ★ Slack 자연어 DM 을 에이전트에게 넘길지. **기본은 끈다.**
+    #
+    #   켜면 자연어 한 턴이 2~9초 → 약 35초가 된다 (슬래시 명령은 안 느려진다 —
+    #   Slack 에서 다른 이벤트다). 설정 파일이 사라지거나 새 기기에 올릴 때
+    #   **느린 쪽으로 조용히 넘어가면 안 되므로** 기본값이 False 다.
+    #   되돌리기는 이 값 하나를 false 로 바꾸고 서비스 재기동.
+    slack: bool = False
+    slack_timeout_sec: float = 240.0
     # OpenClaw 쪽 이름들. 문서와 스크립트가 같은 값을 봐야 해서 여기 둔다.
     agent_id: str = "lifetrainer"
     workspace: str = "data/agent/workspace"
@@ -63,6 +71,8 @@ def load_settings(cfg: Any) -> AgentSettings:
         write_roots=tuple(raw.get("write_roots") or DEFAULT_WRITE_ROOTS),
         agent_id=str(raw.get("agent_id") or "lifetrainer"),
         workspace=str(raw.get("workspace") or "data/agent/workspace"),
+        slack=bool(raw.get("slack", False)),
+        slack_timeout_sec=float(raw.get("slack_timeout_sec") or 240.0),
     )
 
 

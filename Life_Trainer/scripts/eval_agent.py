@@ -117,6 +117,17 @@ CASES: list[Case] = [
         expect_tool=("slash",),
         require_slash=("/done",),
     ),
+    # ★ 번호가 아니라 **이름**으로 시켰을 때. 실측 사고: "오늘 목록 보여주고
+    #   스트레칭 완료 처리해줘" 에 `/view` 로 목록만 내고 **"완료 처리해 드릴까요?"**
+    #   라고 되물었다. `plan-done`(번호)은 통과하는데 이건 안 된다 —
+    #   §4-6 의 "하겠다고 말하고 끝낸다" 가 **되묻기** 형태로 나온 것이다.
+    Case(
+        "plan-done-byname",
+        "오늘 목록 보여주고 '집중근무' 계획을 완료 처리해줘",
+        expect_tool=("slash",),
+        require_slash=("/done",),
+    ),
+
     # ② 실측은 실측 툴로. 계획 툴로 가면 안 된다 (①의 반대 방향).
     Case(
         "activity",

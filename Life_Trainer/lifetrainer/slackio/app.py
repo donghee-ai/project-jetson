@@ -238,7 +238,20 @@ def _spawn_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
 
 
 def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
-    """자연어 한 턴을 처리해 답을 올린다. 어떤 예외에도 반드시 무언가를 답한다."""
+    """자연어 한 턴을 처리해 답을 올린다. 어떤 예외에도 반드시 무언가를 답한다.
+
+    ## 경로가 둘이다 (2026-08-24)
+
+        [agent] slack = true   OpenClaw 에이전트 — **모델이** 툴을 고른다   약 35초
+        그 외                  llm/converse.py — 규칙이 툴을 고른다       2~9초
+
+    ★ **슬래시 명령은 어느 쪽도 아니다.** Slack 에서 `/lt` 는 이 핸들러가 아니라
+    `_register_commands` 로 간다 — 밀리초 그대로다. 여기 바뀌는 것은 **자연어 DM** 뿐.
+
+    ★ 에이전트가 실패하면 `converse()` 로 내려온다. **이건 라우팅 규칙이 아니라
+    강등이다** — 게이트웨이가 죽었을 때 사용자가 에러 대신 답을 받게 하려는 것이고,
+    로그에 왜 내려왔는지 남는다.
+    """
     from lifetrainer.llm.client import LLMClient
     from lifetrainer.llm.converse import converse
 
@@ -251,6 +264,14 @@ def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
 
     _react(client, channel, event, add=True)
     stream = _Streamer(client, channel, thread_ts)
+
+    agent_reply = _try_agent(cfg, text, channel=channel, stream=stream)
+    if agent_reply is not None:
+        _react(client, channel, event, add=False)
+        if not stream.finish(agent_reply):
+            _safe_say(say, agent_reply, thread_ts=thread_ts)
+        return
+
     try:
         conn = db.open_db(cfg)  # sqlite3 커넥션은 스레드 간 공유가 안 된다
         try:
@@ -288,6 +309,98 @@ def _dispatch_chat(cfg: Config, event: dict, client: Any, say: Any) -> None:
     #   뿐이고 사실은 `result.text` 다 (재생성·반복 감지가 본문을 바꿀 수 있다).
     if not stream.finish(reply):
         _safe_say(say, reply, thread_ts=thread_ts)
+
+
+def _try_agent(cfg: Config, text: str, *, channel: str, stream: "_Streamer") -> str | None:
+    """설정이 켜져 있으면 에이전트에게 넘긴다. 넘기지 않았거나 실패하면 None.
+
+    None 을 돌려주면 호출부가 `converse()` 로 간다 — 사용자는 어느 쪽이든 답을 받는다.
+    """
+    from lifetrainer.agent import delegate
+    from lifetrainer.agent.config import load_settings
+
+    try:
+        settings = load_settings(cfg)
+    except Exception:  # noqa: BLE001 - 설정 하나 때문에 대화가 죽으면 안 된다
+        logger.exception("에이전트 설정을 읽지 못했습니다 — 대화 경로로 갑니다")
+        return None
+
+    if not (settings.enabled and settings.slack):
+        return None
+    if not delegate.available():
+        logger.warning("openclaw CLI 가 없어 대화 경로로 갑니다 (channel=%s)", channel)
+        return None
+
+    ticker = _Ticker(stream)
+    ticker.start()
+    try:
+        reply = delegate.ask(
+            cfg, text,
+            channel=channel,
+            agent_id=settings.agent_id,
+            timeout_sec=settings.slack_timeout_sec,
+        )
+    except delegate.DelegateError as exc:
+        logger.warning("에이전트 위임 실패(%s) — 대화 경로로 갑니다 (channel=%s)", exc, channel)
+        return None
+    except Exception:  # noqa: BLE001
+        logger.exception("에이전트 위임 중 예외 — 대화 경로로 갑니다 (channel=%s)", channel)
+        return None
+    finally:
+        ticker.stop()
+
+    if not reply.ok:
+        # 타임아웃·빈 답·파싱 실패. **여기서는 안 내려간다** — 이미 수십 초를 썼고,
+        # 또 한 바퀴를 돌리면 사용자가 1분 넘게 기다린다. 무슨 일이 있었는지 말한다.
+        return reply.text
+    return reply.text
+
+
+class _Ticker:
+    """에이전트가 도는 동안 "몇 초째"를 보여준다.
+
+    ## 왜 필요한가
+
+    에이전트 한 턴이 실측 24~87초다. `_Streamer` 는 생성 중인 **본문**을 고쳐 쓰지만,
+    에이전트는 CLI 가 끝날 때 한 번에 답을 준다 — 중간 글이 없다. 그래서 화면이
+    통째로 비어 있고, 사용자는 봇이 죽은 줄 안다.
+
+    총 시간은 안 줄지만 **살아 있다는 것이 보인다.** `_Streamer` 와 같은 판단이다.
+
+    ## 한도
+
+    `chat.update` 는 Tier 3(분당 약 50회)다. 8초 간격이면 분당 7.5회라 넉넉하다.
+    """
+
+    INTERVAL_SEC = 8.0
+
+    def __init__(self, stream: "_Streamer") -> None:
+        self._stream = stream
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+
+    def start(self) -> None:
+        self._thread = threading.Thread(target=self._run, daemon=True)
+        self._thread.start()
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+
+    def _run(self) -> None:
+        started = time.monotonic()
+        # 첫 줄은 즉시. 기다리는 이유를 같이 말한다 — 느린 것이 고장으로 안 보이게.
+        self._write("🤔 에이전트가 처리 중입니다… (보통 30초 안팎)")
+        while not self._stop.wait(self.INTERVAL_SEC):
+            elapsed = int(time.monotonic() - started)
+            self._write(f"🤔 에이전트가 처리 중입니다… {elapsed}초")
+
+    def _write(self, text: str) -> None:
+        try:
+            self._stream.on_progress(text)
+        except Exception:  # noqa: BLE001 - 진행 표시가 대화를 죽이면 안 된다
+            logger.debug("진행 표시 갱신 실패", exc_info=True)
 
 
 class _Streamer:
