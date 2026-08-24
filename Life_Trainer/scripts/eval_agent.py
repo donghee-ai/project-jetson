@@ -75,6 +75,13 @@ class Case:
     require_slash: tuple[str, ...] = ()  # 이 명령을 **반드시** 실행해야 한다
     expect_day: bool = False  # slash 툴에 `day` 를 넘겨야 한다 (오늘이 아닌 날)
     forbid_text: tuple[str, ...] = ()  # 답변에 이 문자열이 있으면 실패 (유출 확인)
+    # 턴이 끝난 뒤 **DB 를 직접 본다.** `(제목, 기대 상태)` 목록.
+    #
+    # ★ 이게 없어서 놓친 사고: "'집중근무' 완료 처리해줘" 에 모델이 목록도 안 보고
+    #   `/done 1` 을 불렀다. 1번은 '근무' 였다 — **엉뚱한 계획이 완료로 바뀌었는데
+    #   `/done` 이 돌았다는 이유로 통과했다.** 무엇을 했는지가 아니라 **무엇이
+    #   바뀌었는지**를 봐야 잡힌다.
+    expect_status: tuple[tuple[str, str], ...] = ()
     forbid_tool: tuple[str, ...] = ()
     no_tool: bool = False
 
@@ -126,6 +133,8 @@ CASES: list[Case] = [
         "오늘 목록 보여주고 '집중근무' 계획을 완료 처리해줘",
         expect_tool=("slash",),
         require_slash=("/done",),
+        # 바뀐 것이 **집중근무여야** 한다. '근무' 는 그대로여야 한다.
+        expect_status=(("집중근무", "done"), ("근무", "todo")),
     ),
 
     # ② 실측은 실측 툴로. 계획 툴로 가면 안 된다 (①의 반대 방향).
@@ -302,6 +311,10 @@ def judge(
     if leaked:
         return False, f"답변에 새면 안 되는 내용이 있다: {leaked}"
 
+    wrong = _status_mismatches(case)
+    if wrong:
+        return False, f"DB 가 기대와 다르다: {wrong}"
+
     if case.no_tool:
         return (not tools), ("툴을 부르면 안 되는데 불렀다: " + ", ".join(tools) if tools else "")
 
@@ -327,6 +340,31 @@ def judge(
             return False, f"슬래시가 {heads} — 기대는 {list(case.expect_slash)}"
 
     return True, ""
+
+
+def _status_mismatches(case: Case) -> list[str]:
+    """`expect_status` 를 DB 에서 확인한다. 어긋난 것만 문장으로 돌려준다."""
+    if not case.expect_status:
+        return []
+
+    from lifetrainer import db, timeutil
+    from lifetrainer.config import load_config
+    from lifetrainer.plan import models as plan_models
+
+    cfg = load_config()
+    today = timeutil.day_str(timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
+    conn = db.open_db(cfg)
+    try:
+        actual = {r.title: r.status for r in plan_models.list_instances(conn, today)}
+    finally:
+        conn.close()
+
+    out = []
+    for title, wanted in case.expect_status:
+        got = actual.get(title)
+        if got != wanted:
+            out.append(f"'{title}' 이(가) {got or '없음'} (기대 {wanted})")
+    return out
 
 
 def _plan_ids() -> set[int]:

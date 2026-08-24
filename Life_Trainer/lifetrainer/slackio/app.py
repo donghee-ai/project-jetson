@@ -978,6 +978,55 @@ def _dispatch_view(cfg: Config, command: dict, respond) -> None:
         _safe_respond(respond, "플래너를 불러오는 중 오류가 발생했습니다. 서버 로그를 확인하세요.")
 
 
+# ── 계획 하나 고르기 (번호 또는 제목) ──────────────────────────────────
+
+
+class _PickError(Exception):
+    """고를 수 없다. 메시지가 그대로 사용자(또는 모델)에게 간다."""
+
+
+def _pick_instance(text: str, rows: list) -> Any:
+    """`/done 3` 의 "3" 또는 `/done 집중근무` 의 "집중근무" 로 인스턴스 하나를 고른다.
+
+    ## 왜 제목도 받나 — 실측 사고
+
+    "오늘 목록 보여주고 **'집중근무'** 완료 처리해줘" 에 8B 가 목록도 안 보고
+    `/done 1` 을 불렀다. 1번은 '근무' 였다 — **엉뚱한 계획이 완료로 바뀌었고
+    에러는 안 났다.** 모델이 번호를 **추측**한 것이다.
+
+    번호밖에 못 받으면 모델은 이름을 번호로 옮겨야 하고, 그 변환이 곧 추측이다.
+    이름을 그대로 받으면 변환할 일이 없다 — **모델에게 시키지 않는 것이 답이다**
+    (이 저장소가 날짜에서 이미 배운 것과 같다: `catalog.py` 의 `day` 주석).
+
+    ## 애매하면 거절한다
+
+    같은 제목이 둘 이상이면 **아무것도 안 바꾸고** 후보를 보여준다. 하나를 골라
+    바꾸면 그게 또 추측이다. 이때의 되묻기는 정당하다 — 프롬프트도 그렇게 적혀 있다.
+    """
+    needle = text.strip()
+    if not needle:
+        raise _PickError("무엇을 바꿀지 지정하세요 (번호 또는 제목).")
+
+    head = needle.split()[0]
+    if head.isdigit():
+        ordinal = int(head)
+        for row in rows:
+            if row.ordinal == ordinal:
+                return row
+        raise _PickError(f"{ordinal}번 계획을 목록에서 찾을 수 없습니다. /view 로 번호를 확인하세요.")
+
+    lowered = needle.casefold()
+    exact = [r for r in rows if r.title.casefold() == lowered]
+    partial = exact or [r for r in rows if lowered in r.title.casefold()]
+    if not partial:
+        titles = ", ".join(f"{r.ordinal}. {r.title}" for r in rows) or "(없음)"
+        raise _PickError(f"'{needle}' 에 해당하는 계획이 없습니다. 목록: {titles}")
+    if len(partial) > 1:
+        candidates = ", ".join(f"{r.ordinal}. {r.title}" for r in partial)
+        raise _PickError(f"'{needle}' 에 해당하는 계획이 여러 개입니다. 번호로 지정하세요: {candidates}")
+    return partial[0]
+
+
 # ── /done · /doing · /defer 처리 ────────────────────────────────────
 
 def _dispatch_set_status(
@@ -987,29 +1036,20 @@ def _dispatch_set_status(
     `_dispatch_plan` 과 같은 이유로 있다 — 에이전트는 다른 날을 다룬다."""
     try:
         if not text:
-            respond(f"사용법: /{command_name} <번호>  예) /{command_name} 3")
-            return
-        try:
-            ordinal = int(text.split()[0])
-        except ValueError:
-            respond(f"번호를 해석할 수 없습니다: {text!r}")
+            respond(f"사용법: /{command_name} <번호|제목>  예) /{command_name} 3  ·  /{command_name} 집중근무")
             return
 
         status = _STATUS_BY_COMMAND[command_name]
         conn = db.open_db(cfg)
         try:
             day = day or _today(cfg)
-            target = next(
-                (
-                    row
-                    for row in plan_models.list_instances(conn, day, include_archived=False, include_done=True)
-                    if row.ordinal == ordinal
-                ),
-                None,
-            )
-            if target is None:
-                respond(f"{ordinal}번 계획을 오늘 목록에서 찾을 수 없습니다. /view 로 번호를 확인하세요.")
+            rows = plan_models.list_instances(conn, day, include_archived=False, include_done=True)
+            try:
+                target = _pick_instance(text, rows)
+            except _PickError as exc:
+                respond(str(exc))
                 return
+            ordinal = target.ordinal
             try:
                 plan_models.set_status(conn, cfg, target.id, status, actor=actor or "user")
             except ValueError as exc:
