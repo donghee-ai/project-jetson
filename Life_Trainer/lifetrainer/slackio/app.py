@@ -991,7 +991,7 @@ class _PickError(Exception):
     """고를 수 없다. 메시지가 그대로 사용자(또는 모델)에게 간다."""
 
 
-def _pick_instance(text: str, rows: list) -> Any:
+def _pick_instance(text: str, rows: list) -> list:
     """`/done 3` 의 "3" 또는 `/done 집중근무` 의 "집중근무" 로 인스턴스 하나를 고른다.
 
     ## 왜 제목도 받나 — 실측 사고
@@ -1013,13 +1013,31 @@ def _pick_instance(text: str, rows: list) -> Any:
     if not needle:
         raise _PickError("무엇을 바꿀지 지정하세요 (번호 또는 제목).")
 
-    head = needle.split()[0]
-    if head.isdigit():
-        ordinal = int(head)
-        for row in rows:
-            if row.ordinal == ordinal:
-                return row
-        raise _PickError(f"{ordinal}번 계획을 목록에서 찾을 수 없습니다. /view 로 번호를 확인하세요.")
+    # ★ **복수 번호를 조용히 첫 개만 처리하지 않는다.**
+    #   실측 사고: "2번 3번 완료처리해줘" 에 모델이 `/done 2 3` 을 불렀고, 예전
+    #   코드는 `text.split()[0]` 으로 **2번만** 바꾸고 성공했다고 답했다.
+    #   사용자는 둘 다 됐다고 믿었다. 조용히 절반만 하는 것이 최악이다.
+    #   `/del` 이 이미 `parse_index_list` 로 복수를 받으므로 같은 파서를 쓴다 —
+    #   명령마다 다른 파서를 쓰면 두 명령이 조용히 달라진다.
+    if _looks_like_indices(needle):
+        try:
+            ordinals = commands_mod.parse_index_list(needle)
+        except ValueError as exc:
+            raise _PickError(str(exc)) from exc
+        by_ordinal = {row.ordinal: row for row in rows}
+        picked = [by_ordinal[n] for n in ordinals if n in by_ordinal]
+        missing = [n for n in ordinals if n not in by_ordinal]
+        if not picked:
+            raise _PickError(
+                f"{', '.join(str(n) for n in missing)}번 계획을 목록에서 찾을 수 없습니다. "
+                "/view 로 번호를 확인하세요."
+            )
+        if missing:
+            raise _PickError(
+                f"{', '.join(str(n) for n in missing)}번이 목록에 없습니다. "
+                "있는 것만 바꾸지 않고 멈췄습니다 — /view 로 확인하고 다시 지정하세요."
+            )
+        return picked
 
     lowered = needle.casefold()
     exact = [r for r in rows if r.title.casefold() == lowered]
@@ -1030,7 +1048,15 @@ def _pick_instance(text: str, rows: list) -> Any:
     if len(partial) > 1:
         candidates = ", ".join(f"{r.ordinal}. {r.title}" for r in partial)
         raise _PickError(f"'{needle}' 에 해당하는 계획이 여러 개입니다. 번호로 지정하세요: {candidates}")
-    return partial[0]
+    return [partial[0]]
+
+
+_INDEX_ONLY_RE = re.compile(r"^\d+([,\s]+\d+)*$")
+
+
+def _looks_like_indices(text: str) -> bool:
+    """'2' · '2 3' · '2,3' 처럼 **번호만** 있는가. 제목에 숫자가 섞인 것과 구분한다."""
+    return bool(_INDEX_ONLY_RE.match(text.strip()))
 
 
 # ── /done · /doing · /defer 처리 ────────────────────────────────────
@@ -1051,20 +1077,21 @@ def _dispatch_set_status(
             day = day or _today(cfg)
             rows = plan_models.list_instances(conn, day, include_archived=False, include_done=True)
             try:
-                target = _pick_instance(text, rows)
+                targets = _pick_instance(text, rows)
             except _PickError as exc:
                 respond(str(exc))
                 return
-            ordinal = target.ordinal
             try:
-                plan_models.set_status(conn, cfg, target.id, status, actor=actor or "user")
+                for target in targets:
+                    plan_models.set_status(conn, cfg, target.id, status, actor=actor or "user")
             except ValueError as exc:
                 respond(str(exc))
                 return
         finally:
             conn.close()
 
-        respond(f"{_STATUS_EMOJI[status]} {ordinal}. {target.title} — {_STATUS_VERB[status]}")
+        changed = ", ".join(f"{t.ordinal}. {t.title}" for t in targets)
+        respond(f"{_STATUS_EMOJI[status]} {changed} — {_STATUS_VERB[status]}")
     except Exception:  # noqa: BLE001
         logger.exception("/%s 처리 중 오류", command_name)
         _safe_respond(respond, "처리 중 오류가 발생했습니다. 서버 로그를 확인하세요.")

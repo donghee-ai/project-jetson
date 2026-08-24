@@ -34,11 +34,13 @@ from lifetrainer.plan.achieve import day_achievement, plans_for_day
 from lifetrainer.plan.models import (
     Plan,
     PlanInstance,
+    archive_instance,
     create_plan,
     delete_plan,
     get_plan,
     parse_time_range,
     set_check,
+    set_status,
     skip_plan,
     update_plan,
     sync_instances_from_plan,
@@ -907,7 +909,15 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             if get_plan(conn, plan_id) is None:
-                abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
+                # 템플릿이 없으면 인스턴스 하나만 지운다 (그날 것만).
+                row = conn.execute(
+                    "SELECT id, day FROM plan_instance WHERE id = ? AND archived_at IS NULL",
+                    (plan_id,),
+                ).fetchone()
+                if row is None:
+                    abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
+                archive_instance(conn, plan_id)
+                return jsonify({"ok": True, "id": plan_id, "deleted": True, "archived": 1})
 
             body = request.get_json(silent=True) or {}
             try:
@@ -951,6 +961,24 @@ def create_app(cfg: Any) -> Flask:
             conn.close()
         return jsonify({"ok": True, "id": plan_id, "deleted": True, "archived": archived})
 
+
+    # ── 템플릿 없는 인스턴스 ───────────────────────────────────────────
+    #
+    # ★ 웹 API 는 `plan`(반복 템플릿) id 를 기준으로 만들어졌다. 그런데
+    #   **슬래시·에이전트가 만드는 계획은 템플릿이 없다** (`plan_id IS NULL`) —
+    #   그 계획의 id 는 `plan_instance.id` 다.
+    #
+    #   그래서 화면의 체크박스를 누르면 `계획을 찾을 수 없습니다: id=133` 이 났다.
+    #   손으로 웹에서 만든 계획만 쓰던 동안에는 안 드러났고, 에이전트가 계획을
+    #   만들기 시작하자 나왔다 (2026-08-24 사용자 보고).
+    #
+    #   id 하나가 두 테이블을 가리킬 수 있으므로 **양쪽을 다 본다.**
+    def _instance_on_day(conn, instance_id: int, day: str):
+        return conn.execute(
+            "SELECT id FROM plan_instance WHERE id = ? AND day = ? AND archived_at IS NULL",
+            (instance_id, day),
+        ).fetchone()
+
     @app.post("/api/plan/<int:plan_id>/check")
     def api_plan_check(plan_id: int) -> Response:
         body = request.get_json(silent=True) or {}
@@ -961,9 +989,14 @@ def create_app(cfg: Any) -> Flask:
 
         conn = db.open_db(cfg)
         try:
-            if get_plan(conn, plan_id) is None:
+            if get_plan(conn, plan_id) is not None:
+                set_check(conn, plan_id, day, checked)
+            elif _instance_on_day(conn, plan_id, day) is not None:
+                # 템플릿 없는 인스턴스는 `plan_check` 에 쓸 자리가 없다(그 표의 키가
+                # plan_id 다). 상태를 직접 바꾼다 — `set_check` 가 하는 일의 후반부다.
+                set_status(conn, None, plan_id, "done" if checked else "todo", actor="web")
+            else:
                 abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
-            set_check(conn, plan_id, day, checked)
         finally:
             conn.close()
         return jsonify({"ok": True, "id": plan_id, "day": day, "checked": checked})
@@ -977,9 +1010,13 @@ def create_app(cfg: Any) -> Flask:
 
         conn = db.open_db(cfg)
         try:
-            if get_plan(conn, plan_id) is None:
+            if get_plan(conn, plan_id) is not None:
+                skip_plan(conn, plan_id, day)
+            elif _instance_on_day(conn, plan_id, day) is not None:
+                # 템플릿이 없으면 "그날만 건너뛴다"가 곧 취소다 (다시 뜰 원본이 없다).
+                set_status(conn, None, plan_id, "canceled", actor="web")
+            else:
                 abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
-            skip_plan(conn, plan_id, day)
         finally:
             conn.close()
         return jsonify({"ok": True, "id": plan_id, "day": day, "skipped": True})
