@@ -161,8 +161,8 @@ CASES: list[Case] = [
         require_slash=("/done",),
         # 어제 것이 바뀌어야 하고, **오늘의 같은 이름은 그대로**여야 한다.
         status_day="어제",
-        expect_status=(("어제표식", "done"),),
-        reset_status=(("어제", "어제표식", "todo"), ("오늘", "신청 작업", "todo")),
+        expect_status=(("미팅", "done"),),
+        reset_status=(("어제", "미팅", "todo"), ("오늘", "신청 작업", "todo")),
     ),
 
     # ② 실측은 실측 툴로. 계획 툴로 가면 안 된다 (①의 반대 방향).

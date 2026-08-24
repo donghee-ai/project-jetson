@@ -908,16 +908,13 @@ def create_app(cfg: Any) -> Flask:
     def api_plan_update(plan_id: int) -> Response:
         conn = db.open_db(cfg)
         try:
+            # ★ 템플릿 없는 인스턴스는 **수정 대상이 아니다.** 반복 규칙이 없으니
+            #   고칠 것이 없다 — 웹에서 지우고 다시 만드는 것이 맞다.
+            #   (한때 여기에 '삭제' 코드가 잘못 들어가 있었다: 같은 문자열이
+            #    update·delete 두 곳에 있어서 패치가 첫 번째를 물었다.
+            #    **수정하려 하면 지워지는** 상태였다.)
             if get_plan(conn, plan_id) is None:
-                # 템플릿이 없으면 인스턴스 하나만 지운다 (그날 것만).
-                row = conn.execute(
-                    "SELECT id, day FROM plan_instance WHERE id = ? AND archived_at IS NULL",
-                    (plan_id,),
-                ).fetchone()
-                if row is None:
-                    abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
-                archive_instance(conn, plan_id)
-                return jsonify({"ok": True, "id": plan_id, "deleted": True, "archived": 1})
+                abort(404, description=f"수정할 수 있는 반복 계획이 아닙니다: id={plan_id}")
 
             body = request.get_json(silent=True) or {}
             try:
@@ -950,7 +947,15 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             if get_plan(conn, plan_id) is None:
-                abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
+                # 템플릿 없는 인스턴스(슬래시·에이전트가 만든 것)는 그 하나만 지운다.
+                row = conn.execute(
+                    "SELECT id FROM plan_instance WHERE id = ? AND archived_at IS NULL",
+                    (plan_id,),
+                ).fetchone()
+                if row is None:
+                    abort(404, description=f"계획을 찾을 수 없습니다: id={plan_id}")
+                archive_instance(conn, plan_id)
+                return jsonify({"ok": True, "id": plan_id, "deleted": True, "archived": 1})
             # 오늘부터의 인스턴스를 함께 보관 처리한다 — 안 하면 지운 계획이
             # 오늘 목록에 그대로 남는다. 과거는 남긴다(주간 통계 보존).
             today = timeutil.day_str(
