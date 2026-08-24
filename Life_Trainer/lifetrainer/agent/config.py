@@ -57,6 +57,9 @@ class AgentSettings:
     #   되돌리기는 이 값 하나를 false 로 바꾸고 서비스 재기동.
     slack: bool = False
     slack_timeout_sec: float = 240.0
+    # `openclaw` 실행 파일. 비우면 `delegate.resolve_bin` 이 찾는다.
+    # nvm 을 갈아엎었는데 자동 탐색이 옛 버전을 물면 여기서 못 박는다.
+    openclaw_bin: str = ""
     # OpenClaw 쪽 이름들. 문서와 스크립트가 같은 값을 봐야 해서 여기 둔다.
     agent_id: str = "lifetrainer"
     workspace: str = "data/agent/workspace"
@@ -73,6 +76,7 @@ def load_settings(cfg: Any) -> AgentSettings:
         workspace=str(raw.get("workspace") or "data/agent/workspace"),
         slack=bool(raw.get("slack", False)),
         slack_timeout_sec=float(raw.get("slack_timeout_sec") or 240.0),
+        openclaw_bin=str(raw.get("openclaw_bin") or ""),
     )
 
 

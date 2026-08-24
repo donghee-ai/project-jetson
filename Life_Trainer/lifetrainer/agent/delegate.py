@@ -48,9 +48,19 @@ logger = logging.getLogger(__name__)
 # 무한정 기다리게 두지 않는다 — Slack 에서 답이 영영 안 오는 것이 최악이다.
 DEFAULT_TIMEOUT_SEC = 240.0
 
-# 시스템 Node 를 먼저 찾게 한다. nvm 셸에서 서비스가 뜨면 게이트웨이와 다른
-# 런타임을 잡는다 (`openclaw-agent.md §4-10`).
-_PATH_PREFIX = "/usr/local/bin"
+# ★ **`openclaw` 실행 파일을 어디서 찾는가** — 여기서 한 번 크게 틀렸다.
+#
+# 처음에는 PATH 앞에 `/usr/local/bin` 만 붙이고 `shutil.which` 로 찾았다.
+# 내 터미널에서는 nvm PATH 가 잡혀 있어 통과했는데, **systemd 사용자 서비스의
+# PATH 에는 nvm 경로가 없다.** 그래서 실사용에서 `available()` 이 False 가 되어
+# 위임이 통째로 강등됐고 — 답이 빠르고 그럴듯해서 **아무도 눈치채지 못했다.**
+# (로그에는 WARNING 이 찍혔지만 아무도 안 봤다.)
+#
+# `node` 는 `/usr/local/bin` 에 있는데(§4-10 에서 그렇게 옮겼다) **`openclaw` CLI
+# 래퍼는 nvm 에만 있다.** 둘을 같이 옮긴 적이 없었다.
+#
+# 그래서 순서대로 뒤진다. 설정으로 못 박을 수도 있다.
+_SEARCH_PREFIXES = ("/usr/local/bin", "/usr/bin")
 
 # 답변에서 지우는 것 — 프레임워크가 붙이는 첨부 지시자. 채팅에 그대로 나가면
 # 사용자가 읽을 수 없는 줄이 된다.
@@ -72,9 +82,36 @@ class AgentReply:
     session_key: str = ""
 
 
-def available() -> bool:
+def resolve_bin(explicit: str = "") -> str:
+    """`openclaw` 실행 파일의 절대 경로. 못 찾으면 빈 문자열.
+
+    ★ **PATH 에 기대지 않는다.** systemd 사용자 서비스의 PATH 에는 nvm 경로가
+    없어서, 개발 셸에서 되던 것이 서비스에서 조용히 안 됐다 (위 상수 주석).
+    찾은 경로를 그대로 `subprocess` 에 넘긴다.
+    """
+    if explicit:
+        return explicit if os.access(explicit, os.X_OK) else ""
+
+    for prefix in _SEARCH_PREFIXES:
+        candidate = os.path.join(prefix, "openclaw")
+        if os.access(candidate, os.X_OK):
+            return candidate
+
+    found = shutil.which("openclaw")
+    if found:
+        return found
+
+    # nvm 설치본. 여러 버전이 있으면 최신을 고른다 — 게이트웨이가 쓰는 것과
+    # 다를 수 있지만, 없는 것보다 낫고 `lt doctor` 가 무엇을 쓰는지 보여준다.
+    import glob
+
+    nvm = sorted(glob.glob(os.path.expanduser("~/.nvm/versions/node/*/bin/openclaw")))
+    return nvm[-1] if nvm else ""
+
+
+def available(explicit: str = "") -> bool:
     """`openclaw` CLI 가 있나. 없으면 위임을 아예 시도하지 않는다."""
-    return shutil.which("openclaw", path=f"{_PATH_PREFIX}:{os.environ.get('PATH', '')}") is not None
+    return bool(resolve_bin(explicit))
 
 
 def session_key(agent_id: str, channel: str) -> str:
@@ -90,6 +127,7 @@ def ask(
     channel: str,
     agent_id: str = "lifetrainer",
     timeout_sec: float = DEFAULT_TIMEOUT_SEC,
+    openclaw_bin: str = "",
 ) -> AgentReply:
     """자연어 한 턴을 에이전트에게 넘기고 답을 받는다.
 
@@ -102,18 +140,20 @@ def ask(
 
     if not text.strip():
         raise DelegateError("빈 질문입니다.")
-    if not available():
+    binary = resolve_bin(openclaw_bin)
+    if not binary:
         raise DelegateError("openclaw CLI 를 찾지 못했습니다.")
 
     key = session_key(agent_id, channel)
     command = [
-        "openclaw", "agent",
+        binary, "agent",
         "--agent", agent_id,
         "--session-key", key,
         "--message", text,
         "--json",
     ]
-    env = {**os.environ, "PATH": f"{_PATH_PREFIX}:{os.environ.get('PATH', '')}"}
+    # 자식이 부를 `node` 도 시스템 것을 먼저 보게 한다 (§4-10).
+    env = {**os.environ, "PATH": ":".join((*_SEARCH_PREFIXES, os.environ.get("PATH", "")))}
 
     started = time.monotonic()
     with interactive_turn(cfg):

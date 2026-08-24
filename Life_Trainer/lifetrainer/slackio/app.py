@@ -327,8 +327,13 @@ def _try_agent(cfg: Config, text: str, *, channel: str, stream: "_Streamer") -> 
 
     if not (settings.enabled and settings.slack):
         return None
-    if not delegate.available():
-        logger.warning("openclaw CLI 가 없어 대화 경로로 갑니다 (channel=%s)", channel)
+    if not delegate.available(settings.openclaw_bin):
+        # ★ 이 경고가 실제로 찍혔는데 아무도 안 봤다. 답이 빠르고 그럴듯해서
+        #   강등된 줄 몰랐다. `lt doctor` 가 같은 것을 본다 — 로그만으로는 부족하다.
+        logger.warning(
+            "openclaw CLI 를 찾지 못해 대화 경로로 갑니다 (channel=%s) — `lt doctor` 로 확인하세요",
+            channel,
+        )
         return None
 
     ticker = _Ticker(stream)
@@ -339,6 +344,7 @@ def _try_agent(cfg: Config, text: str, *, channel: str, stream: "_Streamer") -> 
             channel=channel,
             agent_id=settings.agent_id,
             timeout_sec=settings.slack_timeout_sec,
+            openclaw_bin=settings.openclaw_bin,
         )
     except delegate.DelegateError as exc:
         logger.warning("에이전트 위임 실패(%s) — 대화 경로로 갑니다 (channel=%s)", exc, channel)

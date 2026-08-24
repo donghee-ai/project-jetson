@@ -624,7 +624,34 @@ def _check_agent(cfg: Config, ok, warn) -> None:  # noqa: ANN001 - cmd_doctor �
     else:
         ok("에이전트 프롬프트", f"{target.name} 최신")
 
-    # ④ OpenClaw 쪽 등록. 설정 파일만 읽는다 — 게이트웨이를 부르지 않는다.
+    # ④ Slack 위임이 실제로 닿는가.
+    #
+    # ★ 이 항목이 없어서 **위임이 조용히 강등된 채 몇 시간을 돌았다.** 개발 셸에는
+    #   nvm PATH 가 있어 `openclaw` 가 찾아졌지만 systemd 서비스에는 없었다.
+    #   로그에 WARNING 이 찍혔는데, 답이 빠르고 그럴듯해서 아무도 안 봤다.
+    if settings.slack:
+        from lifetrainer.agent import delegate
+
+        binary = delegate.resolve_bin(settings.openclaw_bin)
+        if not binary:
+            fail(
+                "에이전트 Slack 위임",
+                "openclaw 실행 파일을 못 찾았다 — 자연어 DM 이 조용히 옛 경로로 간다. "
+                "config 의 [agent] openclaw_bin 에 절대 경로를 넣는다",
+            )
+        elif not binary.startswith(("/usr/local/", "/usr/bin/")):
+            # 서비스 PATH 밖(nvm 등)이면 찾아지긴 해도 버전 매니저에 묶여 있다.
+            warn(
+                "에이전트 Slack 위임",
+                f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다 "
+                "(`openclaw-agent.md §4-10`)",
+            )
+        else:
+            ok("에이전트 Slack 위임", binary)
+    else:
+        ok("에이전트 Slack 위임", "꺼짐 ([agent] slack=false — 자연어는 빠른 경로로)")
+
+    # ⑤ OpenClaw 쪽 등록. 설정 파일만 읽는다 — 게이트웨이를 부르지 않는다.
     openclaw_path = Path(cfg.slack.openclaw_config)
     if not openclaw_path.is_file():
         warn("에이전트 등록", f"{openclaw_path} 가 없다 — OpenClaw 가 설치되지 않았다")
