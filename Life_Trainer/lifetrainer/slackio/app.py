@@ -1025,8 +1025,21 @@ def _pick_instance(text: str, rows: list) -> list:
         except ValueError as exc:
             raise _PickError(str(exc)) from exc
         by_ordinal = {row.ordinal: row for row in rows}
-        picked = [by_ordinal[n] for n in ordinals if n in by_ordinal]
-        missing = [n for n in ordinals if n not in by_ordinal]
+        # ★ **`plan_instance.id` 도 받는다.**
+        #
+        #   `llm/tools.get_plans` 가 목록을 `[134] 15:00~15:30 어제표식` 으로 싣는다.
+        #   목록에 번호가 붙어 있으니 **모델은 그 번호로 명령한다** — 채점에서
+        #   `/done 134` 를 3/3 로 봤고, ordinal 만 받던 시절에는 3/3 실패했다.
+        #   답변은 "먼저 /view 로 번호를 확인해 주세요" 로 사용자에게 떠넘겼다.
+        #
+        #   모델을 고치려고 세 번(ordinal 교체·`N번` 표기·번호 제거) 시도해 세 번
+        #   더 나빠졌다. **모델이 이미 보내는 것을 우리가 받는 편이 값싸다.**
+        #
+        #   ordinal 이 먼저다 — 사람이 `/done 2` 라고 칠 때는 화면의 2번을 뜻하고,
+        #   그게 우연히 다른 계획의 id 여도 사람 의도가 이긴다.
+        by_id = {row.id: row for row in rows if row.id not in by_ordinal}
+        picked = [by_ordinal.get(n) or by_id[n] for n in ordinals if n in by_ordinal or n in by_id]
+        missing = [n for n in ordinals if n not in by_ordinal and n not in by_id]
         if not picked:
             raise _PickError(
                 f"{', '.join(str(n) for n in missing)}번 계획을 목록에서 찾을 수 없습니다. "

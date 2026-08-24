@@ -209,19 +209,76 @@ def run(
     """
     name, rest = parse(line)
     muted = _mute_slack(cfg)
-    target_day = _normalize_day(cfg, day)
+    target_day = _normalize_day(cfg, day, channel=channel)
+
+    # 이번에 다룬 날짜를 기억한다 — 다음 턴의 `직전과 같은 날` 이 이걸 본다.
+    _remember_day(cfg, channel, rest if name == "/view" else "", target_day)
 
     if name == "/view":
         # 인자로 준 날짜(`/view 어제`)가 우선이고, 없으면 `day` 를 쓴다.
         # `target_day` 는 이미 해석된 YYYY-MM-DD 라 여기서 두 번 풀지 않는다.
-        return _truncate(_view_text(muted, rest or (target_day or "")))
+        return _truncate(_view_text(muted, rest or (target_day or "")) + _working_day_note(cfg, rest or (target_day or "")))
     if name == "/week":
         return _truncate(_week_text(muted))
 
     collector = _Collector()
     _delegate(muted, name, rest, collector, actor=actor, channel=channel, day=target_day)
     out = collector.close() or "(결과 없음)"
-    return _truncate(out + _day_note(name, target_day))
+    tail = _day_note(name, target_day)
+    if name in _DAY_SENSITIVE:
+        tail += _acted_on_note(cfg, name, target_day)
+    return _truncate(out + tail)
+
+
+def _remember_day(cfg: "Config", channel: str | None, arg: str, day: str | None) -> None:
+    """이번 명령이 다룬 날짜를 채널별로 기억한다."""
+    try:
+        resolved = _resolve_day(cfg, arg) if arg else (day or _today(cfg))
+    except SlashError:
+        return
+    _LAST_DAY[channel or ""] = resolved
+
+
+def _working_day_note(cfg: "Config", arg: str) -> str:
+    """조회 결과 끝에 **지금 보고 있는 날짜**를 붙인다 (1단계).
+
+    ★ 왜 필요한가. 시스템 프롬프트의 `## Current Date & Time` 이 "오늘"을 강하게
+    말하는데, 대화에서 어제를 보고 있다는 사실은 **히스토리 뒤쪽**이라 약하다.
+    다음 턴에 날짜 단어가 없으면 모델은 강한 쪽을 쓴다 — 실측으로, 어제 목록을
+    보여준 직후 "완료 처리해줘" 가 **오늘 것을** 바꿨다.
+
+    툴 결과는 프롬프트의 **맨 뒤**다. 거기에 한 줄 적으면 시스템의 오늘과 겨룰
+    자리가 생긴다. 막는 것이 아니라 **신호의 위치를 바꾸는 것**이다.
+    """
+    try:
+        day = _resolve_day(cfg, arg)
+    except SlashError:
+        return ""
+    label = _day_label(cfg, day)
+    return f"\n(지금 보고 있는 날짜: {day}{label}. 이어서 바꿀 때도 이 날짜다.)"
+
+
+def _acted_on_note(cfg: "Config", name: str, day: str | None) -> str:
+    """쓰기 결과 끝에 **어느 날짜에 했는지** 붙인다 (3단계).
+
+    막지는 못하지만 보이게 한다. 이번 사고에서 사용자가 무엇이 바뀌었는지 몰랐던
+    것이 피해의 절반이었다 — "조용하면 고장" 이다.
+    """
+    if name == "/view":
+        return ""
+    target = day or _today(cfg)
+    return f"\n(적용한 날짜: {target}{_day_label(cfg, target)})"
+
+
+def _day_label(cfg: "Config", day: str) -> str:
+    """'2026-08-23' 옆에 붙일 사람 말. 모르는 날이면 빈 문자열."""
+    today = _today(cfg)
+    from lifetrainer.llm.tools import _shift_day
+
+    for word, delta in (("오늘", 0), ("어제", -1), ("내일", 1), ("모레", 2)):
+        if day == _shift_day(today, delta):
+            return f" {word}"
+    return ""
 
 
 # 날짜를 안 준 채로 쓰면 **오늘**에 들어가는 명령들.
@@ -248,15 +305,21 @@ def _day_note(name: str, day: str | None) -> str:
     return "\n(날짜를 안 줘서 **오늘** 기준으로 처리했습니다. 다른 날이면 day 인자를 주세요.)"
 
 
-def _normalize_day(cfg: "Config", day: str | None) -> str | None:
+def _normalize_day(cfg: "Config", day: str | None, *, channel: str | None = None) -> str | None:
     """'내일' 같은 말도 날짜로 바꿔 준다. 못 읽으면 `SlashError`.
 
     모델은 `day="내일"` 을 넘긴다. 여기서 안 받으면 `plan_instance.day` 에
     '내일' 이라는 문자열이 들어가고, 그 계획은 **어느 날짜에도 안 뜬다.**
+
+    ★ `직전과 같은 날` 은 그 채널이 마지막으로 다룬 날짜다. 없으면 오늘 —
+    맥락이 없을 때 오늘로 가는 것은 원래 동작이라 새 위험이 아니다.
     """
-    if not day or not str(day).strip():
+    text = (day or "").strip()
+    if not text:
         return None
-    return _resolve_day(cfg, str(day))
+    if text == CARRY_WORD:
+        return _LAST_DAY.get(channel or "", None)
+    return _resolve_day(cfg, text)
 
 
 def _delegate(
@@ -368,6 +431,14 @@ def _instances(conn: "sqlite3.Connection", cfg: "Config", day: str) -> list:
 # ★ `today`/`오늘` 을 받는 이유는 실측이다. 모델이 `/view today` 를 불렀다가
 #   거부당하고 `/view 2026-08-23` 으로 고쳐 부르느라 왕복을 한 번 더 돌았다.
 #   이 기기에서 왕복 하나가 수 초다 — 거부할 이유가 없는 표현은 받는다.
+# 세션이 마지막으로 다룬 날짜. `직전과 같은 날` 이 이걸 가리킨다.
+#
+# ★ 채널별로 갖는다 — 두 사람이 다른 날을 보고 있을 수 있다. 프로세스 안에만
+#   있으므로 재기동하면 사라지고, 그때는 오늘로 떨어진다(안전한 방향).
+_LAST_DAY: dict[str, str] = {}
+
+CARRY_WORD = "직전과 같은 날"
+
 _DAY_WORDS: dict[str, int] = {
     "오늘": 0, "today": 0,
     "어제": -1, "yesterday": -1,

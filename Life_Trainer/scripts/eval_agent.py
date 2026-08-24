@@ -69,7 +69,11 @@ PREFIX = "lt__"  # MCP 서버 이름이 붙은 접두. 케이스에는 안 쓰�
 @dataclass
 class Case:
     name: str
-    message: str
+    message: str  # 한 턴짜리. 여러 턴이면 `turns` 를 쓴다
+    # ★ **여러 턴을 같은 세션에서 돌린다.** 맥락을 이어가는지 보려면 한 턴으로는
+    #   안 된다 — "어제 계획 알려줘" 다음의 "완료 처리해줘" 가 어제에 적용되는가는
+    #   두 턴이 이어져야만 드러난다. 채점은 **마지막 턴**을 기준으로 한다.
+    turns: tuple[str, ...] = ()
     expect_tool: tuple[str, ...] = ()  # 이 중 하나라도 부르면 통과
     expect_slash: tuple[str, ...] = ()  # slash 를 부른다면 이 명령이어야 한다
     require_slash: tuple[str, ...] = ()  # 이 명령을 **반드시** 실행해야 한다
@@ -82,6 +86,12 @@ class Case:
     #   `/done` 이 돌았다는 이유로 통과했다.** 무엇을 했는지가 아니라 **무엇이
     #   바뀌었는지**를 봐야 잡힌다.
     expect_status: tuple[tuple[str, str], ...] = ()
+    # `expect_status` 를 오늘이 아닌 날에서 본다 ("어제" · "내일" · YYYY-MM-DD).
+    status_day: str = ""
+    # ★ **시도 전에 되돌릴 상태.** `(날짜말, 제목, 상태)`.
+    #   상태를 바꾸는 케이스는 한 번 통과하면 다음 시도가 **거저 통과한다** —
+    #   실제로 첫 측정이 그렇게 오염됐다. 채점기가 자기 전제를 자기가 세워야 한다.
+    reset_status: tuple[tuple[str, str, str], ...] = ()
     forbid_tool: tuple[str, ...] = ()
     no_tool: bool = False
 
@@ -137,6 +147,24 @@ CASES: list[Case] = [
         expect_status=(("집중근무", "done"), ("근무", "todo")),
     ),
 
+    # ★ **맥락의 날짜를 이어가는가.** 실측 사고: 어제 목록을 보여준 다음 턴에
+    #   "2번 3번 완료처리해줘" 를 받자 모델이 `day="today"` 를 보내 **오늘 것을**
+    #   바꿨다. 시스템 프롬프트의 "오늘"이 대화 맥락보다 센 신호이고, 스키마에
+    #   "직전과 같은 날" 을 말할 방법이 없었다.
+    #
+    #   한 턴으로는 안 드러난다 — 두 턴이 이어져야 한다.
+    Case(
+        "day-carry",
+        "",
+        turns=("어제 계획 알려줘", "그중 '어제표식' 을 완료 처리해줘"),
+        expect_tool=("slash",),
+        require_slash=("/done",),
+        # 어제 것이 바뀌어야 하고, **오늘의 같은 이름은 그대로**여야 한다.
+        status_day="어제",
+        expect_status=(("어제표식", "done"),),
+        reset_status=(("어제", "어제표식", "todo"), ("오늘", "신청 작업", "todo")),
+    ),
+
     # ② 실측은 실측 툴로. 계획 툴로 가면 안 된다 (①의 반대 방향).
     Case(
         "activity",
@@ -187,19 +215,27 @@ MIN_ANSWER_CHARS = 10
 
 
 def run_case(case: Case, trial: int, *, timeout: int) -> Result:
-    """케이스 하나를 새 세션에서 한 번 돌린다. 세션 키를 매번 새로 만드는 이유는
-    이전 턴의 히스토리가 다음 채점에 섞이면 안 되기 때문이다."""
+    """케이스 하나를 새 세션에서 돌린다. 세션 키를 매번 새로 만드는 이유는
+    이전 턴의 히스토리가 다음 채점에 섞이면 안 되기 때문이다.
+
+    `turns` 가 있으면 **같은 세션 키로 순서대로** 보내고 마지막 턴을 채점한다.
+    """
     key = f"agent:{AGENT_ID}:eval-{case.name}-{trial}-{int(time.time() * 1000)}"
-    cmd = [
-        "openclaw", "agent", "--agent", AGENT_ID,
-        "--session-key", key, "--message", case.message, "--json",
-    ]
     env = {**os.environ, "PATH": "/usr/local/bin:" + os.environ.get("PATH", "")}
+    messages = list(case.turns) or [case.message]
+
+    _apply_reset(case)
+
     started = time.time()
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
-    except subprocess.TimeoutExpired:
-        return Result(case.name, trial, False, time.time() - started, reason=f"{timeout}초 초과")
+    for message in messages:
+        cmd = [
+            "openclaw", "agent", "--agent", AGENT_ID,
+            "--session-key", key, "--message", message, "--json",
+        ]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, env=env)
+        except subprocess.TimeoutExpired:
+            return Result(case.name, trial, False, time.time() - started, reason=f"{timeout}초 초과")
     elapsed = time.time() - started
 
     try:
@@ -342,6 +378,35 @@ def judge(
     return True, ""
 
 
+def _apply_reset(case: Case) -> None:
+    """`reset_status` 대로 DB 상태를 돌려놓는다. 실패하면 **시끄럽게** 알린다."""
+    if not case.reset_status:
+        return
+
+    from lifetrainer import db
+    from lifetrainer.agent.slash import _resolve_day
+    from lifetrainer.config import load_config
+    from lifetrainer.plan import models as plan_models
+
+    cfg = load_config()
+    conn = db.open_db(cfg)
+    try:
+        for day_word, title, status in case.reset_status:
+            day = _resolve_day(cfg, day_word)
+            hit = False
+            for row in plan_models.list_instances(conn, day):
+                if row.title == title:
+                    hit = True
+                    if row.status != status:
+                        plan_models.set_status(conn, cfg, row.id, status, actor="eval-reset")
+            if not hit:
+                # ★ 조용히 넘어가면 **리셋이 안 된 채로 채점이 통과한다.**
+                #   실제로 그래서 가짜 3/3 을 봤다.
+                print(f"★ 리셋 대상 없음: {day} 의 '{title}' — 채점이 무의미하다", file=sys.stderr)
+    finally:
+        conn.close()
+
+
 def _status_mismatches(case: Case) -> list[str]:
     """`expect_status` 를 DB 에서 확인한다. 어긋난 것만 문장으로 돌려준다."""
     if not case.expect_status:
@@ -351,11 +416,15 @@ def _status_mismatches(case: Case) -> list[str]:
     from lifetrainer.config import load_config
     from lifetrainer.plan import models as plan_models
 
+    from lifetrainer.agent.slash import _resolve_day
+
     cfg = load_config()
-    today = timeutil.day_str(timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
+    day = _resolve_day(cfg, case.status_day) if case.status_day else timeutil.day_str(
+        timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
+    )
     conn = db.open_db(cfg)
     try:
-        actual = {r.title: r.status for r in plan_models.list_instances(conn, today)}
+        actual = {r.title: r.status for r in plan_models.list_instances(conn, day)}
     finally:
         conn.close()
 
@@ -363,7 +432,7 @@ def _status_mismatches(case: Case) -> list[str]:
     for title, wanted in case.expect_status:
         got = actual.get(title)
         if got != wanted:
-            out.append(f"'{title}' 이(가) {got or '없음'} (기대 {wanted})")
+            out.append(f"{day} 의 '{title}' 이(가) {got or '없음'} (기대 {wanted})")
     return out
 
 
