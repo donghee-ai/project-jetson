@@ -34,6 +34,8 @@ import os
 import re
 import shutil
 import subprocess
+import threading
+import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -114,10 +116,58 @@ def available(explicit: str = "") -> bool:
     return bool(resolve_bin(explicit))
 
 
-def session_key(agent_id: str, channel: str) -> str:
-    """채널 하나 = 세션 하나. 대화 맥락이 채널 밖으로 새지 않는다."""
+# ★ 컨텍스트가 넘쳤을 때 게이트웨이가 돌려주는 문장. 이걸 만나면 세션을 갈고
+#   한 번 다시 시도한다 (아래 `ask` 참고).
+_OVERFLOW_MARK = "Context overflow"
+
+# 세션을 몇 턴마다 새로 여는가.
+#
+# ★ 압축 설정만으로는 못 막는다. 실측: ctx 20,480 에 시스템 프롬프트가 5,326 이라
+#   `keepRecentTokens 8000` + `reserveTokens 6000` 이면 여유가 1,154 토큰뿐이었고,
+#   한 시간쯤 대화하자 **"Context overflow: prompt too large"** 로 죽었다.
+#   설정을 3000/3000 으로 낮춰 여유를 9,154 로 늘렸지만, 그것도 **한계를 미룰 뿐**
+#   히스토리가 계속 자라면 언젠가 같은 자리에 닿는다.
+#
+#   이 저장소가 반복해서 배운 것 그대로다 — 설정으로 미루지 말고 구조로 막는다.
+#   턴 수로 끊으면 히스토리 길이에 상한이 생긴다.
+MAX_TURNS_PER_SESSION = 24
+
+# 세션이 이만큼 조용했으면 새로 연다. 어제 대화가 오늘 답에 섞이지 않게 한다 —
+# 실측으로, 지운 계획이 다음 날 답변에 "완료"로 나타난 적이 있다.
+SESSION_IDLE_SEC = 1800.0
+
+# 채널별 세션 상태. `{channel: (suffix, turns, last_ts)}`
+_sessions: dict[str, tuple[int, int, float]] = {}
+_sessions_lock = threading.Lock()
+
+
+def session_key(agent_id: str, channel: str, suffix: int = 0) -> str:
+    """채널 하나 = 세션 하나. 대화 맥락이 채널 밖으로 새지 않는다.
+
+    `suffix` 는 같은 채널 안에서 세션을 갈아 끼울 때 쓴다 (턴 상한·유휴·오버플로).
+    """
     safe = re.sub(r"[^A-Za-z0-9_-]", "-", channel or "unknown")
-    return f"agent:{agent_id}:slack-{safe}"
+    tail = f"-{suffix}" if suffix else ""
+    return f"agent:{agent_id}:slack-{safe}{tail}"
+
+
+def _next_key(agent_id: str, channel: str, *, rotate: bool = False) -> str:
+    """이번 턴에 쓸 세션 키. 필요하면 세션을 갈아 끼운다."""
+    now = time.monotonic()
+    with _sessions_lock:
+        suffix, turns, last = _sessions.get(channel, (0, 0, now))
+        stale = (now - last) > SESSION_IDLE_SEC
+        if rotate or stale or turns >= MAX_TURNS_PER_SESSION:
+            suffix += 1
+            turns = 0
+            if rotate:
+                logger.info("컨텍스트가 넘쳐 세션을 갈아 끼웁니다 (channel=%s → #%d)", channel, suffix)
+            elif stale:
+                logger.info("%.0f분 조용해서 새 세션 (channel=%s → #%d)", SESSION_IDLE_SEC / 60, channel, suffix)
+            else:
+                logger.info("%d턴을 채워 새 세션 (channel=%s → #%d)", MAX_TURNS_PER_SESSION, channel, suffix)
+        _sessions[channel] = (suffix, turns + 1, now)
+        return session_key(agent_id, channel, suffix)
 
 
 def ask(
@@ -131,20 +181,42 @@ def ask(
 ) -> AgentReply:
     """자연어 한 턴을 에이전트에게 넘기고 답을 받는다.
 
+    ★ 컨텍스트가 넘치면 **세션을 갈고 한 번 다시 시도한다.** 사용자에게
+    "Context overflow: prompt too large…" 라는 영어 오류를 그대로 보여 주는 것은
+    답이 아니다 — 그 문장은 우리가 고쳐야 할 설정 이야기지 사용자가 할 일이 아니다.
+
     ★ **`interactive_turn` 안에서 돈다.** 에이전트도 같은 `llama-server` 를 쓰는데,
     게이트웨이를 거치므로 우리 GPU 락을 안 지난다. 이걸 안 잡으면 야간 배치가
     요약을 집어 든 뒤에 사용자 질문이 줄을 서서 35초가 55초가 된다
     (`llm/interactive.py` 의 그 문제 그대로다).
     """
-    import time
-
     if not text.strip():
         raise DelegateError("빈 질문입니다.")
     binary = resolve_bin(openclaw_bin)
     if not binary:
         raise DelegateError("openclaw CLI 를 찾지 못했습니다.")
 
-    key = session_key(agent_id, channel)
+    reply = _run(cfg, binary, agent_id, channel, text, timeout_sec, rotate=False)
+    if reply.ok or _OVERFLOW_MARK not in reply.text:
+        return reply
+
+    # 넘쳤다 — 세션을 갈고 한 번만 더. 두 번은 안 한다(사용자가 1분을 넘게 기다린다).
+    logger.warning("컨텍스트 초과로 세션을 갈고 재시도합니다 (channel=%s)", channel)
+    return _run(cfg, binary, agent_id, channel, text, timeout_sec, rotate=True)
+
+
+def _run(
+    cfg: "Config",
+    binary: str,
+    agent_id: str,
+    channel: str,
+    text: str,
+    timeout_sec: float,
+    *,
+    rotate: bool,
+) -> AgentReply:
+    """실제 한 번의 호출."""
+    key = _next_key(agent_id, channel, rotate=rotate)
     command = [
         binary, "agent",
         "--agent", agent_id,
@@ -172,7 +244,11 @@ def ask(
             )
     elapsed = time.monotonic() - started
 
-    return _parse(proc, elapsed, key, channel)
+    reply = _parse(proc, elapsed, key, channel)
+    # 게이트웨이는 오버플로를 **정상 응답 본문**으로 준다 (rc=0). 여기서 잡아낸다.
+    if reply.ok and _OVERFLOW_MARK in reply.text:
+        return AgentReply(text=reply.text, ok=False, seconds=reply.seconds, session_key=key)
+    return reply
 
 
 def _parse(proc: "subprocess.CompletedProcess[str]", elapsed: float, key: str, channel: str) -> AgentReply:

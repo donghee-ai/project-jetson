@@ -540,7 +540,7 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     #   세우거나 `openclaw` 를 재설치하면 조용히 사라지는데, 그때 증상은
     #   "에이전트가 툴을 하나도 안 부른다" 뿐이라 원인을 찾기 어렵다. 여기서 본다.
     try:
-        _check_agent(cfg, ok, warn)
+        _check_agent(cfg, ok, warn, fail)
     except Exception as exc:  # noqa: BLE001 - 진단이 진단 때문에 죽으면 안 된다
         warn("에이전트", f"확인 실패: {exc}")
 
@@ -569,7 +569,7 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     return 0
 
 
-def _check_agent(cfg: Config, ok, warn) -> None:  # noqa: ANN001 - cmd_doctor 의 지역 함수
+def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doctor 의 지역 함수
     """에이전트 쪽 점검 — 예산 · 워크스페이스 · OpenClaw 등록.
 
     **모델을 부르지 않는다.** `doctor` 는 빨라야 하고, 한 턴이 26초다.
@@ -651,7 +651,16 @@ def _check_agent(cfg: Config, ok, warn) -> None:  # noqa: ANN001 - cmd_doctor �
     else:
         ok("에이전트 Slack 위임", "꺼짐 ([agent] slack=false — 자연어는 빠른 경로로)")
 
-    # ⑤ OpenClaw 쪽 등록. 설정 파일만 읽는다 — 게이트웨이를 부르지 않는다.
+    # ⑤ 압축 설정이 **지금의 ctx** 와 맞는가.
+    #
+    # ★ 이 검사가 없어서 대화가 한 시간쯤 이어지자 `Context overflow` 로 죽었다.
+    #   08-15 에 ctx 40,960 기준으로 정한 값이 08-23 의 ctx 축소 뒤에도 남아 있었고,
+    #   그때의 재계산이 **시스템 프롬프트를 빼먹었다** (HISTORY 2026-08-24).
+    #   같은 누락이 `main` 에이전트를 이미 죽여 놨다 — 한 곳에서 본 원인을
+    #   옆으로 밀어 보지 않은 것이 이 사고의 절반이다.
+    _check_compaction(cfg, total, ok, warn, fail)
+
+    # ⑥ OpenClaw 쪽 등록. 설정 파일만 읽는다 — 게이트웨이를 부르지 않는다.
     openclaw_path = Path(cfg.slack.openclaw_config)
     if not openclaw_path.is_file():
         warn("에이전트 등록", f"{openclaw_path} 가 없다 — OpenClaw 가 설치되지 않았다")
@@ -675,6 +684,47 @@ def _check_agent(cfg: Config, ok, warn) -> None:  # noqa: ANN001 - cmd_doctor �
         warn("에이전트 등록", f"{', '.join(missing)} 없음 — bash scripts/install-agent.sh")
     else:
         ok("에이전트 등록", f"agent={settings.agent_id} · mcp={catalog_mod.SERVER_NAME}")
+
+
+def _check_compaction(cfg: Config, prompt_tokens: int, ok, warn, fail) -> None:  # noqa: ANN001
+    """`시스템 프롬프트 + keepRecent + reserve` 가 ctx 안에 드는가.
+
+    OpenClaw 의 압축 설정은 **전역**이라 ctx 를 바꿔도 따라오지 않는다. 남는 자리가
+    한 턴치도 안 되면 대화가 길어지는 순간 죽는다 — 그때 사용자가 보는 것은
+    영어 오류 문장 하나뿐이다.
+    """
+    import json as _json
+
+    path = Path(cfg.slack.openclaw_config)
+    if not path.is_file():
+        return
+    try:
+        raw = _json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return
+
+    agents = raw.get("agents") or {}
+    comp = (agents.get("defaults") or {}).get("compaction") or {}
+    keep = int(comp.get("keepRecentTokens") or 0)
+    reserve = int(comp.get("reserveTokens") or 0)
+    models = ((raw.get("models") or {}).get("providers") or {}).get("llamacpp", {}).get("models") or []
+    ctx = int(models[0].get("contextWindow") or 0) if models else 0
+    if not (ctx and keep and reserve):
+        return
+
+    # 한 턴이 쓰는 최소치. 남는 자리가 이보다 작으면 곧 넘친다.
+    headroom = ctx - (prompt_tokens + keep + reserve)
+    detail = f"ctx {ctx} − (프롬프트 {prompt_tokens} + keepRecent {keep} + reserve {reserve}) = 여유 {headroom}"
+    if headroom < 2000:
+        fail(
+            "에이전트 압축 여유",
+            f"{detail} — 대화가 길어지면 Context overflow 로 죽는다. "
+            "`openclaw config set agents.defaults.compaction.keepRecentTokens 3000` 등으로 낮춘다",
+        )
+    elif headroom < 5000:
+        warn("에이전트 압축 여유", f"{detail} — 빠듯하다")
+    else:
+        ok("에이전트 압축 여유", detail)
 
 
 def cmd_init_db(args: argparse.Namespace, cfg: Config) -> int:
