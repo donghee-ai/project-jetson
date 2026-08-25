@@ -364,8 +364,16 @@ def _build_grid_rows(
     cols = max(1, cfg.slots_per_day // 24)
     grid_start_hour = cfg.rollup.day_boundary_hour
     plan_slots: set[int] = set()
+    # 슬롯 → 그 시간에 **하기로 한** 카테고리. 계획 보기(ON)에서 칸을 칠하는 색이다.
+    # 겹치는 계획이 있으면 나중 것이 이긴다 — 사람이 나중에 넣은 의도가 최신이다.
+    plan_cats: dict[int, str] = {}
     for pi in instances:
         plan_slots.update(range(pi.start_slot, pi.end_slot))
+        # 카테고리는 합성된 `plan` 객체에 있다 (achieve.py 가 템플릿/과목에서 정한 값).
+        cat = getattr(pi.plan, "category", None)
+        if cat:
+            for sl in range(pi.start_slot, pi.end_slot):
+                plan_cats[sl] = cat
 
     rows: list[dict[str, Any]] = []
     for r in range(24):
@@ -387,6 +395,18 @@ def _build_grid_rows(
             # (종이 플래너의 빈 칸은 그냥 비어 있다). 활동 카테고리에만 적용한다.
             if j - i >= 3 and row_cats[i] in pal.categories:
                 label_at[i + (j - i) // 2] = True
+            i = j
+
+        # 계획 보기용 라벨도 같은 규칙으로 (3칸 이상 이어지면 가운데에).
+        row_plans = [plan_cats.get(base + c) for c in range(len(row_cats))]
+        plan_label_at = [False] * len(row_plans)
+        i = 0
+        while i < len(row_plans):
+            j = i
+            while j < len(row_plans) and row_plans[j] == row_plans[i]:
+                j += 1
+            if j - i >= 3 and row_plans[i] in pal.categories:
+                plan_label_at[i + (j - i) // 2] = True
             i = j
 
         cells = []
@@ -412,6 +432,20 @@ def _build_grid_rows(
                     "plan_end": slot_idx in plan_slots and (slot_idx + 1) not in plan_slots,
                     # 구조 상태(빈칸·자리비움)는 활동이 아니라 기기를 붙이지 않는다.
                     "device_kind": None if is_structural else (slot_devices or {}).get(slot_idx),
+                    # ── 계획 보기(ON) ────────────────────────────────────
+                    # 같은 칸이 "한 일"과 "하기로 한 일" 두 가지를 들고 있다가,
+                    # 어느 쪽을 칠할지는 **브라우저가** 고른다. 서버를 다시 부르지
+                    # 않으므로 토글이 즉시 먹고, 두 값이 한 응답에서 나와
+                    # 서로 다른 시점의 데이터가 섞일 수 없다.
+                    "plan_category": plan_cats.get(slot_idx),
+                    "plan_css_var": (
+                        f"--cat-{plan_cats[slot_idx]}" if slot_idx in plan_cats else "--structural-off"
+                    ),
+                    "plan_label_text": (
+                        _label_for(pal, plan_cats[slot_idx])
+                        if plan_label_at[c] and slot_idx in plan_cats
+                        else ""
+                    ),
                 }
             )
         rows.append({"hour": hour, "cells": cells})

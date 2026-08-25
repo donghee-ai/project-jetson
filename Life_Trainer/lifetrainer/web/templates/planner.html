@@ -74,6 +74,10 @@
             <p class="section-kicker">10 MINUTE GRID</p>
             <h2 id="timetable-title">타임테이블</h2>
           </div>
+          <button type="button" class="plan-toggle" id="plan-toggle" aria-pressed="false"
+                  title="켜면 하기로 한 것, 끄면 실제로 한 것">
+            <span class="plan-toggle-dot" aria-hidden="true"></span><span id="plan-toggle-text">계획 OFF</span>
+          </button>
           <div class="legend" id="legend" aria-label="범례">
             {% for cat_id in used_categories %}
             <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-{{ cat_id }})"></span>{{ palette.labels[cat_id] }}</span>
@@ -98,8 +102,9 @@
               <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}{% if cell.plan_start %} plan-start{% endif %}{% if cell.plan_end %} plan-end{% endif %}"
                    data-slot="{{ cell.slot }}" data-category="{{ cell.category }}"
                    title="{{ cell.tooltip }}"{% if cell.device_kind %} data-device="{{ cell.device_kind }}"{% endif %}
-                   style="--cell-color: var({{ cell.css_var }})">
+                   style="--cell-color: var({{ cell.css_var }}); --plan-color: var({{ cell.plan_css_var }})">
                 {% if cell.label_text %}<span class="cell-label">{{ cell.label_text }}</span>{% endif %}
+                {% if cell.plan_label_text %}<span class="cell-label cell-label-plan">{{ cell.plan_label_text }}</span>{% endif %}
               </div>
               {% endfor %}
             </div>
