@@ -90,8 +90,6 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "respect_robots": True,
     },
     "search": {
-        "naver_client_id": "",
-        "naver_client_secret": "",
         "serper_api_key": "",
         "timeout_sec": 10.0,
         "max_results": 5,
@@ -246,8 +244,6 @@ class SearchConfig:
     근거와 대안 비교는 `docs/known-issues.md §1`.
     """
 
-    naver_client_id: str = ""
-    naver_client_secret: str = ""
     serper_api_key: str = ""
     timeout_sec: float = 10.0
     max_results: int = 5
@@ -540,8 +536,6 @@ def load_config(path: str | Path | None = None) -> Config:
     )
 
     search = SearchConfig(
-        naver_client_id=str(raw["search"]["naver_client_id"]),
-        naver_client_secret=str(raw["search"]["naver_client_secret"]),
         serper_api_key=str(raw["search"]["serper_api_key"]),
         timeout_sec=float(raw["search"]["timeout_sec"]),
         max_results=int(raw["search"]["max_results"]),

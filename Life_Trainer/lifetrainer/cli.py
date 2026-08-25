@@ -515,13 +515,9 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         from lifetrainer.llm.websearch import providers_available
 
         have = providers_available(cfg)
-        if have["naver"] and have["serper"]:
-            ok("웹 검색", "네이버(한국어) + Serper(영어)")
-        elif have["naver"]:
-            warn("웹 검색", "네이버만 설정됨 — 영어 질의도 네이버로 간다 ([search] serper_api_key)")
-        elif have["serper"]:
-            # 네이버는 API HUB 이관으로 신규 발급이 막혔다(known-issues §4). Serper
-            # 하나가 정상 구성이라 OK 를 준다 — 못 하는 일을 WARN 으로 권하지 않는다.
+        if have["serper"]:
+            # 공급자는 Serper 하나다(2026-08-25 에 네이버 경로를 지웠다). 하나뿐인
+            # 것이 정상 구성이라 OK 를 준다 — 못 하는 일을 WARN 으로 권하지 않는다.
             ok("웹 검색", "Serper (구글 경유) — 한국어 질의는 gl=kr 로 간다")
         else:
             warn(
