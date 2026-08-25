@@ -5,15 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Life Trainer 플래너 — {{ day }}</title>
 <style>
-{{ light_css_vars | safe }}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    {{ dark_css_vars | safe }}
-  }
-}
-:root[data-theme="dark"] {
-  {{ dark_css_vars | safe }}
-}
+{{ palette_css | safe }}
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='planner.css', v=asset_v) }}">
 </head>
@@ -73,6 +65,11 @@
           <div>
             <p class="section-kicker">10 MINUTE GRID</p>
             <h2 id="timetable-title">타임테이블</h2>
+          </div>
+          <div class="palette-picker" role="group" aria-label="색 테마">
+            <button type="button" data-palette-choice="base" class="pal-btn" title="기본">기본</button>
+            <button type="button" data-palette-choice="pastel" class="pal-btn" title="파스텔">파스텔</button>
+            <button type="button" data-palette-choice="neon" class="pal-btn" title="네온">네온</button>
           </div>
           <button type="button" class="plan-toggle" id="plan-toggle" aria-pressed="false"
                   title="켜면 하기로 한 것, 끄면 실제로 한 것">

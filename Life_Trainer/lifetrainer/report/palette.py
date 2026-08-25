@@ -42,10 +42,37 @@ def _pick(node: dict[str, Any], theme: str) -> str:
     return str(node[theme])
 
 
+def split_theme(theme: str) -> tuple[str, str]:
+    """`"pastel-dark"` → `("pastel", "dark")`. 변주가 없으면 `("base", ...)`.
+
+    테마 이름이 **변주 × 명암** 두 축이다. 문자열 하나로 다니는 이유는 이 값이
+    쿼리 파라미터·localStorage·PNG 렌더 인자로 그대로 오가기 때문이다 —
+    두 값으로 쪼개면 넘기는 자리마다 짝을 맞춰야 하고 한쪽만 바뀌는 사고가 난다.
+    """
+    if "-" in theme:
+        variant, _, mode = theme.partition("-")
+        return variant, mode
+    return "base", theme
+
+
+def variant_names(path: str | Path) -> list[str]:
+    """고를 수 있는 변주 목록. `base` 가 항상 먼저다."""
+    with open(path, encoding="utf-8") as f:
+        raw = yaml.safe_load(f) or {}
+    return ["base", *sorted(raw.get("themes") or {})]
+
+
 def load_palette(path: str | Path, theme: str = "light") -> Palette:
-    """`config/palette.yaml` 을 읽어 지정된 테마 하나로 확정된 `Palette` 를 만든다."""
-    if theme not in _VALID_THEMES:
-        raise ValueError(f"알 수 없는 테마입니다: {theme!r} ('light'|'dark' 만 허용)")
+    """`config/palette.yaml` 을 읽어 지정된 테마 하나로 확정된 `Palette` 를 만든다.
+
+    `theme` 는 `"light"`/`"dark"` 또는 `"<변주>-<명암>"`(예: `"pastel-dark"`).
+    변주는 **카테고리 색만** 바꾼다 — 표면·글자·구조 상태·계획 오버레이는 기본을
+    그대로 쓴다. 그것들은 취향이 아니라 읽힘의 뼈대라서 테마마다 다르면 안 된다.
+    """
+    variant, mode = split_theme(theme)
+    if mode not in _VALID_THEMES:
+        raise ValueError(f"알 수 없는 명암입니다: {mode!r} ('light'|'dark' 만 허용)")
+    theme = mode
 
     with open(path, encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
@@ -59,6 +86,13 @@ def load_palette(path: str | Path, theme: str = "light") -> Palette:
     # adjacent 로 완화하는 설계의 일부라서, 이 순서를 임의로 흩트리면 안 된다).
     ordered_ids = sorted(categories_raw, key=lambda cat_id: int(categories_raw[cat_id]["slot"]))
     categories = {cat_id: _pick(categories_raw[cat_id], theme) for cat_id in ordered_ids}
+    if variant != "base":
+        overrides = ((raw.get("themes") or {}).get(variant) or {}).get(theme)
+        if overrides is None:
+            raise ValueError(f"알 수 없는 팔레트 변주입니다: {variant!r}")
+        # 변주에 없는 카테고리는 기본색을 그대로 쓴다 — 카테고리를 하나 더할 때
+        # 변주 세 곳을 같이 안 고쳐도 화면이 깨지지 않는다(색이 하나 튈 뿐이다).
+        categories = {cat_id: overrides.get(cat_id, categories[cat_id]) for cat_id in ordered_ids}
     labels = {cat_id: str(categories_raw[cat_id]["label"]) for cat_id in ordered_ids}
 
     structural = {key: _pick(val, theme) for key, val in raw["structural"].items()}
@@ -72,7 +106,7 @@ def load_palette(path: str | Path, theme: str = "light") -> Palette:
             plan[key] = val
 
     return Palette(
-        theme=theme,
+        theme=f"{variant}-{theme}" if variant != "base" else theme,
         surface=surface,
         ink=ink,
         categories=categories,

@@ -5,15 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Life Trainer 주간 — {{ end_day }}</title>
 <style>
-{{ light_css_vars | safe }}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    {{ dark_css_vars | safe }}
-  }
-}
-:root[data-theme="dark"] {
-  {{ dark_css_vars | safe }}
-}
+{{ palette_css | safe }}
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='planner.css', v=asset_v) }}">
 </head>

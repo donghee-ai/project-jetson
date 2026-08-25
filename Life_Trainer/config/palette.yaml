@@ -97,3 +97,67 @@ plan_overlay:
   wash_alpha:   0.10
   achieved:    {light: "#006300", dark: "#0ca30c"}   # 달성 표시 (성공 텍스트색)
   missed:      {light: "#898781", dark: "#898781"}
+
+# ── 팔레트 변주 (2026-08-25) ─────────────────────────────────────────────
+#
+# 위 `categories` 가 기본이고, 아래는 **같은 hue 를 유지한 채** 명도·채도만 옮긴
+# 변주다. hue 가 곧 카테고리의 정체라서 테마를 바꿔도 "파랑은 코딩"이 유지된다.
+#
+# ★ 눈대중이 아니다. `scripts/derive_theme_palette.py` 가 OKLCH 격자를 전수 탐색해
+#   게이트(adjacent >= 9 · all-pairs >= 2.5 · 표면 대비 >= 12)를 통과하는 것 중
+#   테마의 의도(파스텔=가장 연하게 / 네온=가장 진하게)에 맞는 조합을 고른다.
+#
+#   기본     adjacent 19.6/19.3 · all-pairs 7.1/7.1 · 표면 27.7/35.9
+#   pastel   adjacent 12.0/10.6 · all-pairs 2.6/2.5 · 표면 12.6/60.5
+#   neon     adjacent 20.8/23.1 · all-pairs 5.2/5.0 · 표면 25.4/48.7
+#
+# ★ **all-pairs 는 기본(7.1)보다 나쁘다.** 특히 파스텔은 2.6 이다 — 처음에 4.0 을
+#   걸었더니 파스텔은 어떤 조합도 통과하지 못했다. hue 를 유지한 채 채도를 낮추면
+#   최악 쌍이 함께 눌리는 것이 원리적이다. 기본 팔레트도 all-pairs 는 실패해서
+#   2차 인코딩(3칸 이상 블록의 이름 · 상시 범례)에 기대고 있는데, 변주에서는
+#   그 의존도가 더 크다. 라벨을 끄면 안 된다.
+#
+#   재현: .venv/bin/python scripts/derive_theme_palette.py
+themes:
+  pastel:
+    light:
+      coding:         "#a7e2ff"
+      research:       "#ffa681"
+      writing:        "#9bf4c9"
+      sns:            "#f2b965"
+      learning:       "#ffc1de"
+      ops:            "#8fda88"
+      browsing:       "#d3d3ff"
+      entertainment:  "#ff9d95"
+      gaming:         "#ffbded"
+    dark:
+      coding:         "#bee1ff"
+      research:       "#f1b49e"
+      writing:        "#bcebd3"
+      sns:            "#debe96"
+      learning:       "#ffc9db"
+      ops:            "#a6d2a2"
+      browsing:       "#dad8ff"
+      entertainment:  "#efb2af"
+      gaming:         "#f3d0fe"
+  neon:
+    light:
+      coding:         "#23bdff"
+      research:       "#ff4b00"
+      writing:        "#00eb93"
+      sns:            "#ff8900"
+      learning:       "#ff75c2"
+      ops:            "#00d600"
+      browsing:       "#b29cff"
+      entertainment:  "#ff0039"
+      gaming:         "#ff69de"
+    dark:
+      coding:         "#0098ff"
+      research:       "#ff3500"
+      writing:        "#00c378"
+      sns:            "#ef7e00"
+      learning:       "#ff1d95"
+      ops:            "#00c500"
+      browsing:       "#9a7dff"
+      entertainment:  "#ff384f"
+      gaming:         "#dd58ff"

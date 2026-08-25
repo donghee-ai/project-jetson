@@ -100,6 +100,38 @@ def _inner_decls(css_block: str) -> str:
     return "\n".join(_DECL_RE.findall(css_block))
 
 
+def _palette_css_blocks(palette_path) -> str:
+    """모든 변주 × 명암을 한 번에 `<style>` 로 낸다.
+
+    변주를 고르는 일은 **취향**이라 서버 왕복이 아깝다. 여섯 벌(기본·파스텔·네온
+    × 라이트·다크)을 전부 실어 두고 `<html data-palette=...>` 한 글자로 고른다 —
+    응답이 약 2KB 늘고 전환이 즉시다.
+
+    ★ 카테고리 색만 변주가 있다. 표면·글자·구조 상태·계획 오버레이는 기본을
+      그대로 쓴다(`load_palette` 주석) — 읽힘의 뼈대라 취향으로 흔들면 안 된다.
+
+    명암은 세 갈래를 다 덮는다: 기본(라이트) · 시스템이 다크일 때 ·
+    사용자가 다크로 못박았을 때. 아티팩트 페이지에서와 같은 규칙이다.
+    """
+    from lifetrainer.report.palette import variant_names
+
+    out: list[str] = []
+    for variant in variant_names(palette_path):
+        base = ":root" if variant == "base" else f':root[data-palette="{variant}"]'
+        light = _inner_decls(css_variables(load_palette(palette_path, _theme_of(variant, "light"))))
+        dark = _inner_decls(css_variables(load_palette(palette_path, _theme_of(variant, "dark"))))
+        auto_dark = base.replace(":root", ':root:not([data-theme="light"])', 1)
+        forced_dark = base.replace(":root", ':root[data-theme="dark"]', 1)
+        out.append(f"{base} {{\n{light}\n}}")
+        out.append(f"@media (prefers-color-scheme: dark) {{\n{auto_dark} {{\n{dark}\n}}\n}}")
+        out.append(f"{forced_dark} {{\n{dark}\n}}")
+    return "\n".join(out)
+
+
+def _theme_of(variant: str, mode: str) -> str:
+    return mode if variant == "base" else f"{variant}-{mode}"
+
+
 def _weekdays_kr(iso_weekdays: str) -> str:
     """ISO 요일 문자열 -> 사람이 읽기 좋은 한글 표현.
 
@@ -830,8 +862,7 @@ def create_app(cfg: Any) -> Flask:
         finally:
             conn.close()
 
-        light_css = css_variables(pal_light)
-        dark_css = _inner_decls(css_variables(load_palette(palette_path, "dark")))
+        palette_css = _palette_css_blocks(palette_path)
         today = timeutil.day_str(timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
         present_categories = {slot["category"] for slot in data["slots"]}
         used_categories = [cat for cat in pal_light.order if cat in present_categories]
@@ -861,8 +892,7 @@ def create_app(cfg: Any) -> Flask:
             url_prefix=request.script_root or "",
             asset_v=asset_v,
             activity_runs=activity_runs,
-            light_css_vars=light_css,
-            dark_css_vars=dark_css,
+            palette_css=palette_css,
             read_only=cfg.web.read_only,
             hhmm=_hhmm,
         )
@@ -879,8 +909,7 @@ def create_app(cfg: Any) -> Flask:
             abort(400, description=f"잘못된 날짜 형식입니다: {end_day!r} (YYYY-MM-DD)")
 
         pal_light = load_palette(palette_path, "light")
-        light_css = css_variables(pal_light)
-        dark_css = _inner_decls(css_variables(load_palette(palette_path, "dark")))
+        palette_css = _palette_css_blocks(palette_path)
         today = timeutil.day_str(
             timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
         )
@@ -894,8 +923,7 @@ def create_app(cfg: Any) -> Flask:
             prev_end_day=_shift_day(end_day, -7),
             next_end_day=_shift_day(end_day, 7),
             palette=pal_light,
-            light_css_vars=light_css,
-            dark_css_vars=dark_css,
+            palette_css=palette_css,
             read_only=cfg.web.read_only,
         )
 
