@@ -95,7 +95,7 @@
             <div class="grid-hour">{{ "%02d" | format(row.hour) }}</div>
             <div class="grid-row" data-hour="{{ row.hour }}">
               {% for cell in row.cells %}
-              <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}"
+              <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}{% if cell.plan_start %} plan-start{% endif %}{% if cell.plan_end %} plan-end{% endif %}"
                    data-slot="{{ cell.slot }}" data-category="{{ cell.category }}"
                    title="{{ cell.tooltip }}"{% if cell.device_kind %} data-device="{{ cell.device_kind }}"{% endif %}
                    style="--cell-color: var({{ cell.css_var }})">

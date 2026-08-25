@@ -405,6 +405,11 @@ def _build_grid_rows(
                     "css_var": css_var,
                     "overridden": s["overridden"],
                     "has_plan": slot_idx in plan_slots,
+                    # 계획 구간의 **가장자리**. 칸마다 상자를 그리면 격자가 점선으로
+                    # 뒤덮여 읽을 수 없다(2026-08-25 사용자 지적). 이어진 칸은 옆면을
+                    # 비워서 한 덩어리로 보이게 한다.
+                    "plan_start": slot_idx in plan_slots and (slot_idx - 1) not in plan_slots,
+                    "plan_end": slot_idx in plan_slots and (slot_idx + 1) not in plan_slots,
                     # 구조 상태(빈칸·자리비움)는 활동이 아니라 기기를 붙이지 않는다.
                     "device_kind": None if is_structural else (slot_devices or {}).get(slot_idx),
                 }
