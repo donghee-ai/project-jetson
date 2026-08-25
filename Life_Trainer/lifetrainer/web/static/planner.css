@@ -152,8 +152,13 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
    같은 격자가 두 가지를 보여준다.
 
      OFF (기본)  실제로 한 것 — 계측된 활동 색. 계획은 테두리 띠로만 겹친다
-     ON          하기로 한 것 — 계획 카테고리 색으로 칸을 칠한다. 계획이 없는
-                 칸은 빈칸으로 둔다(계획표는 비어 있는 것이 정상이다)
+     ON          하기로 한 시간 **그 구간만** 계획 색으로 덮는다. 계획이 없는
+                 칸은 손대지 않는다 — 활동 색·라벨·빗금·보정 표식 그대로다
+
+   ★ 아래 규칙이 전부 `.cell.has-plan` 으로 좁혀져 있는 이유가 이것이다.
+     처음엔 `.grid.show-plan .cell` 로 격자 전체를 칠했는데, 그러면 계획을 켜는
+     순간 **계획이 없는 시간의 측정 결과가 화면에서 사라진다.** 계획 보기는
+     덮어쓰기가 아니라 겹쳐 그리기다.
 
    ★ 두 값이 **한 응답에 같이** 실려 온다. 토글은 어느 변수를 칠할지만 바꾸므로
      서버를 다시 부르지 않고, 서로 다른 시점의 데이터가 섞일 수 없다. */
@@ -173,9 +178,9 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
    ★ 구조 상태(off/away)는 `!important` 로 배경을 비우고 빗금을 깐다. 그건 **실제**
      쪽 이야기라, 계획 보기에서 남겨 두면 하기로 한 시간 위에 "자리비움"이 겹쳐
      보인다(실제로 09~21시 계획 안에 빗금이 떴다). 여기서 되돌린다. */
-.grid.show-plan .cell,
-.grid.show-plan .cell[data-category="off"],
-.grid.show-plan .cell[data-category="away"] {
+.grid.show-plan .cell.has-plan,
+.grid.show-plan .cell.has-plan[data-category="off"],
+.grid.show-plan .cell.has-plan[data-category="away"] {
   background-color: var(--plan-color) !important;
   background-image: none !important;
 }
@@ -186,10 +191,10 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
    뒤가 이기므로 계획 라벨 쪽은 특정성을 한 칸 올려 둔다 — 안 그러면 계획 라벨이
    OFF 에서도 보인다. */
 .cell .cell-label-plan { display: none; }
-.grid.show-plan .cell .cell-label { display: none; }
-.grid.show-plan .cell .cell-label-plan { display: grid; }
-/* 보정(override) 표식도 실제 쪽 이야기라 계획 보기에서는 숨긴다. */
-.grid.show-plan .cell.overridden { box-shadow: none; }
+.grid.show-plan .cell.has-plan .cell-label { display: none; }
+.grid.show-plan .cell.has-plan .cell-label-plan { display: grid; }
+/* 보정(override) 표식도 실제 쪽 이야기라 **계획이 덮은 칸에서만** 숨긴다. */
+.grid.show-plan .cell.has-plan.overridden { box-shadow: none; }
 
 /* ── 계획 오버레이 (2026-08-25 재작업) ─────────────────────────────────
    전에는 계획에 걸린 **칸마다** 점선 상자를 그렸다. 3칸짜리 계획이면 상자가 3개고,

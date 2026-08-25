@@ -469,9 +469,15 @@ def _build_grid_rows(
                     # 어느 쪽을 칠할지는 **브라우저가** 고른다. 서버를 다시 부르지
                     # 않으므로 토글이 즉시 먹고, 두 값이 한 응답에서 나와
                     # 서로 다른 시점의 데이터가 섞일 수 없다.
+                    #
+                    # ★ 계획이 없는 칸은 **계획 색을 갖지 않는다** — 자기 활동 색을
+                    #   그대로 되돌려준다. 전에는 여기에 빈칸 색을 넣었고, CSS 가
+                    #   격자 전체를 칠했기 때문에 계획을 켜는 순간 계획 없는 시간의
+                    #   측정 결과가 화면에서 사라졌다. 계획 보기는 **덮어쓰기가 아니라
+                    #   겹쳐 그리기**다: 계획이 있는 시간만 계획이 이긴다.
                     "plan_category": plan_cats.get(slot_idx),
                     "plan_css_var": (
-                        f"--cat-{plan_cats[slot_idx]}" if slot_idx in plan_cats else "--structural-off"
+                        f"--cat-{plan_cats[slot_idx]}" if slot_idx in plan_cats else "--cell-color"
                     ),
                     "plan_label_text": (
                         _label_for(pal, plan_cats[slot_idx])
