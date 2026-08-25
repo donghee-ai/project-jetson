@@ -27,7 +27,7 @@
       </a>
       <nav class="view-switch" aria-label="보기 전환">
         <a class="is-active" href="{{ url_for('day_page', day=day) }}">하루</a>
-        <a href="/w/{{ day }}">주간</a>
+        <a href="{{ url_prefix }}/w/{{ day }}">주간</a>
       </nav>
       <button id="theme-toggle" class="icon-button theme-toggle" type="button" title="다크/라이트 전환" aria-label="다크/라이트 전환">◐</button>
     </div>

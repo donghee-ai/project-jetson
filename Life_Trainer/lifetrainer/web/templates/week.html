@@ -21,12 +21,12 @@
 <div id="app-base" data-base="{{ url_prefix }}" hidden></div>
   <header class="topbar">
     <nav class="day-nav" aria-label="주 이동">
-      <a href="/w/{{ prev_end_day }}" class="nav-btn" aria-label="이전 주">◀</a>
+      <a href="{{ url_prefix }}/w/{{ prev_end_day }}" class="nav-btn" aria-label="이전 주">◀</a>
       <div class="day-current">
         <strong>{{ end_day }}</strong> 까지 7일
       </div>
-      <a href="/w/{{ next_end_day }}" class="nav-btn" aria-label="다음 주">▶</a>
-      <a href="/d/{{ end_day }}" class="nav-btn nav-week" aria-label="일간 보기">일간</a>
+      <a href="{{ url_prefix }}/w/{{ next_end_day }}" class="nav-btn" aria-label="다음 주">▶</a>
+      <a href="{{ url_prefix }}/d/{{ end_day }}" class="nav-btn nav-week" aria-label="일간 보기">일간</a>
       <button id="theme-toggle" class="theme-toggle" type="button" title="다크/라이트 전환" aria-label="다크/라이트 전환">◐</button>
     </nav>
   </header>
