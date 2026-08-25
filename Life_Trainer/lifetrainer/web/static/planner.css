@@ -303,35 +303,14 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .device-phone { opacity: 0.55; }
 .device-manual { opacity: 0.35; }
 
-/* ── 폰이 만든 칸 (2026-08-22) ─────────────────────────────────────
-   같은 카테고리인데 **어느 기기에서 했는지**를 한 축 더 얹는다.
-   hue 는 그대로 두고 표면 쪽으로 섞어 톤만 올린다.
+/* ── 폰이 만든 칸 — 색을 다르게 두지 않는다 (2026-08-25) ────────────
+   08-22 에는 같은 카테고리라도 폰에서 한 것을 파스텔(35% 혼합) + 오른쪽 위 점으로
+   구분했다. 계산해서 고른 비율이었고 기기는 실제로 갈렸다. 그런데 **읽는 사람이
+   원한 것이 아니었다** — "어차피 같은 카테고리"다. 코딩은 어디서 했든 코딩이다.
 
-   ★ 비율 35% 는 눈대중이 아니라 계산해서 골랐다 (OKLab ΔE, 라이트·다크 양쪽):
-
-       파스텔 ↔ 자기 원색      18.0 / 23.3   ← 기기가 구분된다
-       파스텔 ↔ 남의 원색      12.2 / 21.2   ← 다른 카테고리로 오인되지 않는다
-       파스텔 ↔ 파스텔(인접)    6.9 /  6.7   ← ★ 부족하다
-
-   마지막 줄이 이 표식을 색에만 맡길 수 없는 이유다. 톤을 올리면 모든 차이가 같이
-   눌리고, 원본 팔레트부터 all-pairs 최소가 7.1 이라(palette.yaml 참조) 어떤 비율을
-   골라도 파스텔끼리는 12 를 못 넘는다. 그래서 **오른쪽 위 점**을 함께 찍는다 —
-   색이 아닌 채널이라 톤 압축의 영향을 받지 않는다. 범례에도 견본을 띄운다. */
-.cell[data-device="phone"] {
-  background-color: color-mix(in oklab, var(--cell-color) 35%, var(--surface));
-  background-image: radial-gradient(
-    circle at calc(100% - 3.5px) 3.5px,
-    var(--ink-secondary) 0 1.6px, transparent 1.7px
-  );
-}
-.legend-phone-swatch {
-  display: inline-block; width: 0.72rem; height: 0.72rem; border-radius: 3px;
-  background-color: color-mix(in oklab, var(--cat-gaming) 35%, var(--surface));
-  background-image: radial-gradient(
-    circle at calc(100% - 2px) 2px, var(--ink-secondary) 0 1.3px, transparent 1.4px
-  );
-  border: 1px solid var(--ink-gridline);
-}
+   격자는 "무슨 활동이었나" 한 가지만 답하게 두고, "어디서 했나"는 그 답을
+   흐리지 않는 곳(아래 '어디서 썼나' 카드와 칸 툴팁)에서만 말한다.
+   `data-device` 속성은 그대로 남는다 — 색을 안 쓸 뿐이다. */
 
 /* 계획 폼의 버튼 줄 — 수정 모드에서 '취소'가 함께 뜬다 */
 .form-actions { display: flex; gap: 8px; align-items: center; }

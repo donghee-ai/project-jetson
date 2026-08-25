@@ -80,7 +80,7 @@
             {% endfor %}
             {% if "away" in used_structural %}<span class="legend-item structural"><span class="legend-swatch structural-away-swatch"></span>자리비움</span>{% endif %}
             {% if "unknown" in used_structural %}<span class="legend-item structural"><span class="legend-swatch" style="background: var(--structural-unknown)"></span>미분류</span>{% endif %}
-            {% if has_phone_cells %}<span class="legend-item structural" title="같은 카테고리라도 폰에서 한 것은 옅게 칠한다"><span class="legend-swatch legend-phone-swatch"></span>폰</span>{% endif %}
+            
           </div>
         </div>
         {% if not read_only %}

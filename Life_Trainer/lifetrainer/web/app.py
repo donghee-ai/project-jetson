@@ -816,7 +816,6 @@ def create_app(cfg: Any) -> Flask:
             used_categories=used_categories,
             used_structural=used_structural,
             minute_labels=minute_labels,
-            has_phone_cells=any(k == "phone" for k in slot_devices.values()),
             # ★ JS 가 API 를 부를 때 붙일 접두사. 절대 경로(`/api/...`)로 부르면
             #   터널(`lt.example.com/planner/...`)에서 접두사 밖으로 나가 404 가 난다 —
             #   실제로 계획 수정·삭제·체크가 전부 조용히 실패했다.
