@@ -167,7 +167,7 @@ def _pick_window(rng: random.Random, effective_type: str) -> tuple[str, str, str
             return "WindowsTerminal.exe", rng.choice(_TERMINAL_TITLES), None
         title, url = _pick_site(rng, _CODE_SITES)
         return "chrome.exe", title, url
-    if effective_type == "meeting":  # -> communication/chat
+    if effective_type == "meeting":  # -> sns/chat
         if r < 0.55:
             return "Slack.exe", rng.choice(_SLACK_TITLES), None
         return "Zoom.exe", rng.choice(_ZOOM_TITLES), None

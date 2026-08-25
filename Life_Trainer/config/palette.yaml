@@ -73,7 +73,7 @@ categories:
   coding:        {slot: 1, hue: blue,    light: "#2a78d6", dark: "#3987e5", label: 코딩}
   research:      {slot: 2, hue: orange,  light: "#eb6834", dark: "#d95926", label: 리서치}
   writing:       {slot: 3, hue: aqua,    light: "#1baf7a", dark: "#199e70", label: 문서}
-  communication: {slot: 4, hue: yellow,  light: "#eda100", dark: "#c98500", label: 소통}
+  sns:           {slot: 4, hue: yellow,  light: "#eda100", dark: "#c98500", label: SNS}
   learning:      {slot: 5, hue: magenta, light: "#e87ba4", dark: "#d55181", label: 학습}
   ops:           {slot: 6, hue: green,   light: "#008300", dark: "#008300", label: 운영}
   browsing:      {slot: 7, hue: violet,  light: "#4a3aa7", dark: "#9085e9", label: 웹}

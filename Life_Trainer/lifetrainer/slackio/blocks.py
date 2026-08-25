@@ -47,7 +47,7 @@ _CATEGORY_EMOJI: dict[str, str] = {
     "coding": "💻",
     "research": "🔬",
     "writing": "📝",
-    "communication": "💬",
+    "sns": "💬",
     "ops": "🛠️",
     "learning": "📚",
     "browsing": "🌐",
