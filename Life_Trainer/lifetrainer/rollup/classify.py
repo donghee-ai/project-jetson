@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -23,7 +24,6 @@ _RESERVED_CATEGORIES = frozenset({"away", "off", "unknown"})
 class Category:
     id: str
     label: str
-    color: str
 
 
 @dataclass(frozen=True)
@@ -60,6 +60,20 @@ class Classification:
     source: str  # 'rule' | 'default'
 
 
+@lru_cache(maxsize=4)
+def _palette(theme: str):
+    """`config/palette.yaml` 을 테마별로 한 번만 읽는다.
+
+    `classify` 는 롤업 안쪽 뜨거운 경로라 파일을 매번 열면 안 된다.
+    경로는 `palette.yaml` 이 저장소에 고정돼 있으므로 여기서 찾는다 —
+    설정으로 옮기면 "색이 두 곳에서 온다"가 다시 시작된다.
+    """
+    from lifetrainer.report.palette import load_palette
+
+    root = Path(__file__).resolve().parent.parent.parent
+    return load_palette(root / "config" / "palette.yaml", theme)
+
+
 class Classifier:
     """rules.yaml 로부터 만들어지는 불변 분류기.
 
@@ -93,11 +107,9 @@ class Classifier:
 
         categories: dict[str, Category] = {}
         for raw_cat in doc.get("categories", []):
-            cat = Category(
-                id=str(raw_cat["id"]),
-                label=str(raw_cat["label"]),
-                color=str(raw_cat["color"]),
-            )
+            # ★ `color` 는 여기서 읽지 않는다 (2026-08-25). 색 단일 원본은
+            #   `config/palette.yaml` 이다 — 아래 `color()` 주석 참고.
+            cat = Category(id=str(raw_cat["id"]), label=str(raw_cat["label"]))
             categories[cat.id] = cat
 
         if default_category not in categories:
@@ -152,8 +164,28 @@ class Classifier:
             category=self.default_category, subcategory=None, rule_index=None, source="default"
         )
 
-    def color(self, category_id: str) -> str:
-        return self.categories[category_id].color
+    def color(self, category_id: str, theme: str = "light") -> str:
+        """카테고리 색. **`config/palette.yaml` 이 유일한 원본이다.**
+
+        ## 왜 여기서 palette 를 읽나 (2026-08-25)
+
+        색이 두 파일에 따로 적혀 있었다. `rules.yaml` 에는 초기 Tailwind 값이,
+        `palette.yaml` 에는 검증기를 통과한 값이 있었고 **둘이 달랐다**:
+
+            research   rules #8b5cf6 (보라)  vs  palette #eb6834 (주황)
+            browsing   rules #94a3b8 (회색)  vs  palette #4a3aa7 (보라)
+
+        웹 플래너는 palette 를, 일일/주간 타임라인 PNG 는 rules 를 읽고 있어서
+        **같은 카테고리가 화면마다 다른 색**이었다. 게다가 rules 쪽 값은
+        `palette.yaml` 머리말이 "검증기 3항목 FAIL" 이라고 적어 둔 바로 그 색이다.
+
+        이 저장소의 반복된 실패 2번(같은 값을 여러 곳에서 각자 관리)이라,
+        `rules.yaml` 에서 색을 없애고 여기서 palette 를 읽는다.
+        """
+        pal = _palette(theme)
+        if category_id in pal.categories:
+            return pal.categories[category_id]
+        return pal.structural.get(category_id, pal.ink.get("muted", "#898781"))
 
     def label(self, category_id: str) -> str:
         return self.categories[category_id].label
