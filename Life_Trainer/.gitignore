@@ -30,4 +30,11 @@ dist/
 # 손으로 만든 백업 사본. 스크립트가 만드는 정식 백업은 data/backup/ 으로 간다
 # (scripts/apply-slack-manifest.sh 참조) — 저장소에 사본이 두 벌 있으면
 # 어느 쪽이 최신인지 알 수 없다.
+#
+# ★ 접미사가 붙은 것까지 막는다 (2026-08-25). `*.bak` 하나만 있을 때
+#   `config/lifetrainer.toml.bak-portmove` 같은 이름이 그물을 그냥 통과했고,
+#   실제로 **Serper API 키가 든 백업 4개가 커밋됐다** (49581fa).
+#   백업 파일은 디스크에 그대로 두고 추적만 끊는다 — 백업은 사용자의 것이다.
 *.bak
+*.bak-*
+*.bak.*
