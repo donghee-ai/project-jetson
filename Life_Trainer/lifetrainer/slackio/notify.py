@@ -25,6 +25,11 @@ from lifetrainer.slackio.blocks import error_blocks, image_block
 
 logger = logging.getLogger(__name__)
 
+# 업로드한 파일을 이미지 블록으로 참조했을 때 Slack 이 `invalid slack file` 을
+# 돌려주는 경합의 대기 간격(초). 합계 3.5초 — 사용자가 카드를 기다리는 시간이므로
+# 길게 잡지 않는다. 실패는 3일에 7번이라 이 지연을 무는 경우 자체가 드물다.
+_IMAGE_RACE_BACKOFF_SEC = (0.5, 1.0, 2.0)
+
 
 def _is_invalid_blocks(exc: Exception) -> bool:
     """Slack 이 블록 자체를 거부한 오류인지.
@@ -166,21 +171,76 @@ class SlackNotifier:
             retry_blocks = _blocks_without_slack_file_images(blocks) if _is_invalid_blocks(exc) else None
             if retry_blocks is None:
                 raise
-            # 방금 올린 파일을 Slack 이 아직 처리 중이면 그 파일을 참조하는 이미지 블록이
-            # `invalid_blocks` 로 거부된다. 업로드 자체는 성공해 파일은 이미 채널에
-            # 보이는 상태이므로, **카드를 통째로 잃는 것보다 이미지만 빼고 올리는 편이 낫다.**
-            # (실측: 같은 코드로 일일 리포트는 통과하고 /view 는 거부됐다 — 경합이다.)
-            logger.warning("이미지 블록이 거부돼(%s) 이미지 없이 다시 게시합니다", exc)
-            resp = self._call_with_retry(
-                self.client.chat_postMessage,
-                channel=target,
-                text=text,
-                blocks=retry_blocks,
-                unfurl_links=False,
-                unfurl_media=False,
-                thread_ts=thread_ts,
+            resp = self._post_retrying_image_race(
+                text, blocks=blocks, fallback_blocks=retry_blocks,
+                target=target, thread_ts=thread_ts, first_exc=exc,
             )
         return str(resp.get("ts", ""))
+
+    def _post_retrying_image_race(
+        self,
+        text: str,
+        *,
+        blocks: list[dict],
+        fallback_blocks: list[dict],
+        target: str,
+        thread_ts: str | None,
+        first_exc: Exception,
+    ):
+        """`invalid_blocks` 로 거부된 이미지 카드를 **그림을 지키면서** 다시 올린다.
+
+        ## 무엇이 일어나는가 (2026-08-24 실측)
+
+        `files_upload_v2` 직후 그 파일을 `slack_file` 로 참조하면 Slack 이 가끔
+        `invalid slack file` 로 거부한다. 3일에 7번 났고, 그때마다 사용자에게는
+        **사진만 빠진 카드**가 갔다. 사용자는 `/view` 를 한 번 더 쳤다 — 화면에
+        같은 카드가 두 장 남은 것이 그 흔적이다.
+
+        ## 왜 기다렸다 다시 하나
+
+        원인을 우리 쪽에서 없앨 수 없다. 업로드는 성공했고 파일도 정상이다
+        (`files.info` 가 `mode=hosted` 로 돌려준다). **썸네일 생성이 게이트일
+        것으로 보고 쟀지만 아니었다** — 썸네일이 없는 상태에서도 통과했다(2/2).
+        슬랙 내부의 짧은 반영 지연이고, 붙어 있는 것은 시간뿐이다.
+
+        그래서 **이미지를 뺀 카드로 곧장 강등하지 않는다.** 이 저장소의 규칙이기도
+        하다 — 조용히 다르게 동작하는 것이 가장 나쁘다. 세 번(합계 3.5초) 다시
+        시도하고, 그래도 안 되면 그때 이미지를 뺀다.
+        """
+        for wait in _IMAGE_RACE_BACKOFF_SEC:
+            time.sleep(wait)
+            try:
+                resp = self._call_with_retry(
+                    self.client.chat_postMessage,
+                    channel=target,
+                    text=text,
+                    blocks=blocks,
+                    thread_ts=thread_ts,
+                    unfurl_links=False,
+                    unfurl_media=False,
+                )
+            except SlackError as exc:
+                if not _is_invalid_blocks(exc):
+                    raise
+                continue
+            logger.info("이미지 블록이 %.1f초 기다린 뒤 통과했습니다", wait)
+            return resp
+
+        # 여기까지 왔으면 경합이 아니라 정말 못 싣는 파일이다. 카드를 통째로
+        # 잃는 것보다는 이미지만 빼는 편이 낫다.
+        logger.warning(
+            "이미지 블록이 %.1f초 재시도 뒤에도 거부돼(%s) 이미지 없이 게시합니다",
+            sum(_IMAGE_RACE_BACKOFF_SEC), first_exc,
+        )
+        return self._call_with_retry(
+            self.client.chat_postMessage,
+            channel=target,
+            text=text,
+            blocks=fallback_blocks,
+            unfurl_links=False,
+            unfurl_media=False,
+            thread_ts=thread_ts,
+        )
 
     def upload_png(
         self,
