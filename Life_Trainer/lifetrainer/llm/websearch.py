@@ -29,8 +29,14 @@
 
 이 프로젝트의 전제는 "데이터가 기기 밖으로 안 나간다" 이고, 검색은 그 예외다.
 나가는 것은 **질의어 한 줄뿐**이며 활동 기록·창 제목·계획은 절대 싣지 않는다.
-질의어에 개인 정보가 섞이지 않게 길이를 `MAX_QUERY_CHARS` 로 자른다 — 모델이
-맥락을 통째로 질의어에 넣는 것을 막는 최소한의 방어다.
+방어가 두 겹이다.
+
+1. **길이** — `MAX_QUERY_CHARS` 로 자른다. 맥락이 통째로 실리는 것을 막는다
+2. **내용** — `search()` 가 나가기 직전에 `trigger.is_personal()` 로 한 번 더 본다
+
+★ 처음엔 1번만 있었다. 그런데 유출은 **길이가 아니라 내용**이었다 — 개인 낱말이
+질의어 **앞**에 붙어서, 잘라도 그대로 남았다 (`docs/issues/0001`). 방어를 엉뚱한
+축에 걸어두고 막혔다고 믿고 있었다.
 
 ## 왜 PoliteSession 을 안 쓰나
 
@@ -151,6 +157,23 @@ def search(cfg: "Config", query: str, *, limit: int | None = None) -> SearchResu
     query = _truncate(query, MAX_QUERY_CHARS)
     if not query:
         raise SearchError("검색어가 비었습니다.")
+
+    # ★ **발송 직전 마지막 관문** (`docs/issues/0001`).
+    #
+    # 게이트(`trigger.select_tools`)는 사용자의 원문 하나를 보고 툴을 고르는데,
+    # **실제로 나가는 문자열은 그 뒤에 다시 조립된다** — `converse._search_query` 가
+    # 짧은 후속 발화("오늘은?") 앞에 직전 질문의 낱말("어제","했지")을 붙인다.
+    # 그래서 게이트가 판정한 문자열과 나간 문자열이 달랐고, 개인 발화가 새어나갔다.
+    #
+    # 모든 경로(선주입·모델의 툴 호출·MCP)가 이 함수로 합류하므로, **여기서 막으면
+    # 새 호출자가 생겨도 못 빠져나간다.** 게이트와 같은 판정을 쓴다.
+    from lifetrainer.llm.trigger import is_personal  # 지연 import — 순환 방지
+
+    if is_personal(query):
+        raise SearchError(
+            f"이 질문은 사용자 자신의 기록에 대한 것이라 바깥으로 내보내지 않았다 ({query!r}). "
+            "검색하지 말고 이미 주어진 활동 기록·계획으로 답하라."
+        )
 
     n = limit if limit is not None else cfg.search.max_results
     n = max(1, min(int(n), 10))
