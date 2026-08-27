@@ -40,7 +40,7 @@
 - **모델 id 까지 확인** — 포트만 보는 헬스체크가 1시간 무중단 다운을 낸 적 있다.
   ★ **살아 있다 ≠ 서빙 가능하다.** 기동 직후 `llama-server` 는 503 `Loading model` 을
   낸다. 야간 배치가 이걸 안 기다려 요약 잡 277건이 죽었다
-  ([known-issues §2](docs/known-issues.md))
+  ([HISTORY](HISTORY/2026-08-21-a-loading-model-burned-the-whole-queue.md))
 
 ## 기본값
 
