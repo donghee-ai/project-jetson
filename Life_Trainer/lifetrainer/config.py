@@ -7,11 +7,13 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
 import json
 import logging
 import os
 from dataclasses import dataclass
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -31,6 +33,10 @@ logger = logging.getLogger(__name__)
 
 _LOG_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
 _LOG_HANDLER_MARK = "_lifetrainer_stderr_handler"
+_FILE_HANDLER_MARK = "_lifetrainer_file_handler"
+LOG_FILE_NAME = "lifetrainer.log"
+_LOG_FILE_BYTES = 5 * 1024 * 1024
+_LOG_FILE_BACKUPS = 3
 
 # 내장 기본값. config/lifetrainer.example.toml 의 값과 맞춘다.
 # 경로류 값은 여기서는 아직 문자열이다 — root 확정 후 절대 경로로 바뀐다.
@@ -588,17 +594,44 @@ def load_config(path: str | Path | None = None) -> Config:
 
 
 def setup_logging(cfg: Config) -> None:
-    """루트 로거에 stderr 핸들러를 단다. 중복 호출해도 핸들러가 쌓이지 않는다."""
+    """루트 로거에 stderr + 파일 핸들러를 단다. 중복 호출해도 핸들러가 쌓이지 않는다.
+
+    ★ 파일 핸들러가 있는 이유 — **프로세스마다 stderr 가 가는 곳이 다르다.**
+      `lt …` 의 stderr 는 journald 로 가지만, MCP 서버는 게이트웨이(OpenClaw)가
+      삼켜서 어디에도 안 남는다. 그래서 바깥으로 나간 검색 30여 건이 **우리 로그에
+      한 줄도 없었고, 남의 대시보드로만 발견됐다** (`docs/issues/0002`).
+      어느 프로세스가 부르든 같은 파일에 남게 한다.
+
+    파일은 `<data_dir>/lifetrainer.log` 다. 질의어·창 제목이 실리므로 **0600** 으로 둔다.
+    파일을 못 열어도 죽지 않는다 — stderr 로만 남기고 경고한다.
+    """
     root_logger = logging.getLogger()
     root_logger.setLevel(cfg.log_level)
 
-    for handler in root_logger.handlers:
-        if getattr(handler, _LOG_HANDLER_MARK, False):
-            handler.setLevel(cfg.log_level)
-            return
+    if not any(getattr(h, _LOG_HANDLER_MARK, False) for h in root_logger.handlers):
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+        setattr(handler, _LOG_HANDLER_MARK, True)
+        root_logger.addHandler(handler)
 
-    handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter(_LOG_FORMAT))
-    handler.setLevel(cfg.log_level)
-    setattr(handler, _LOG_HANDLER_MARK, True)
-    root_logger.addHandler(handler)
+    if not any(getattr(h, _FILE_HANDLER_MARK, False) for h in root_logger.handlers):
+        try:
+            cfg.data_dir.mkdir(parents=True, exist_ok=True)
+            path = cfg.data_dir / LOG_FILE_NAME
+            file_handler = RotatingFileHandler(
+                path,
+                maxBytes=_LOG_FILE_BYTES,
+                backupCount=_LOG_FILE_BACKUPS,
+                encoding="utf-8",
+            )
+            file_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+            setattr(file_handler, _FILE_HANDLER_MARK, True)
+            root_logger.addHandler(file_handler)
+            with contextlib.suppress(OSError):
+                path.chmod(0o600)
+        except OSError as exc:  # 디스크 문제로 앱이 죽으면 안 된다
+            root_logger.warning("로그 파일을 열지 못했다 (%s) — stderr 로만 남는다", exc)
+
+    for handler in root_logger.handlers:
+        if getattr(handler, _LOG_HANDLER_MARK, False) or getattr(handler, _FILE_HANDLER_MARK, False):
+            handler.setLevel(cfg.log_level)

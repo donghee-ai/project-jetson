@@ -161,6 +161,11 @@ def search(cfg: "Config", query: str, *, limit: int | None = None) -> SearchResu
             "(config/lifetrainer.toml 의 [search] serper_api_key)."
         )
 
+    # ★ **보내기 전에** 남긴다. 성공 뒤에만 남기면 실패한 요청이 기록에서 사라지는데,
+    #   기록의 목적은 "몇 건 받았나"가 아니라 **무엇이 바깥으로 나갔나** 다
+    #   (`docs/issues/0002`). 나간 것은 실패해도 나간 것이다.
+    logger.info("바깥으로 나감 — 검색(serper) %r (최대 %d건 요청)", query, n)
+
     try:
         result = _serper(cfg, query, n)
     except SearchError:
@@ -168,5 +173,5 @@ def search(cfg: "Config", query: str, *, limit: int | None = None) -> SearchResu
     except Exception as exc:  # noqa: BLE001 - requests 계열 예외를 한 종류로 모은다
         raise SearchError(f"검색 중 오류: {exc}") from exc
 
-    logger.info("검색(%s) %r → %d건", result.provider, query, len(result.hits))
+    logger.info("검색(%s) 응답 %d건", result.provider, len(result.hits))
     return result

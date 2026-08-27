@@ -176,20 +176,19 @@ def main(argv: list[str] | None = None) -> int:
     import argparse
 
     from lifetrainer.agent.config import build_context
+    from lifetrainer.config import setup_logging
 
     parser = argparse.ArgumentParser(description="Life Trainer MCP 서버 (stdio)")
     parser.add_argument("--config", default=None, help="lifetrainer.toml 경로")
     args = parser.parse_args(argv)
 
-    # ★ 로깅을 stderr 로 못박는다. basicConfig 의 기본 대상은 stderr 지만,
-    #   어딘가에서 이미 stdout 핸들러가 붙었을 수 있어 명시한다.
-    logging.basicConfig(
-        stream=sys.stderr,
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
-
     ctx = build_context(args.config)
+
+    # ★ `logging.basicConfig` 를 쓰지 않는다. 이 프로세스는 게이트웨이(OpenClaw)가
+    #   띄우고 **stderr 를 삼킨다** — 그래서 여기서 남긴 로그가 어디에도 안 남았다
+    #   (`docs/issues/0002`). `setup_logging` 은 stderr 와 함께
+    #   `<data_dir>/lifetrainer.log` 에도 쓰므로, 누가 띄우든 기록이 남는다.
+    setup_logging(ctx.cfg)
     logger.info("MCP 서버 시작 — 툴 %d개, %s", len(catalog_mod.build_tools()), ctx.sandbox.describe().replace("\n", " · "))
     serve(ctx)
     return 0
