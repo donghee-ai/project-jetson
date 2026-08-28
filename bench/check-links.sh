@@ -6,13 +6,27 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+# ★ 파일시스템이 아니라 **git 기준**으로 본다.
+#   워킹트리에만 있는 것(git mv 뒤 남은 빈 디렉토리 · gitignore 된 results/speech/)을
+#   실재로 세면 로컬은 통과하고 CI 는 깨진다. 실제로 그렇게 두 번 놓쳤다.
+TRACKED=$(mktemp); git ls-files > "$TRACKED"
+trap 'rm -f "$TRACKED"' EXIT
+
+exists() {  # $1 = 저장소 루트 기준 경로
+  local t="${1%/}"
+  grep -qxF "$t" "$TRACKED" && return 0          # 추적 중인 파일
+  grep -q "^${t}/" "$TRACKED" && return 0        # 그 아래 추적 파일이 있는 디렉토리
+  return 1
+}
+
 broken=0 checked=0
 while IFS= read -r f; do
   d=$(dirname "$f")
   while IFS= read -r t; do
     case "$t" in http*|mailto:*|'') continue;; esac
     checked=$((checked+1))
-    [ -e "$d/$t" ] || { echo "  ❌ $f → $t"; broken=$((broken+1)); }
+    rel=$(realpath -m --relative-to=. "$d/$t")
+    exists "$rel" || { echo "  ❌ $f → $t"; broken=$((broken+1)); }
   # ★ 앵커(#...)는 sed 말고 cut 으로 뗀다 — 이 로케일의 sed 는 `.` 가 한글을 못 넘어서
   #   `s/#.*$//` 가 한글 앵커에 조용히 실패한다 (LC_ALL=C 로도 되지만 cut 이 분명하다).
   done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | cut -d'#' -f1)

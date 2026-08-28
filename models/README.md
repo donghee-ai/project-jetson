@@ -63,7 +63,7 @@ curl -L -o Qwen3-4B-Q4_K_M.gguf \
 
 측정 방법·결론은 [archive/speech/](../docs/archive/speech/) 로 옮겼다 (ASR 미사용 결정).
 원본 wav 은
-[`../results/speech/`](../results/speech/) 에 있다.
+`results/speech/` 에 있고 **git 에는 안 올라간다** — `live/` 는 사람 목소리 실녹음이다.
 
 ### 재다운로드
 

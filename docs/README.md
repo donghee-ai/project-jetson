@@ -8,22 +8,22 @@
 
 | 폴더 | 뜻 | 다시 읽을 이유 |
 |---|---|---|
-| **[build/](build/)** | 지금 이 기기에서 **돌고 있는 것**의 구축 기록 | 재현·복구·함정 회피 |
+| **[../runtime/](../runtime/)** | 지금 이 기기에서 **돌고 있는 것**의 구축 기록 | 재현·복구·함정 회피 |
 | **[plans/](plans/)** | 하기로 했지만 **아직 안 끝난 것** | 다음에 뭘 할지 |
 | **[archive/](archive/)** | 판단이 끝났거나 **전제가 무효화된 것** | 같은 검토를 두 번 하지 않기 위해 |
 
 ---
 
-## build/ — 가동 중
+## ../runtime/ — 가동 중
 
 | 문서 | 무엇 | 상태 |
 |---|---|---|
-| [build/llm-runtime.md](../runtime/llm-runtime.md) | llama.cpp CUDA 빌드, llama-server 운영, 모델 로드 | ✅ `llama-server.service` active |
-| [build/openclaw-agent.md](../runtime/agent-gateway.md) | OpenClaw 게이트웨이 + 로컬 LLM 결합, **함정 14가지** | ✅ 게이트웨이 active (Slack 채널만 꺼짐) |
+| [runtime/llm-runtime.md](../runtime/llm-runtime.md) | llama.cpp CUDA 빌드, llama-server 운영, 모델 로드 | ✅ `llama-server.service` active |
+| [runtime/agent-gateway.md](../runtime/agent-gateway.md) | OpenClaw 게이트웨이 + 로컬 LLM 결합, **함정 14가지** | ✅ 게이트웨이 active (Slack 채널만 꺼짐) |
 
 실행 자산(유닛·스크립트)은 문서가 아니라 [`openclaw-setup/`](../runtime/) 에 있다.
 
-> **`build/openclaw-agent.md §4` 는 코드에서 직접 참조된다.** `llm/client.py`,
+> **`runtime/agent-gateway.md §4` 는 코드에서 직접 참조된다.** `llm/client.py`,
 > `llm/tools.py`, `llm/trigger.py` 등이 주석에서 §번호로 가리킨다
 > (`pattern` 금지·모델 id 확인 같은 하드웨어 제약의 출처). 절을 재배열하지 말 것.
 
