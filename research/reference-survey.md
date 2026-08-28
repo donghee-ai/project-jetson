@@ -186,7 +186,7 @@ VLM + LLM 레이어  : "택배기사가 상자를 놓고 감 / 모르는 사람�
 
 > ⚠️ **HWP 파서는 조사에서 발견되지 않았다.** `hwp korean document parser` 검색이
 > 유의미한 결과를 내지 못했다. grant-radar의 HWP 파싱은 여전히 직접 해결해야 하는
-> 문제이며, 이것이 해자가 된다는 [기획 문서](../docs/plans/grant-radar-plan.md)의 판단은 유효하다.
+> 문제이며, 이것이 해자가 된다는 [기획 문서](../docs/archive/grant-radar-plan.md)의 판단은 유효하다.
 
 ---
 

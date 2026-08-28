@@ -157,7 +157,7 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 ├── Life_Trainer/        ★ 상시 구동 중인 응용 — 자체 문서 트리를 갖는다
 │   └── deploy/              이 앱을 이 기기에 세우는 것 (게이트웨이 포함)
 ├── models/              어떤 가중치를 왜 골랐나 (실물은 `~/models/`, git 제외)
-└── reference/           타 프로젝트 클론 (git 제외)
+└── reference/           타 프로젝트 클론 — **URL + 커밋만** (실물은 `~/reference/`)
 ```
 
 ---
