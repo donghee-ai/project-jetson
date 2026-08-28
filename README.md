@@ -151,6 +151,7 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 
 ```
 ├── CLAUDE.md            저장소 전체 작업 규칙 — **검사·경보를 붙이기 전에 읽는다**
+├── folder-structure.md  폴더 구조 목표안 — **지금 구조는 아래가 정본이다**
 ├── bench/               측정 도구 (하드웨어 · 모델 · 프로파일링 · 생태계 조사)
 ├── results/             측정 원본 데이터
 ├── figures/             results/ 에서 재생성되는 그림  ← make figures
