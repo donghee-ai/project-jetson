@@ -50,6 +50,7 @@ Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨�
 ![generation speed vs context depth](figures/depth-crossover.png)
 
 → [research/llm-models.md](research/llm-models.md) · [research/performance.md](research/performance.md) · [benchmarks/](benchmarks/) (13종 실측)
+· [research/decode-profile.md](research/decode-profile.md) (커널 프로파일)
 
 ---
 
@@ -107,6 +108,10 @@ Qwen3-8B Q8_0 트래픽      86.4 GB/s   ← 사양의 84%. 읽기 커널보다 
 K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 언패킹 연산 비용** 때문이고,
 즉 그 구간은 메모리가 아니라 **연산에 먼저 막힌다.**
 
+**2026-08-28: 이 추론을 커널 프로파일로 확인했다** — 디코드 시간의 **95.7% 가 언패킹을
+안에 품은 행렬곱 커널**이다 ([decode-profile.md](research/decode-profile.md)).
+역산으로 얻은 추론이 직접 측정이 됐다.
+
 관측은 맞았고 원인 귀속이 틀렸다. 그리고 **이 숫자는 ①②③ 어느 결정도 좌우하지 않았다** —
 모델 선택은 툴 콜링과 깊이가, 메모리 예산은 KV 크기가 정했다.
 
@@ -137,7 +142,7 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 `docs/plans/` 는 안 끝난 것, `docs/archive/` 는 접은 것.
 
 ```
-├── bench/               측정 도구 (하드웨어 · 모델 · 생태계 조사)
+├── bench/               측정 도구 (하드웨어 · 모델 · 프로파일링 · 생태계 조사)
 ├── results/             측정 원본 데이터
 ├── figures/             results/ 에서 재생성되는 그림  ← make figures
 ├── benchmarks/          모델 13종 실측 (2026-08-18) → 색인: benchmarks/README.md

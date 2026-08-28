@@ -30,6 +30,12 @@ reference/*
 results/*.log
 results/server-*
 
+# Nsight 원본 — 바이너리이고 `bench/profile-decode.sh` 로 재생성된다.
+# 읽을 수 있는 요약(*.kernels.csv)만 커밋한다.
+*.nsys-rep
+*.qdstrm
+*.qdrep
+
 # 음성 원본. 전부 스크립트로 재생성된다
 # (speech-bench.py / asr-source-test.py 는 TTS 합성, mic-live-bench.py 는 마이크 녹음).
 # ★ results/speech/live/ 는 **사람 목소리 실제 녹음**이다 — 개인 데이터라 절대 커밋 금지.

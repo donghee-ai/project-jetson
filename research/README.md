@@ -8,6 +8,7 @@
 | [hardware.md](hardware.md) | 하드웨어 실측, 전력모드, **Super Mode 불가 원인**, 메모리 예산 | 2026-08-13 |
 | [performance.md](performance.md) | 대역폭, 컨텍스트 깊이별 성능 곡선, 양자화 품질 | 2026-08-14 |
 | [llm-models.md](llm-models.md) | 모델 3종 비교 — 툴 콜링·속도·한국어 토큰 효율 | 2026-08-14 |
+| [decode-profile.md](decode-profile.md) | 디코드 커널 프로파일 (Nsight Systems) — **95.7% 가 양자화 행렬곱** | 2026-08-28 |
 | [reference-survey.md](reference-survey.md) | GitHub 생태계 전수 스캔 (704개) — 무엇이 이미 있고 무엇이 비었나 | 2026-08-15 |
 
 원본 로그·JSON 은 [`../results/`](../results/), 측정 도구는 [`../scripts/`](../bench/) 에 있다.
