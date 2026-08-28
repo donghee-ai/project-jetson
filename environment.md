@@ -1,7 +1,11 @@
 # environment.md — 측정 환경 (자동 생성)
 
 > `make verify` 로 다시 뽑는다. **이 저장소의 모든 수치는 아래 환경에서 잰 것이다.**
-> 마지막 갱신: 2026-08-28 10:33 KST
+> 아래 블록은 손으로 고치지 않는다 — 마커 사이를 `bench/gen-environment.sh` 가 덮어쓴다.
+
+<!-- verify:begin — 이 블록은 `make verify` 가 생성한다. 손으로 고치지 말 것 -->
+
+> 생성 시각: 2026-08-28 15:51 KST
 
 ```
 ════════════════════════════════════════════════
@@ -10,15 +14,18 @@
 
 ▶ 1. 패키지
   ✅ nvidia-jetpack             6.2.3+b81
-     L4T: 
+  ✅ L4T (nv_tegra_release)     R36.5.0
+     nvidia-l4t-core           36.5.0-20260115194252  (APT 후보 36.5.2-20260716114719)
+  ⚠️  BSP 일관성              설치본과 APT 후보가 다르다 — 유지보수 창에서 한 릴리스로 통일할 것
+  ⚠️  패키지 hold             nvidia-l4t-kernel nvidia-l4t-kernel-headers — hold 이유가 기록돼 있는지 확인
 
 ▶ 2. CUDA
   ✅ nvcc                       release 12.6
   ✅ /usr/local/cuda            → cuda-12.6
-  ❌ libcudart                  없음
-  ❌ libcublas                  없음
-  ❌ libcufft                   없음
-  ❌ libcurand                  없음
+  ✅ libcudart                  libcudart.so.12
+  ✅ libcublas                  libcublas.so.12
+  ✅ libcufft                   libcufft.so.11
+  ✅ libcurand                  libcurand.so.10
 
 ▶ 3. cuDNN / TensorRT
   ✅ cuDNN                      libcudnn.so.9.3.0
@@ -26,7 +33,11 @@
   ✅ python3 tensorrt           10.3.0
 
 ▶ 4. ★ DLA (딥러닝 가속기) — 그동안 미검증 항목
-  ❌ DLA 디바이스           /dev/nvhost-nvdla* 없음
+  ✅ DLA 노드                 /dev/nvhost-ctrl-nvdla0
+  ✅ DLA 노드                 /dev/nvhost-ctrl-nvdla1
+  ✅ libcudla                   libcudla.so.1
+     → 노드 2개와 런타임이 있다. **쓸 수 있는지는 아직 모른다** —
+       trtexec --onnx=<model> --useDLACore=0 --allowGPUFallback 로 확인할 것
 
 ▶ 5. 하드웨어 가속 블록 (영상 파이프라인용)
   ✅ NVDEC (영상 디코딩)   857 MHz
@@ -37,13 +48,13 @@
 ▶ 6. 전력 모드
      현재 모드 : MAXN
      활성 conf : nvpmodel_p3767_0000.conf
-  ⚠️  Super Mode                 비활성 — 아래 §Super Mode 참조
+  ⚠️  Super Mode                 이 보드에서는 불가 — 부팅마다 되돌려진다 (research/hardware.md)
 
 ▶ 7. 온도 / 전력
-     RAM 14461/15643MB
+     RAM 10959/15643MB
      GR3D_FREQ 0%
-     tj@57.031C
-     VDD_IN 4958mW
+     tj@56.812C
+     VDD_IN 4917mW
 
 ════════════════════════════════════════════════
  §PATH 설정 (nvcc 가 안 잡히면)
@@ -52,22 +63,29 @@
    echo 'export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
    source ~/.bashrc
 
- §Super Mode 활성화 (100 → 157 TOPS)
+ §Super Mode — 이 보드에서는 불가 (실측 결론, 재시도하지 말 것)
 
-   sudo ln -sf /etc/nvpmodel/nvpmodel_p3767_0000_super.conf /etc/nvpmodel.conf
-   sudo nvpmodel -m 0          # MAXN_SUPER
-   sudo reboot
-   sudo jetson_clocks          # 재부팅 후 클럭 고정
-   tegrastats                  # 부하 시 tj 온도 확인 (스로틀링 여부)
+   conf 심링크를 바꿔도 nvpower.sh 가 부팅마다 되돌리고,
+   하드웨어 과전류 보호도 25W 로 설정된다.
+   근거와 재현 경위: research/hardware.md
 ════════════════════════════════════════════════
 ```
+
+<!-- verify:end -->
 
 ## 읽는 법
 
 | 항목 | 왜 여기 있나 |
 |---|---|
 | **전력 모드** | 이 저장소의 성능 수치는 **전부 MAXN(`pmode:0000`)** 이다. 15W·25W 에서는 재지 않았다 |
-| **Super Mode 비활성** | conf 파일은 있으나 디바이스 트리에 `-super` 가 없어 부팅마다 되돌려진다 |
-| **DLA 없음** | `/dev/nvhost-nvdla*` 가 안 잡힌다. 이 보드에서 DLA 는 쓰지 않았다 |
-| **libcudart/cublas 등 ❌** | 런타임 `.so` 를 표준 경로에서 못 찾는다는 표시다. llama.cpp 는 `/usr/local/cuda` 를 직접 링크하므로 빌드·추론에는 지장이 없다 |
+| **Super Mode 비활성** | conf 파일은 있으나 부팅마다 되돌려지고 하드웨어 과전류 보호가 25W 로 잡힌다. **검증기가 활성화 절차를 더 이상 안내하지 않는다** — 같은 시도를 반복하지 않기 위해서다 |
+| **DLA 노드** | 노드와 `libcudla` 가 **있다**. 다만 노드 존재는 가용성이 아니다 — `trtexec --useDLACore` 로 재 본 적이 없어서 이 저장소는 DLA 를 안 썼다 |
+| **BSP 일관성 ⚠️** | `nvidia-jetpack` 은 6.2.3 인데 L4T 구성요소가 36.5.0 이고 APT 후보가 36.5.2 다. 커널·헤더가 `hold` 다 — **hold 이유가 기록돼 있지 않다** |
 | RAM 사용량 | 측정 시점의 값이다. LLM 가용 예산은 [README ③](README.md) 참조 |
+
+> **2026-08-28 정정.** 이 문서는 오랫동안 `L4T:` 빈칸 · `libcudart` 외 3종 ❌ ·
+> `DLA 없음` 을 **실측 결과로** 싣고 있었다. 셋 다 [`bench/verify-jetpack.sh`](bench/verify-jetpack.sh)
+> 의 버그였다 — 정규식이 실제 형식을 못 읽었고, `find` 가 심링크 `lib64` 를 안 내려갔고,
+> 글롭이 `nvhost-ctrl-nvdla*` 를 못 잡았다. **사양치와 실측이 다르다고 말하는 저장소가
+> 측정 도구의 버그를 실측으로 싣고 있었다.** 같은 일이 다시 나지 않도록 이 블록은
+> 이제 사람이 붙여넣지 않고 `make verify` 가 생성한다.

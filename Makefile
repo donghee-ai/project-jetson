@@ -19,8 +19,10 @@ help:  ## 이 목록
 	@echo
 	@echo "  측정 환경: environment.md   ·   결론: README.md"
 
-verify:  ## JetPack·CUDA·전력모드 점검 → environment.md 갱신
-	@bash bench/verify-jetpack.sh
+verify:  ## JetPack·CUDA·전력모드 점검 → environment.md 를 **생성**한다
+	@bash bench/gen-environment.sh
+	@echo
+	@echo "  화면으로만 보려면: bash bench/verify-jetpack.sh"
 
 bench:  ## 모델 벤치 무인 실행 (llama-server 를 직접 띄운다 — 약 40분)
 	@echo "★ 실행 중인 llama-server.service 와 :8080 을 다투므로 먼저 내릴 것:"
