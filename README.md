@@ -23,9 +23,9 @@
 **출고 기본값에서 GPU 절반이 꺼져 있었다.** MAXN 으로 SM 이 4 → 8 이 됐다.
 Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨어 과전류 보호도 25W 로 잡혀 있다.
 
-![tokens per watt](figures/tokens-per-watt.png)
-
-> 와트당 성능은 **MAXN 에서만** 쟀다. 15W·25W 는 아직 측정하지 않았다.
+> **이 절에는 그림이 없다.** SM 게이팅이 *사실*로는 셋 문서에 있지만 **성능 수치가 안 붙어 있어서**
+> 그리면 측정이 아니라 모식도가 된다. 15W 에서 한 번 재면 채워진다 —
+> 그 한 번이 와트당 성능의 전력모드 비교도 같이 푼다.
 
 → [research/hardware.md](research/hardware.md)
 
@@ -48,6 +48,13 @@ Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨�
 라이선스도 봤다 — Qwen3 계열은 Apache 2.0, EXAONE 은 `other` 다.
 
 ![generation speed vs context depth](figures/depth-crossover.png)
+
+같은 보드에서 **모델마다 와트당 성능이 3배 넘게 갈린다.** 8B 를 고른 것은
+효율이 아니라 툴 콜링과 깊이 때문이고, 그 대가가 여기 보인다.
+
+![tokens per watt](figures/tokens-per-watt.png)
+
+> MAXN 에서만 쟀다. 15W·25W 는 아직 측정하지 않았다.
 
 → [research/llm-models.md](research/llm-models.md) · [research/performance.md](research/performance.md) · [benchmarks/](benchmarks/) (13종 실측)
 · [research/decode-profile.md](research/decode-profile.md) (커널 프로파일)

@@ -10,7 +10,7 @@ FIGURES   := figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures links test
+.PHONY: help verify bench figures clean-figures status links test
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -33,6 +33,9 @@ figures:  ## results/ 와 benchmarks/results/ 에서 그림 재생성
 
 clean-figures:  ## 그림 삭제 (재생성 확인용)
 	@rm -f $(FIGURES)/*.png
+
+status:  ## 지금 이 기기의 현황 (서비스 · 실데이터 · 링크)
+	@bash bench/status.sh
 
 links:  ## 문서의 상대경로 링크가 전부 실재하는지
 	@bash bench/check-links.sh
