@@ -23,6 +23,10 @@
 **출고 기본값에서 GPU 절반이 꺼져 있었다.** MAXN 으로 SM 이 4 → 8 이 됐다.
 Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨어 과전류 보호도 25W 로 잡혀 있다.
 
+![tokens per watt](figures/tokens-per-watt.png)
+
+> 와트당 성능은 **MAXN 에서만** 쟀다. 15W·25W 는 아직 측정하지 않았다.
+
 → [research/hardware.md](research/hardware.md)
 
 ---
@@ -43,6 +47,8 @@ Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨�
 
 라이선스도 봤다 — Qwen3 계열은 Apache 2.0, EXAONE 은 `other` 다.
 
+![generation speed vs context depth](figures/depth-crossover.png)
+
 → [research/llm-models.md](research/llm-models.md) · [research/performance.md](research/performance.md) · [benchmarks/](benchmarks/) (13종 실측)
 
 ---
@@ -61,6 +67,8 @@ OpenClaw 게이트웨이          0.3 GB
 
 **컨텍스트를 40960 → 20480 으로 낮춰 KV 를 2.99 → 1.50 GB 로 줄인 것**이 이 예산을
 성립시킨 결정이다. 슬롯 수가 KV 를 배수로 잡으므로 슬롯도 1개로 뒀다.
+
+![what fills the 13.4 GB](figures/memory-budget.png)
 
 → [docs/build/llm-runtime.md](docs/build/llm-runtime.md)
 
@@ -92,6 +100,8 @@ D2D 복사 (읽기+쓰기)       69.5 GB/s
 Qwen3-8B Q4_K_M 트래픽    56.0 GB/s
 Qwen3-8B Q8_0 트래픽      86.4 GB/s   ← 사양의 84%. 읽기 커널보다 44% 높다
 ```
+
+![achieved bandwidth](figures/achieved-bandwidth.png)
 
 60 GB/s 는 **단일 커널 마이크로벤치의 한계**이지 하드웨어 천장이 아니었다.
 K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 언패킹 연산 비용** 때문이고,
