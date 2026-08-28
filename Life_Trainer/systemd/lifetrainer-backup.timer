@@ -1,0 +1,13 @@
+[Unit]
+Description=Life Trainer — 매일 백업
+
+[Timer]
+# 야간 배치(02:00~05:50)가 끝난 뒤, 아침 다이제스트(07:34) 전.
+# 배치가 도는 중에 백업하면 WAL 이 커진 상태를 뜨게 된다.
+OnCalendar=*-*-* 06:20:00
+RandomizedDelaySec=5min
+# 기기가 꺼져 있었으면 켜진 뒤에 한 번 돌린다 — 백업은 거르면 안 되는 종류다.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

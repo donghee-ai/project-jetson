@@ -37,7 +37,8 @@ fi
 # ── 예외 ────────────────────────────────────────────────────
 #   기록 문서는 **그날의 사실**이라 고치면 안 된다. check-links.sh 와 같은 목록이다.
 #   maintenance-plan*.md 는 "문서가 이렇게 틀렸다" 를 인용하는 문서라 예외다.
-EXCLUDE_RE='^(Life_Trainer/docs/progress/|Life_Trainer/HISTORY/|Life_Trainer/docs/issues/|Life_Trainer/docs/archive/|docs/archive/|maintenance-plan)'
+#   bench/fixtures/ 는 검사기의 시험지다 — 여기를 세면 자기 시험지에 걸려 넘어진다.
+EXCLUDE_RE='^(Life_Trainer/docs/progress/|Life_Trainer/HISTORY/|Life_Trainer/docs/issues/|Life_Trainer/docs/archive/|docs/archive/|bench/fixtures/|maintenance-plan)'
 
 # ── 막는 것 ─────────────────────────────────────────────────
 #   패턴 | 사람이 읽을 이름 | 대신 쓸 명령

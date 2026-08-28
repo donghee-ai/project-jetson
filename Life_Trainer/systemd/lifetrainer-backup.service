@@ -1,0 +1,18 @@
+[Unit]
+Description=Life Trainer — DB 백업 + 무결성 검사 + 보존 정리
+Documentation=file://%h/project/project-jetson/Life_Trainer/docs/runbook-backup-restore.md
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/project/project-jetson/Life_Trainer
+ExecStart=%h/project/project-jetson/Life_Trainer/scripts/backup.sh
+
+# 외부 복제 대상. 비어 있으면 스크립트가 경고만 하고 로컬 사본만 남긴다.
+# ★ 값을 넣으려면 age 와 수신자 키가 같이 있어야 한다 — 개인 활동 기록이 평문으로
+#   나가는 것을 막으려고, 반쪽만 설정되면 스크립트가 일부러 실패한다.
+Environment=LT_BACKUP_REMOTE=
+Environment=LT_BACKUP_AGE_RECIPIENT=
+
+# 온라인 백업 API 는 페이지를 옮길 뿐이라 메모리를 크게 안 쓴다.
+MemoryMax=512M

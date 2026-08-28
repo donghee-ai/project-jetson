@@ -55,6 +55,11 @@
   같은 파일의 `themes:` 에 있고 `scripts/derive_theme_palette.py` 가 계산한다**
   **색을 더할 때는 검증기로 계산한다** — 눈대중 금지. 근거는 palette.yaml 주석에
 - **Slack 발송은 `--post` 등 명시적 지시가 있을 때만**
+- **백업은 검증까지가 백업이다** — `scripts/backup.sh` 가 `quick_check` 와 내용 유무를
+  보고, 실패하면 그 파일을 지운다. 깨진 파일을 "백업 있음" 으로 세지 않기 위해서다.
+  **월 1회 `scripts/restore-test.sh` 로 실제로 복원해 본다**
+  ([runbook](docs/runbook-backup-restore.md)). ★ 원본 밖 사본은 **아직 없다** —
+  같은 NVMe 의 사본은 디스크 고장·도난에 무력하다
 
 ## 대화 프롬프트 규칙 (`llm/context.py`·`converse.py`)
 
