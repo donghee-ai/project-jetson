@@ -16,6 +16,12 @@ dependencies = [
     "pydantic>=2.9",
     "slack-bolt>=1.20",
     "slack-sdk>=3.33",
+    # ★ 아래 넷은 코드가 쓰는데 선언이 빠져 있었다 (2026-08-28, CI 가 잡음).
+    #   로컬 .venv 에 깔려 있어서 여기서는 안 보였다 — 새 환경에서만 드러난다.
+    "flask>=3.0",          # web/app.py
+    "werkzeug>=3.0",       # web/app.py — flask 가 끌고 오지만 직접 import 한다
+    "numpy>=1.24",         # llm/embed.py
+    "tomli>=2.0; python_version < '3.11'",   # config.py — 3.11+ 는 표준 tomllib
 ]
 
 [project.optional-dependencies]
