@@ -41,6 +41,19 @@ systemctl --user show llama-server -p Environment --value | tr ' ' '\n' | grep L
 bash bench/verify-boot.sh
 ```
 
+## ★ journal 이 재부팅을 못 넘긴다 — 아직 안 고쳤다 (sudo 필요)
+
+`/var/log/journal` 이 없어 journald 가 **메모리에만** 쓴다. 재부팅하면 로그가 전부
+사라지고, [HANDOFF §10](../Life_Trainer/HANDOFF.md) 이 안내하는 `journalctl` 명령이
+빈손이 된다. **관측 불가와 정상은 다르다** — 이 저장소가 겪은 사고는 전부
+*"언제부터 그랬나"* 를 물어야 풀리는 종류였다.
+
+```bash
+sudo bash bench/enable-persistent-journal.sh   # 용량 상한(500M)을 먼저 걸고 켠다
+```
+
+`verify-boot.sh` 의 §6 이 이 상태를 본다.
+
 **살아 있는 상태만 보고 넘어가지 않는다** — 심링크는 프로세스가 도는 동안엔
 안 깨진 것처럼 보인다. 유닛 경로를 건드리면 이 스크립트를 다시 돌린다.
 
