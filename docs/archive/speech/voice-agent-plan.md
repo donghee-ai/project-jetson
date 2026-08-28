@@ -2,7 +2,7 @@
 
 > 작성일: 2026-08-15 / 상태: **Phase 0 완료 (마이크 없이 전 구간 실측)**
 > 측정 환경: Jetson Orin NX 16GB / MAXN / JetPack 6.2.3 / llama.cpp b1-a94d563 / sherpa-onnx 1.13.5
-> 관련: [speech-stack-research.md](../../research/speech-stack.md) · [project-candidates.md](../archive/project-candidates.md) · [project-proposal.md](../archive/project-proposal.md)
+> 관련: [speech-stack-research.md](speech-stack.md) · [project-candidates.md](../project-candidates.md) · [project-proposal.md](../project-proposal.md)
 
 ---
 
@@ -18,7 +18,7 @@
 | 슬롯 정확도 (음성 경로) | **8/8 (4B)** / 7/8 (8B) | ✅ 실용 수준 |
 
 **설계 결론: 3단 게이트.** 웨이크워드(상시·초저비용) → 핫패스 규칙(0.2 ms) → LLM(2.5초, 폴백만).
-[Understudy](../archive/project-proposal.md)의 선생-학생 구조가 음성에서 그대로 성립한다.
+[Understudy](../project-proposal.md)의 선생-학생 구조가 음성에서 그대로 성립한다.
 
 ---
 
@@ -71,7 +71,7 @@
 
 **둘 다 정답이다.** ASR의 숫자 정규화(ITN) 결과이며 의미는 정확하다.
 실제 시스템에서 중요한 것은 받아쓴 글자가 아니라 **최종적으로 기기가 어떻게 동작했는가**다.
-그래서 채점 단위를 **툴 호출의 슬롯**으로 바꿨다. — 이 저장소의 [기존 교훈](../../research/performance.md)과 같다: *측정 기준이 틀리면 결론도 틀린다.*
+그래서 채점 단위를 **툴 호출의 슬롯**으로 바꿨다. — 이 저장소의 [기존 교훈](../../../research/performance.md)과 같다: *측정 기준이 틀리면 결론도 틀린다.*
 
 ### 2-3. 음성 경로 E2E — 슬롯 정확도
 
@@ -155,7 +155,7 @@ Home Assistant 실행 → 응답 TTS (경량/고품질 이중)
 LLM이 처리한 발화 + 슬롯  →  로그  →  반복되는 표현을 규칙으로 승격  →  핫패스 확대
 ```
 
-시간이 지날수록 LLM 호출 비율이 떨어진다. **[Understudy](../archive/project-proposal.md)의 선생-학생 구조와 동일**하며,
+시간이 지날수록 LLM 호출 비율이 떨어진다. **[Understudy](../project-proposal.md)의 선생-학생 구조와 동일**하며,
 "선생 호출률 하락 곡선"이 여기서도 성과 지표가 된다.
 
 ### 왜 젯슨인가 — 정직하게
@@ -211,7 +211,7 @@ LLM이 처리한 발화 + 슬롯  →  로그  →  반복되는 표현을 규�
 ### Phase 2 — 웨이크워드 (미검증 영역)
 
 - [ ] sherpa-onnx `KeywordSpotter`로 한국어 키워드 검출 가능 여부 확인
-- [ ] 안 되면: **TTS로 학습 데이터 합성 → 소형 KWS 학습** ([H3](../../research/speech-stack.md))
+- [ ] 안 되면: **TTS로 학습 데이터 합성 → 소형 KWS 학습** ([H3](speech-stack.md))
 - [ ] 상시 대기 전력·CPU 점유 측정 (24시간 가동 근거)
 
 ### Phase 3 — 실제 연동

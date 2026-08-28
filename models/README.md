@@ -61,8 +61,8 @@ curl -L -o Qwen3-4B-Q4_K_M.gguf \
 | `speech/vits-mimic3-ko_KO-kss_low/` | 79 MB | 한국어 TTS (VITS, 저품질·경량) | 합성음 ASR 대조 실험용 |
 | `speech/silero_vad.onnx` | 629 KB | 음성 구간 검출 (VAD) | 실마이크 측정에 사용 |
 
-측정 방법·결론은 [speech-stack.md](../research/speech-stack.md) 와
-[voice-agent-plan.md](../docs/plans/voice-agent-plan.md), 원본 wav 은
+측정 방법·결론은 [archive/speech/](../docs/archive/speech/) 로 옮겼다 (ASR 미사용 결정).
+원본 wav 은
 [`../results/speech/`](../results/speech/) 에 있다.
 
 ### 재다운로드

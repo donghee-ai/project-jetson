@@ -117,24 +117,23 @@ K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 
 │   ├── performance.md       벤치마크 (대역폭 · 깊이별 곡선 · 품질)
 │   ├── llm-models.md        모델 3종 비교 (툴콜링 · 속도 · 한국어)
 │   ├── reference-survey.md  GitHub 생태계 전수 스캔 (704개)
-│   └── speech-stack.md      음성 스택 (ASR · KWS · 통역 · TTS) + 실측
 ├── docs/                구축 · 기획   → 색인: docs/README.md
 │   ├── build/               ✅ 가동 중
 │   │   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
 │   │   └── openclaw-agent.md    에이전트 게이트웨이 결합 · 함정 14가지
 │   │                            + §7 Life Trainer 결합 (MCP · 폴더 감옥 · 예산)
 │   ├── plans/               ⏳ 미완
-│   │   ├── voice-agent-plan.md  한국어 음성 에이전트 (Phase 0 실측 완료)
 │   │   ├── opensource-plan.md   측정 자료 공개 · whichllm 기여
 │   │   └── grant-radar-plan.md  지원사업 매칭 서비스 (미착수)
-│   └── archive/             ⛔ 판단 종료 · 전제 무효
+│   └── archive/             ⛔ 판단 종료 · 접은 것
+│       └── speech/          음성 에이전트 — 성립했지만 ASR 을 안 쓰기로 (문서+스크립트)
 │       ├── project-candidates.md  후보 7개 비교
 │       ├── project-proposal.md    Understudy (미채택)
 │       └── vision-agent-plan.md   Frigate+VLM (전제 무효)
 ├── Life_Trainer/        ★ 상시 구동 중인 응용 — 자체 문서 트리를 갖는다
 ├── openclaw-setup/      OpenClaw 실행 자산 (systemd 유닛 · 설치 스크립트)
 ├── scripts/             측정 · 자동화 도구
-├── results/             측정 원본 데이터 (음성 wav 포함)
+├── results/             측정 원본 데이터
 ├── models/              어떤 가중치를 왜 골랐나 (실물은 `~/models/`, git 제외)
 └── reference/           타 프로젝트 클론 (git 제외)
 ```
@@ -170,32 +169,6 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
 
 ---
 
-## 또 하나의 트랙 — 음성 (Phase 0 실측 완료, 미착수)
-
-같은 하드웨어 위에서 **완전 로컬 한국어 음성 에이전트**가 성립하는지를 마이크 없이
-전 구간 측정했다. TTS 로 명령 음성을 합성해 ASR 에 먹이는 방식이라 **상한선**이다.
-
-| 구간 | 실측 | 판정 |
-|---|---|---|
-| ASR (SenseVoice-Small int8, CPU 8스레드) | **RTF 0.042** — 1.3초 음성을 0.12초에 | ✅ |
-| TTS (Supertonic-3 int8, CPU) | RTF 0.57~0.80 | ⚠️ 응답이 길면 부담 |
-| LLM 툴콜 (Qwen3-4B Q4) | **2.45초** | ❌ **지연의 95%** |
-| 핫패스 규칙 | **0.19 ms** | ✅ LLM 대비 약 **6,500배** |
-
-**결론: 성립한다. 단 LLM 을 매번 부르면 안 된다.** 웨이크워드 → 핫패스 규칙(0.2ms)
-→ LLM(2.5초, 폴백만) 의 3단 게이트 설계로 갔다.
-
-이 "규칙 게이트가 먼저, LLM 은 폴백" 구조는 **Life Trainer 의 `llm/trigger.py` 로
-그대로 옮겨갔다** — 음성에서 먼저 실측하고 텍스트에서 재사용한 셈이다.
-
-→ [research/speech-stack.md](research/speech-stack.md) (생태계 조사) ·
-[docs/plans/voice-agent-plan.md](docs/plans/voice-agent-plan.md) (실행 계획)
-
-> **진짜 공백은 기술이 아니라 언어다.** ASR·TTS 는 52k~14k 스타 프로젝트가 완성형으로
-> 널려 있어 조립만 하면 된다. 한국어 음성 도구 생태계가 사실상 비어 있는 것이 문제다.
-
----
-
 ## 환경
 
 ```
@@ -226,17 +199,6 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
 | `deep-context-bench.py` | 컨텍스트 깊이별 성능 + 장거리 검색 | [performance.md](research/performance.md) |
 | `chat-bench.py` | 운영 설정 그대로 대화로 깊이·품질 동시 측정 | 〃 |
 | `tool-bench.py` | 툴 콜링 정확도 (에이전트 적합성) | [llm-models.md](research/llm-models.md) |
-
-**음성 스택** — 마이크 없이 TTS 합성음으로 상한선을 먼저 쟀고, 나중에 실마이크로 다시 쟀다
-
-| 스크립트 | 용도 | 결과 |
-|---|---|---|
-| `speech-bench.py` | TTS · ASR · 엔드투엔드 (합성음) | [speech-stack.md](research/speech-stack.md) |
-| `asr-source-test.py` | ASR 실패 원인 분리 — 인식기인가 합성음인가 | 〃 |
-| `voice-e2e-bench.py` | 음성 에이전트 E2E, **슬롯 정확도** 기준 | [voice-agent-plan.md](docs/plans/voice-agent-plan.md) |
-| `mic-live-bench.py` | 실마이크 입력으로 같은 측정 (잡음·거리·에코 포함) | 〃 |
-| `hotpath-router.py` | 규칙 라우터로 LLM 을 빼면 얼마나 빨라지나 (**약 6,500배**) | 〃 |
-| `ha-tool-bench.py` | 구어체 스마트홈 툴 콜링 정확도 | 〃 |
 
 **생태계 조사**
 
@@ -271,11 +233,6 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
   ([Life_Trainer/docs/research/activitywatch.md](Life_Trainer/docs/research/activitywatch.md))
 - **aw-server 를 Tailscale IP 에만 바인딩하면 수집이 멈춘다** — 로컬 워처가
   `localhost:5600` 으로 붙기 때문. `0.0.0.0` + 방화벽으로 대역 제한이 맞다
-- **합성음 인식률이 무너져도 ASR 탓이 아닐 수 있다** — 같은 인식기가 원어민 녹음은
-  완벽히 받아썼다. 원인을 가르는 실험을 따로 설계해야 했다
-  ([speech-stack.md](research/speech-stack.md))
-- **문자열 완전일치로 음성을 채점하면 정답이 오답이 된다** — "이십사도" → "24도" 는
-  ASR 의 숫자 정규화(ITN) 결과라 의미는 정확하다. 채점 기준을 **슬롯 정확도**로 바꿨다
 - **EXAONE 툴 콜링 2/6 은 모델 탓이 아니었다** — 채팅 템플릿에 `tools` 렌더링 코드가
   없어 llama.cpp 가 툴 정의를 조용히 버렸다. **모델은 툴 존재를 몰랐다**
   ([llm-models.md](research/llm-models.md))

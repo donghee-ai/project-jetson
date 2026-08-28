@@ -31,7 +31,6 @@
 
 | 문서 | 무엇 | 어디까지 |
 |---|---|---|
-| [plans/voice-agent-plan.md](plans/voice-agent-plan.md) | 완전 로컬 한국어 음성 에이전트 — 3단 게이트 설계 | **Phase 0 완료** (마이크 없이 전 구간 실측). 마이크 확보 후 Phase 1 |
 | [plans/opensource-plan.md](plans/opensource-plan.md) | 측정 자료 공개·`whichllm` 기여 | 스키마 확인·패치 작성 완료, **PR 승인 대기** |
 | [plans/grant-radar-plan.md](plans/grant-radar-plan.md) | 지원사업 자격요건 매칭 서비스 | **미착수.** 사업화 검토 대상 |
 
