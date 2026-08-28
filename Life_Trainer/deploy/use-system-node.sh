@@ -16,7 +16,15 @@ echo "==> 시스템 Node: $(/usr/local/bin/node --version)"
 # 유닛 본체를 다시 생성한다. 이제 /usr/local/bin/node 가 존재하므로 openclaw 가
 # ExecStart 를 시스템 Node 로 잡는다 (resolveSystemNodeInfo 가 version-managed
 # 아닌 지원 버전을 우선한다). --force 없이는 "already enabled" 로 그냥 넘어간다.
-openclaw gateway install --force
+#
+# ★ **어느 openclaw 로 부르는지가 결정적이다** (2026-08-28).
+#   `openclaw` 를 PATH 로 찾으면 nvm 쪽이 잡히고(PATH 에서 nvm 이 앞이다),
+#   그러면 유닛 ExecStart 에 **nvm 경로가 다시 박힌다.** 실제로 시스템 설치를
+#   끝낸 직후 이 스크립트를 돌렸다가 방금 한 일을 그대로 되돌렸다.
+#   설치된 것 중 시스템 쪽을 **우선해서** 부른다.
+OC=$(command -v /usr/local/bin/openclaw || command -v openclaw)
+echo "==> gateway 를 다시 만든다: $OC"
+"$OC" gateway install --force
 
 # 본체 PATH 에는 여전히 nvm 경로가 섞이므로 드롭인으로 덮는다.
 mkdir -p "$DROPIN_DIR"

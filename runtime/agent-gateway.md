@@ -326,6 +326,36 @@ CLI 경로뿐이고 smoke test 3번이 그걸 본다.
 시스템 쪽이 며칠 멀쩡히 돈 뒤에 지운다. 그리고 **버전을 고정해서 옮긴다** —
 옮기는 김에 올리면 무엇이 원인인지 못 가른다.
 
+### ✅ 2026-08-28 옮겼다 — 그 과정에서 나온 함정 둘
+
+```
+게이트웨이  /usr/local/bin/node /usr/local/lib/node_modules/openclaw/dist/index.js
+위임 CLI    /usr/local/bin/openclaw
+lt doctor   OK 17 / WARN 0 / FAIL 0
+smoke       "오늘 계획이 뭐야?" → 계획·달성률 정상 응답 (Node 24)
+```
+
+**① `use-system-node.sh` 가 방금 한 일을 되돌렸다.** 그 스크립트는 안에서
+`openclaw gateway install --force` 를 부르는데, **PATH 로 찾으면 nvm 쪽이 잡힌다**
+(PATH 에서 nvm 이 `/usr/local/bin` 보다 앞이다). 그러면 유닛 `ExecStart` 에 nvm 경로가
+다시 박힌다. 시스템 설치를 끝낸 직후 그 스크립트를 돌렸다가 정확히 그렇게 됐다.
+지금은 `/usr/local/bin/openclaw` 를 **우선해서** 부른다.
+
+**② `command -v openclaw` 는 설치 후에도 nvm 을 가리킨다** — 같은 PATH 순서 때문이다.
+그래서 위임 경로를 PATH 에 맡기지 않고 절대경로로 고정했다:
+
+```toml
+# config/lifetrainer.toml
+[agent]
+openclaw_bin = "/usr/local/bin/openclaw"
+```
+
+**둘 다 "설치했으니 됐다" 와 "실제로 그게 불린다" 가 다른 경우다.** 이 저장소가
+반복해서 겪은 부류 — 살아 있다 ≠ 서빙 가능하다, 툴을 불렀다 ≠ 일을 했다 — 와 같다.
+
+★ nvm 설치본은 **아직 지우지 않았다.** 며칠 멀쩡히 돈 뒤에 지운다:
+`rm -rf ~/.nvm/versions/node/v22.23.2/lib/node_modules/openclaw`
+
 ---
 
 ### 11. 서비스 감사(audit)는 드롭인을 못 본다 — 경고 하나는 오탐
