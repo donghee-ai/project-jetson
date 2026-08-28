@@ -11,6 +11,9 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 fail=0
 ok()   { printf "  \033[32m✅\033[0m %s\n" "$1"; }
 bad()  { printf "  \033[31m❌\033[0m %s\n" "$1"; fail=1; }
+# ★ 경고는 실패로 세지 않는다. 아직 증명할 수 없을 뿐 잘못되지 않은 상태가 있고,
+#   그걸 빨간불로 만들면 신호가 죽는다 — issues/0016 이 정확히 그 부류다.
+wr()   { printf "  \033[33m⚠️\033[0m  %s\n" "$1"; }
 
 echo "▶ 부팅 후 경과: $(uptime -p)"
 echo
@@ -70,11 +73,16 @@ echo
 echo "▶ 6. journal 이 이전 부팅을 갖고 있나"
 # ★ 로그가 재부팅을 못 넘기면 사고를 사후에 조사할 수 없다.
 #   HANDOFF §10 이 안내하는 journalctl 명령이 빈손이 된다.
-if [ -d /var/log/journal ]; then
-  journalctl --user -b -1 -n1 >/dev/null 2>&1 \
-    && ok "이전 부팅 로그 있음" || bad "영속 저장은 켜져 있는데 이전 부팅 기록이 없다"
-else
+if [ ! -d /var/log/journal ]; then
   bad "/var/log/journal 없음 — journald 가 메모리에만 쓴다. 재부팅하면 전부 사라진다"
+  echo "     고치는 법: sudo bash bench/enable-persistent-journal.sh"
+elif journalctl --user -b -1 -n1 >/dev/null 2>&1; then
+  ok "이전 부팅 로그 있음 ($(journalctl --list-boots --no-pager 2>/dev/null | wc -l) 부팅 보관)"
+else
+  # ★ 영속화를 **이번 부팅 도중에** 켜면 이전 부팅이 디스크에 있을 수가 없다.
+  #   설정은 옳고 증명만 아직 안 되는 상태다. 이걸 실패로 세면 다음 재부팅까지
+  #   빨간불이 상수가 되고, 그러면 사람이 이 스크립트를 안 본다.
+  wr "영속 저장은 켜져 있으나 이전 부팅 기록이 아직 없다 — 다음 재부팅 뒤 다시 볼 것"
 fi
 
 echo
