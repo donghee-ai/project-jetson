@@ -124,6 +124,24 @@ if command -v dkms >/dev/null; then
 fi
 
 echo
+echo "▶ 노출 — 이 기기에는 창 제목이 든 개인 기록 DB 가 있다"
+fw="없음"
+systemctl is-active ufw >/dev/null 2>&1 && fw="ufw"
+systemctl is-active nftables >/dev/null 2>&1 && fw="nftables"
+open=$(ss -tulnH 2>/dev/null | awk '$5 ~ /^(0\.0\.0\.0|\*|\[::\]):/ {split($5,a,":"); print a[length(a)]}' | sort -un | tr '\n' ' ')
+# ★ 안 쓰는 것을 끄는 것이 방화벽 규칙보다 먼저다 — 규칙은 잊히지만
+#   꺼진 서비스는 잊혀도 안 열린다.
+known_unused=""
+for p in 111 631; do echo "$open" | grep -qw "$p" && known_unused="$known_unused $p"; done
+[ "$fw" = "없음" ] && wr "방화벽" "없음 — 아래 포트가 LAN 전체에 열려 있다" || ok "방화벽" "$fw"
+if [ -n "$known_unused" ]; then
+  # ★ 백틱을 큰따옴표 안에 두면 **명령 치환으로 실행된다.** 처음에 그렇게 썼다가
+  #   메시지 안의 harden-network.sh 가 실제로 돌았다. 안내문에는 백틱을 쓰지 않는다.
+  wr "안 쓰는 포트" "$known_unused (rpcbind·CUPS) — bash bench/harden-network.sh 로 닫는다"
+else ok "안 쓰는 포트" "없음"; fi
+ok "전체 개방 포트" "$open"
+
+echo
 echo "▶ journal — 로그가 재부팅을 넘기나"
 if [ -d /var/log/journal ]; then
   ok "영속 저장" "$(journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[MG]' | head -1) · 부팅 $(journalctl --list-boots --no-pager 2>/dev/null | wc -l)개 보관"
