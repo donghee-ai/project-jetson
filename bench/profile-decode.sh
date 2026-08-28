@@ -18,7 +18,7 @@
 # ## 중간에 죽어도 원래대로 돌아온다 (trap)
 
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 ROOT=$(pwd)
 
 # ★ 세션 이름은 매번 다르게. 같은 이름이 살아 있으면

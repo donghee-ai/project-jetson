@@ -5,7 +5,7 @@
 # (테스트 수 두 번 · 분류 규칙 수 한 번 · 실데이터 한 번).
 # 원인은 규칙이 아니라 **옮겨 적을 자리가 있다는 것**이었다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 LT=Life_Trainer
 
 echo "▶ $(date '+%Y-%m-%d %H:%M %Z') · $(uptime -p)"

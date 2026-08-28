@@ -14,7 +14,7 @@
 #     WARN 유지 → **안 알린다** (이미 아는 것. 알려진 WARN 은 issues/ 에 있다)
 #     전부 OK   → 안 알린다
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/project-jetson"
 mkdir -p "$STATE_DIR"

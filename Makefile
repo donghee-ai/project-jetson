@@ -10,7 +10,7 @@ FIGURES   := figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs check-fast check test hooks
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck check-fast check test hooks
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -59,9 +59,21 @@ check-docs:  ## 문서가 운영 지표를 옮겨 적고 있는지 (검사기 �
 	@bash bench/check-docs.sh
 
 # ★ pre-push 는 이걸 부른다. 6분짜리 테스트는 여기 안 넣는다 — 훅이 느리면 꺼진다.
-check-fast:  ## 링크 + 문서 지표 (즉시. pre-push 훅이 부르는 것)
+check-fast:  ## 링크 + 문서 지표 + shellcheck (즉시. pre-push 훅이 부르는 것)
 	@$(MAKE) --no-print-directory links
 	@$(MAKE) --no-print-directory check-docs
+	@$(MAKE) --no-print-directory shellcheck
+
+shellcheck:  ## 셸 스크립트 정적 검사
+	@# ★ 이 기기에는 apt shellcheck 이 없다. venv 의 shellcheck-py 를 쓴다.
+	@if [ -x Life_Trainer/.venv/bin/shellcheck ]; then \
+	   Life_Trainer/.venv/bin/shellcheck -S warning -f gcc \
+	     bench/*.sh Life_Trainer/scripts/*.sh Life_Trainer/deploy/*.sh runtime/*.sh \
+	   && echo "  셸 경고 없음"; \
+	 elif command -v shellcheck >/dev/null; then \
+	   shellcheck -S warning -f gcc bench/*.sh Life_Trainer/scripts/*.sh Life_Trainer/deploy/*.sh runtime/*.sh \
+	   && echo "  셸 경고 없음"; \
+	 else echo "  ⚠️ shellcheck 없음 — pip install shellcheck-py (CI 는 돈다)"; fi
 
 check: check-fast  ## check-fast + 유닛 정적검사 + 테스트
 	@echo

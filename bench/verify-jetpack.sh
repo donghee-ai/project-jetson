@@ -95,7 +95,6 @@ done
 
 echo
 echo "▶ 6. 전력 모드"
-m=$(nvpmodel -q 2>/dev/null | grep -A1 "NV Power Mode" | tail -1)
 c=$(readlink -f /etc/nvpmodel.conf | sed 's|.*/||')
 echo "     현재 모드 : $(nvpmodel -q 2>/dev/null | grep 'NV Power Mode' | cut -d: -f2 | xargs)"
 echo "     활성 conf : $c"

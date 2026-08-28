@@ -4,7 +4,7 @@
 # 기록 문서(progress/ · HISTORY/)는 제외한다 — 그날의 사실을 적은 것이라
 # 오늘 구조에 맞춰 고치면 안 된다. 대신 이정표 문서가 옛 경로를 받아준다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 # ★ 파일시스템이 아니라 **git 기준**으로 본다.
 #   워킹트리에만 있는 것(git mv 뒤 남은 빈 디렉토리 · gitignore 된 results/speech/)을

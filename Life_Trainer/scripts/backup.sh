@@ -12,7 +12,7 @@
 #   ★ 이 묶음에는 **비밀값이 들어간다.** 0600 으로 만들고 data/ 밖으로 내보낼 때는
 #     반드시 암호화한다 (아래 LT_BACKUP_REMOTE).
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 VENV=.venv/bin
 OUT_DIR=data/backup

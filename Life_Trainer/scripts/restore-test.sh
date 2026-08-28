@@ -9,7 +9,7 @@
 #
 #   운영 DB 를 절대 건드리지 않는다. 임시 경로에만 쓴다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 VENV=.venv/bin
 
 SRC=${1:-$(ls -1t data/backup/lifetrainer-????-??-??.db 2>/dev/null | head -1)}

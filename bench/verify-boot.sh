@@ -6,7 +6,7 @@
 #   뜬다는 뜻이 아니다. 이 저장소가 이미 겪은 부류다 —
 #   "살아 있다 ≠ 서빙 가능하다" (runtime/agent-gateway.md §4-8).
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 fail=0
 ok()   { printf "  \033[32m✅\033[0m %s\n" "$1"; }

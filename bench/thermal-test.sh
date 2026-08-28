@@ -42,7 +42,8 @@ else
 fi
 
 # ── CPU 부하: 전 코어
-for i in $(seq 1 $(nproc)); do
+ncpu=$(nproc)
+for _ in $(seq 1 "$ncpu"); do
   ( while :; do :; done ) &
 done
 echo "  ▶ CPU 부하 시작 ($(nproc) 코어)"

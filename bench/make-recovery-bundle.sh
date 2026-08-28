@@ -22,7 +22,7 @@
 # ★★ 산출물에는 **토큰·API 키·터널 자격증명·개인 활동 기록**이 들어간다.
 #    0600 으로 만들고, 옮길 때 암호화한다. 공개 저장소나 채팅에 올리지 말 것.
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 REPO=$PWD
 LT=$REPO/Life_Trainer
 

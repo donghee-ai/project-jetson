@@ -9,7 +9,7 @@
 #   sudo 없이 읽히는 것만 본다. 못 읽는 것은 **못 읽는다고 말한다** —
 #   조용히 건너뛰면 "확인했다" 로 읽힌다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 warn=0
 ok()  { printf "  \033[32m✅\033[0m %-22s %s\n" "$1" "$2"; }

@@ -25,7 +25,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov"]
+# shellcheck-py: apt shellcheck 이 없는 기기에서도 `make check` 가 셸을 검사하게 한다.
+dev = ["pytest>=8", "pytest-cov", "shellcheck-py>=0.10"]
 
 [project.scripts]
 lt = "lifetrainer.cli:main"

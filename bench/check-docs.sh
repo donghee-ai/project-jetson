@@ -13,7 +13,7 @@
 #   측정값은 잰 시점이 있는 사실이라 문서에 적는 게 맞다. 여기서 막는 것은
 #   `make status` 가 뽑아 주는, **오늘과 내일이 다른** 값이다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
 
 TARGET_LIST=${1:-}   # 비우면 git 추적 md 전체. 테스트는 파일 하나를 넘긴다
 
