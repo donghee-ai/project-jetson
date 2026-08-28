@@ -125,6 +125,23 @@ def _palette_css_blocks(palette_path) -> str:
         out.append(f"{base} {{\n{light}\n}}")
         out.append(f"@media (prefers-color-scheme: dark) {{\n{auto_dark} {{\n{dark}\n}}\n}}")
         out.append(f"{forced_dark} {{\n{dark}\n}}")
+
+    # ★ UI 강조색(`--ui-accent-base`)은 **변주를 안 따른다.**
+    #
+    # 전에는 `planner.css` 가 `--ui-accent: var(--cat-coding)` 이라 팔레트를 파스텔로
+    # 바꾸면 격자만이 아니라 "실제 활동" 숫자·"오늘의 계획" 강조까지 같이 옅어졌다
+    # (파스텔 coding 은 #a7e2ff 다). **격자의 취향과 UI 의 읽힘은 다른 축이다** —
+    # 격자는 카테고리를 구분하려고 색을 쓰고, UI 는 무엇을 누를지 알려주려고 쓴다.
+    #
+    # 라이트는 기본, 다크는 네온을 쓴다. 두 값 다 palette.yaml 에서 온다 (하드코딩 없음).
+    accent_light = load_palette(palette_path, "light").categories["coding"]
+    accent_dark = load_palette(palette_path, "neon-dark").categories["coding"]
+    out.append(f":root {{\n  --ui-accent-base: {accent_light};\n}}")
+    out.append(
+        "@media (prefers-color-scheme: dark) {\n"
+        f'  :root:not([data-theme="light"]) {{ --ui-accent-base: {accent_dark}; }}\n}}'
+    )
+    out.append(f':root[data-theme="dark"] {{ --ui-accent-base: {accent_dark}; }}')
     return "\n".join(out)
 
 

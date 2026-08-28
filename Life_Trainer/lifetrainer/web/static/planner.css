@@ -7,7 +7,9 @@
 * { box-sizing: border-box; }
 
 :root {
-  --ui-accent: var(--cat-coding);
+  /* ★ 카테고리 색이 아니라 서버가 주입한 **변주 무관** 값이다.
+     파스텔을 고르면 격자만 바뀌고 이 값은 안 바뀐다 (web/app.py `_palette_css_blocks`). */
+  --ui-accent: var(--ui-accent-base, var(--cat-coding));
   --ui-bg: color-mix(in srgb, var(--surface) 95%, var(--ink-gridline));
   --ui-card: var(--surface);
   --ui-subtle: color-mix(in srgb, var(--ink-gridline) 48%, transparent);
