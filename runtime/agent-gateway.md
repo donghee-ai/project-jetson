@@ -290,6 +290,36 @@ root 가 필요하다. Ubuntu 22.04 의 apt `nodejs` 는 **12.22.9** 라 못 쓴
 설치 후 **유닛을 다시 생성해야 한다.** `openclaw daemon install` 은 이미 설치돼 있으면
 `already enabled` 로 넘어가므로 `openclaw gateway install --force` 가 필요하다.
 
+### 10-B. ★ 시스템 Node 로 **절반만** 옮겨져 있었다 (2026-08-28)
+
+`use-system-node.sh` 를 돌린 뒤 게이트웨이는 시스템 Node 로 **실행**된다.
+그런데 실행하는 **스크립트는 여전히 nvm 안**이다:
+
+```
+ExecStart=/usr/local/bin/node \
+          /home/user/.nvm/versions/node/v22.23.2/lib/node_modules/openclaw/dist/index.js
+          ↑ 시스템          ↑ 여기가 안 옮겨졌다
+```
+
+`openclaw` CLI 도 같다 (위임이 이걸 부른다). **nvm 을 갈아엎으면 둘 다 죽고**,
+증상은 *"에이전트가 툴을 안 부른다"* 하나뿐이다.
+
+`lt doctor` 가 CLI 경로만 보고 있어서 **절반만 옮겨진 상태가 안 드러났다.**
+지금은 게이트웨이 `ExecStart` 도 같이 본다 — 그리고 그 조회가 실패하면
+**실패했다고 말한다.** 조용히 "괜찮음" 으로 넘어가면 이번에도 안 드러난다.
+
+나머지 절반을 옮기는 것 (sudo 필요, **rollback 절차가 스크립트 안에 있다**):
+
+```bash
+sudo bash Life_Trainer/deploy/install-openclaw-system.sh
+```
+
+★ **nvm 설치본을 먼저 지우지 않는다.** 둘이 공존하는 동안에만 되돌릴 수 있고,
+시스템 쪽이 며칠 멀쩡히 돈 뒤에 지운다. 그리고 **버전을 고정해서 옮긴다** —
+옮기는 김에 올리면 무엇이 원인인지 못 가른다.
+
+---
+
 ### 11. 서비스 감사(audit)는 드롭인을 못 본다 — 경고 하나는 오탐
 
 시스템 Node 로 전환해도 PATH 경고가 남는다. 그런데 실제 런타임은 깨끗하다.

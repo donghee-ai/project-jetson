@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import time
 import sqlite3
 import sys
@@ -684,9 +685,31 @@ def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doc
             )
         elif not binary.startswith(("/usr/local/", "/usr/bin/")):
             # 서비스 PATH 밖(nvm 등)이면 찾아지긴 해도 버전 매니저에 묶여 있다.
+            #
+            # ★ 2026-08-28: 게이트웨이 유닛도 같이 본다. 유닛은 이미 시스템 Node 로
+            #   **실행**되는데(`/usr/local/bin/node`), 실행하는 **스크립트**는 여전히
+            #   nvm 안의 node_modules 다. 즉 nvm 을 지우면 CLI 뿐 아니라 게이트웨이도
+            #   같이 죽는다. 여기를 안 보고 있어서 절반만 옮긴 상태가 안 드러났다.
+            gw = ""
+            try:
+                gw = subprocess.run(
+                    ["systemctl", "--user", "show", "openclaw-gateway", "-p", "ExecStart", "--value"],
+                    capture_output=True, text=True, timeout=5,
+                ).stdout
+            except Exception as exc:  # noqa: BLE001
+                gw = f"<확인 실패: {exc}>"
+            if "/.nvm/" in gw:
+                also = " · **게이트웨이 스크립트도 같은 곳에 있다**"
+            elif gw.startswith("<확인 실패"):
+                # ★ 못 봤으면 못 봤다고 말한다. 조용히 "괜찮음" 으로 넘어가면
+                #   절반만 옮겨진 상태가 이번에도 안 드러난다.
+                also = f" · 게이트웨이 경로 {gw}"
+            else:
+                also = ""
             warn(
                 "에이전트 Slack 위임",
-                f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다 "
+                f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다{also}. "
+                "옮기는 법: `sudo bash Life_Trainer/deploy/install-openclaw-system.sh` "
                 "(`openclaw-agent.md §4-10`)",
             )
         else:
