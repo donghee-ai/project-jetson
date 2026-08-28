@@ -5,10 +5,13 @@ Documentation=file://%h/project/project-jetson/runtime/README.md
 [Service]
 Type=oneshot
 WorkingDirectory=%h/project/project-jetson
-# ★ 여기를 채워야 동작한다. healthchecks.io 등의 ping 주소.
-#   비어 있으면 스크립트가 78(EX_CONFIG)로 끝난다 — 실패가 아니라 미설정이다.
+# ★ URL 은 **이 파일에 적지 않는다.** 이 유닛은 git 에 추적되므로 여기 넣으면
+#   GitHub 에 공개되고, 그 URL 을 아는 사람은 기기가 죽어도 "살아 있다" 고 위조할 수 있다.
+#   저장소 밖 0600 파일에서 읽는다. 없으면 스크립트가 78(EX_CONFIG)로 끝난다 —
+#   실패가 아니라 미설정이다.
+#     ~/.config/jetson/heartbeat.env 에  JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>
 #   나가는 것은 "이 기기가 방금 정상이었다" 는 사실 하나뿐이다.
-Environment=JETSON_HEARTBEAT_URL=
+EnvironmentFile=-%h/.config/jetson/heartbeat.env
 ExecStart=%h/project/project-jetson/bench/heartbeat.sh
 # 미설정(78)은 실패로 세지 않는다
 SuccessExitStatus=78

@@ -45,7 +45,20 @@ while read -r u cond; do
   case "$cond" in
     optional=*)
       var=${cond#optional=}
-      val=$(systemctl --user show "$u" -p Environment --value 2>/dev/null | tr ' ' '\n' | grep "^$var=" | cut -d= -f2-)
+      # ★ 환경변수는 **서비스**에 있다. 타이머에서 찾으면 항상 비어 있어서
+      #   설정을 마쳐도 계속 "미설정" 노란불이 남는다 (실제로 그랬다).
+      # ★ 그리고 `EnvironmentFile=` 은 **실행 시점에 읽히므로 `show -p Environment`
+      #   에 안 나온다.** 비밀값은 저장소 밖 파일에 두는 게 맞으니(유닛은 git 에
+      #   추적된다) 파일 쪽도 같이 봐야 한다. 두 번째 함정이었다.
+      svc=${u%.timer}.service
+      val=$(systemctl --user show "$svc" -p Environment --value 2>/dev/null | tr ' ' '\n' | grep "^$var=" | cut -d= -f2-)
+      if [ -z "$val" ]; then
+        while read -r ef; do
+          ef=${ef%% *}; ef=${ef#-}
+          [ -r "$ef" ] && val=$(grep -h "^$var=" "$ef" 2>/dev/null | tail -1 | cut -d= -f2-)
+          [ -n "$val" ] && break
+        done < <(systemctl --user show "$svc" -p EnvironmentFiles --value 2>/dev/null | tr ' ' '\n' | grep '^/')
+      fi
       if [ -z "$val" ]; then
         # ★ 미설정을 실패로 세지 않는다. 다만 **조용히 넘어가지도 않는다** —
         #   heartbeat 가 안 도는 것과 "설정을 안 한 것" 은 다른 사실이다.

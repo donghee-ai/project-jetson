@@ -97,3 +97,7 @@ core.*
 *.tmp
 *.swp
 .DS_Store
+
+# 복구 묶음 — 토큰·키·개인 활동 기록이 들어 있다. 절대 커밋하지 않는다.
+recovery-bundle-*.tar.gz
+recovery-bundle-*.sha256

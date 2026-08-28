@@ -10,7 +10,7 @@ FIGURES   := figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status links check-docs check-fast check test hooks
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs check-fast check test hooks
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -44,6 +44,12 @@ status:  ## 지금 이 기기의 현황 (서비스 · 실데이터 · 링크)
 #   아무도 안 보고 있었다.
 host-status:  ## 기기 상태 (디스크 · OOM · 발열 · BSP · 서비스 재시작 이력)
 	@bash bench/host-status.sh
+
+# ★ 저장소 백업(Life_Trainer/scripts/backup.sh)과 다르다. 이건 **저장소 밖**까지
+#   포함해 기기를 처음부터 다시 세우는 묶음이다 — openclaw 배선 · 터널 자격증명 ·
+#   WiFi 드라이버(커널 hold 의 이유) · systemd 실제 상태.
+recovery-bundle:  ## 기기 재구축용 묶음 하나 (★ 비밀값 포함 · 0600)
+	@bash bench/make-recovery-bundle.sh
 
 links:  ## 문서의 상대경로 링크가 전부 실재하는지
 	@bash bench/check-links.sh
