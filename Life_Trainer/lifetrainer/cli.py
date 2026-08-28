@@ -470,26 +470,45 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         try:
             from lifetrainer.llm.queue import stats as queue_stats
 
+            from lifetrainer.llm.queue import health as queue_health
+
             qs = queue_stats(conn)
             detail = ", ".join(f"{k}={v}" for k, v in sorted(qs.items())) if qs else "비어 있음"
 
-            # ★ 조회가 됐다고 OK 가 아니다. 실패한 잡이 쌓여 있으면 그게 요점이다.
-            #   2026-08-21 에 요약 잡 277건이 503("Loading model")으로 죽어 있었는데,
-            #   이 항목이 개수만 나열하고 OK 를 찍어서 이틀을 못 봤다.
-            #   → 실패는 "조회 가능" 이 아니라 "실패율" 로 판정한다.
-            failed = int(qs.get("failed", 0))
-            done = int(qs.get("done", 0))
-            finished = failed + done
-            if failed and finished:
-                rate = failed / finished
+            # ★ 조회가 됐다고 OK 가 아니다 (2026-08-21). 요약 잡 277건이 503 으로
+            #   죽어 있었는데 이 항목이 개수만 나열하고 OK 를 찍어 이틀을 못 봤다.
+            #
+            # ★ 그렇다고 **누적 실패율**도 아니다 (2026-08-28, issues/0016).
+            #   `purge_done` 이 종료 잡을 14일 뒤에 걷어가므로 done 은 회전하는데
+            #   failed 는 그 창이 지나야 사라진다. 그래서 원인을 고친 뒤에도 2주 동안
+            #   노란불이 남고, **그 사이 새 실패가 들어와도 구분이 안 된다.**
+            #   상시 켜진 신호는 신호가 아니다.
+            #
+            #   판정 축은 "얼마나 실패했나" 가 아니라 **"지금 실패하고 있나"** 다.
+            h = queue_health(conn)
+            RECENT_H, BACKLOG_H, MIN_SAMPLE, RATE = 48.0, 6.0, 10, 0.10
+            since_h = h.hours_since_last_failure
+
+            if h.stale_running:
+                # 워커가 잡을 집다 죽으면 실패가 아니라 여기 남는다. 실패율엔 안 잡힌다.
+                warn("큐", f"{detail} · running 인데 lease 만료 {h.stale_running}건"
+                           " — 워커가 잡을 집은 채 죽었다. `lt queue stats` 확인")
+            elif h.oldest_queued_age > BACKLOG_H * 3600:
+                # backlog 도 실패율엔 안 잡힌다 — 아무것도 실패하지 않고 그냥 안 돈다.
+                warn("큐", f"{detail} · 가장 오래된 대기 잡 {h.oldest_queued_age/3600:.1f}시간"
+                           f" (기준 {BACKLOG_H:.0f}h) — 워커가 도는지 확인")
+            elif (since_h is not None and since_h <= RECENT_H
+                  and h.recent_finished >= MIN_SAMPLE and h.recent_rate >= RATE):
+                worst = f" · 최악 {h.worst_kind[0]} {h.worst_kind[1]}/{h.worst_kind[2]}" if h.worst_kind else ""
                 top = _top_job_error(conn)
-                hint = f" — 대표 사유: {top}" if top else ""
-                msg = f"{detail} · 실패율 {rate:.0%} ({failed}/{finished}){hint}"
-                # 10% 를 넘으면 뭔가 구조적으로 새고 있는 것이다. 한두 건은 잡음.
-                if rate >= 0.10 or failed >= 50:
-                    warn("큐", msg + " — `lt queue stats` 로 확인, known-issues 참조")
-                else:
-                    ok("큐", msg)
+                warn("큐", f"{detail} · 최근 {h.window_days}일 실패율 {h.recent_rate:.0%}"
+                           f" ({h.recent_failed}/{h.recent_finished}){worst}"
+                           f" · 마지막 실패 {since_h:.0f}시간 전"
+                           + (f" — 대표 사유: {top}" if top else ""))
+            elif since_h is not None and h.success_since_last_failure:
+                # 무더기로 죽었어도 그 뒤로 계속 성공했으면 **고쳐진 것**이다.
+                ok("큐", f"{detail} · 마지막 실패 {since_h/24:.1f}일 전, "
+                         f"이후 {h.success_since_last_failure:,}건 연속 성공")
             else:
                 ok("큐", detail)
         except Exception as exc:  # noqa: BLE001
