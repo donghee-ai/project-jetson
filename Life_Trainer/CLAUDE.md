@@ -122,7 +122,7 @@
 | 무엇이 있고 어떻게 흐르는가 | [docs/handbook.md](docs/handbook.md) |
 | **왜 이 모양인가** — ERD·워크플로우·판정 근거 | [docs/architecture.md](docs/architecture.md) |
 | 기기 실측치 (대역폭·속도·메모리) | [`research/`](../research/) — 색인 있음 |
-| 이 기기에서 돌고 있는 것의 구축 기록 | [`docs/build/`](../docs/build/) |
+| 이 기기에서 돌고 있는 것의 구축 기록 | [`runtime/`](../runtime/) |
 | 아직 안 고친 문제 | [docs/issues/](docs/issues/) — 한 건에 한 파일. 파일명 접두어가 등급이다 |
 
 **고칠 때까지 안 고친 것은 `docs/issues/` 에 한 건씩 남긴다.** "나중에 하자"를 문서 밖에

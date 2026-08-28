@@ -1,8 +1,25 @@
+# deploy/ — Life Trainer 를 이 기기에 세우는 것
+
+> **2026-08-28: `openclaw-setup/` 에서 갈라져 나왔다.** 그 폴더에는 소비자가 다른
+> 두 가지가 섞여 있었다 — 공유 추론 런타임은 [`../../runtime/`](../../runtime/) 으로,
+> 에이전트 경로에만 필요한 것은 여기로.
+
+| | |
+|---|---|
+| `install-gateway.sh` | 게이트웨이 드롭인 2개를 건다 (**둘 다** — 전에는 하나씩 흩어져 있었다) |
+| `install-system-node.sh` · `use-system-node.sh` | OpenClaw 가 요구하는 Node 22+ 로 맞춘다 |
+| `patch-cron-schema.sh` | `cron` 툴 스키마의 `pattern` 제거 — llama.cpp GBNF 가 400 을 낸다 |
+| `enable-tailscale-serve.sh` | 게이트웨이 제어 UI 를 tailnet 에 연다 |
+| `slack-app-manifest.json` | 게이트웨이용 Slack 앱 (Life Trainer 자체 매니페스트와 다른 것) |
+| `systemd/openclaw-gateway.service.d/` | `10-depends-llama` · `20-system-node` |
+
+---
+
 # openclaw-setup — 실행 자산
 
 OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립트.
 
-**구축 기록·실측·함정 정리는 [../docs/build/openclaw-agent.md](../docs/build/openclaw-agent.md)** 에 있다.
+**구축 기록·실측·함정 정리는 [../runtime/agent-gateway.md](../../runtime/agent-gateway.md)** 에 있다.
 이 폴더는 그 문서가 참조하는 실행 파일만 담는다.
 
 > ⚠️ `~/.config/systemd/user/` 의 드롭인이 이 폴더를 **심링크로 참조**한다.
@@ -28,7 +45,7 @@ OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립�
 ★ **`lifetrainer` 에이전트 배선은 여기 없다.** Life Trainer 쪽에 있다 —
 `Life_Trainer/scripts/install-agent.sh` (에이전트 등록 · MCP 서버 · 툴 정책).
 게이트웨이가 살아 있는 것이 선행 조건이라 이 폴더의 `install.sh` 를 먼저 돌린다.
-자세한 것은 [openclaw-agent.md §7](../docs/build/openclaw-agent.md).
+자세한 것은 [openclaw-agent.md §7](../../runtime/agent-gateway.md).
 
 ---
 
@@ -51,4 +68,4 @@ systemctl --user status llama-server openclaw-gateway
 ```
 
 현재 상태와 되돌리는 방법은
-[../docs/build/openclaw-agent.md §5](../docs/build/openclaw-agent.md) 참조.
+[../runtime/agent-gateway.md §5](../../runtime/agent-gateway.md) 참조.

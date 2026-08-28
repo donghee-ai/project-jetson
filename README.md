@@ -70,7 +70,7 @@ OpenClaw 게이트웨이          0.3 GB
 
 ![what fills the 13.4 GB](figures/memory-budget.png)
 
-→ [docs/build/llm-runtime.md](docs/build/llm-runtime.md)
+→ [runtime/llm-runtime.md](runtime/llm-runtime.md)
 
 ---
 
@@ -133,33 +133,29 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 
 ## 디렉토리 구조
 
-**폴더가 곧 상태다.** `research/` 는 잰 것, `docs/build/` 는 돌고 있는 것,
+**폴더가 곧 상태다.** `research/` 는 잰 것, `runtime/` 는 돌고 있는 것,
 `docs/plans/` 는 안 끝난 것, `docs/archive/` 는 접은 것.
 
 ```
+├── bench/               측정 도구 (하드웨어 · 모델 · 생태계 조사)
+├── results/             측정 원본 데이터
+├── figures/             results/ 에서 재생성되는 그림  ← make figures
 ├── benchmarks/          모델 13종 실측 (2026-08-18) → 색인: benchmarks/README.md
 ├── research/            조사 · 실측  → 색인: research/README.md
 │   ├── hardware.md          하드웨어 실측 · 전력모드 · 메모리 예산
 │   ├── performance.md       벤치마크 (대역폭 · 깊이별 곡선 · 품질)
 │   ├── llm-models.md        모델 3종 비교 (툴콜링 · 속도 · 한국어)
-│   ├── reference-survey.md  GitHub 생태계 전수 스캔 (704개)
-├── docs/                구축 · 기획   → 색인: docs/README.md
-│   ├── build/               ✅ 가동 중
-│   │   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
-│   │   └── openclaw-agent.md    에이전트 게이트웨이 결합 · 함정 14가지
-│   │                            + §7 Life Trainer 결합 (MCP · 폴더 감옥 · 예산)
+│   └── reference-survey.md  GitHub 생태계 전수 스캔 (704개)
+├── runtime/             ★ 측정이 정한 값으로 돌리는 법 — **공유 자산**
+│   ├── llm-runtime.md       llama.cpp 빌드 · 서버 운영
+│   ├── agent-gateway.md     OpenClaw 결합 · 함정 14가지
+│   └── systemd/             llama-server.service + ctx.conf (LLAMA_CTX=20480)
+├── docs/                기획 · 기록
 │   ├── plans/               ⏳ 미완
-│   │   ├── opensource-plan.md   측정 자료 공개 · whichllm 기여
-│   │   └── grant-radar-plan.md  지원사업 매칭 서비스 (미착수)
 │   └── archive/             ⛔ 판단 종료 · 접은 것
-│       └── speech/          음성 에이전트 — 성립했지만 ASR 을 안 쓰기로 (문서+스크립트)
-│       ├── project-candidates.md  후보 7개 비교
-│       ├── project-proposal.md    Understudy (미채택)
-│       └── vision-agent-plan.md   Frigate+VLM (전제 무효)
+│       └── speech/          음성 에이전트 — 성립했지만 ASR 을 안 쓰기로
 ├── Life_Trainer/        ★ 상시 구동 중인 응용 — 자체 문서 트리를 갖는다
-├── openclaw-setup/      OpenClaw 실행 자산 (systemd 유닛 · 설치 스크립트)
-├── scripts/             측정 · 자동화 도구
-├── results/             측정 원본 데이터
+│   └── deploy/              이 앱을 이 기기에 세우는 것 (게이트웨이 포함)
 ├── models/              어떤 가중치를 왜 골랐나 (실물은 `~/models/`, git 제외)
 └── reference/           타 프로젝트 클론 (git 제외)
 ```
@@ -186,7 +182,7 @@ RSS · arXiv ───────────────────┼─→ 
 규칙에서 **모델**로 바뀐 경로가 하나 더 생겼다 — 슬래시 명령 10개·플래너·RAG 를
 MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 프레임워크 기본
 구성이 시스템 프롬프트 12,541 토큰이던 것을 **5,247 토큰**으로 줄인 것이 이 결합의
-대부분이었다 ([openclaw-agent.md §7](docs/build/openclaw-agent.md)).
+대부분이었다 ([openclaw-agent.md §7](runtime/agent-gateway.md)).
 
 → **[Life_Trainer/HANDOFF.md](Life_Trainer/HANDOFF.md)** (지금 상태 · 이어받는다면 여기부터) ·
 [README](Life_Trainer/README.md) · [전체 설명서](Life_Trainer/docs/handbook.md) ·
@@ -215,7 +211,7 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
 | `verify-jetpack.sh` | JetPack · CUDA · DLA · 전력모드 일괄 검증 | [hardware.md](research/hardware.md) |
 | `membw.cu` | 메모리 대역폭 실측 (LLM 속도 예측의 기준값) | 〃 |
 | `thermal-test.sh` | CPU+GPU 동시 부하 발열 측정 | 〃 |
-| `build-llamacpp.sh` | llama.cpp CUDA 빌드 (SM 8.7) | [llm-runtime.md](docs/build/llm-runtime.md) |
+| `build-llamacpp.sh` | llama.cpp CUDA 빌드 (SM 8.7) | [llm-runtime.md](runtime/llm-runtime.md) |
 
 **모델 벤치마크**
 
@@ -245,7 +241,7 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
 - **슬롯 수가 KV 캐시를 배수로 잡는다** — 기본 4슬롯이면 4배 소요
 - **`pkill -f` 자기매칭** — 자신의 셸 명령줄까지 죽인다
 - **툴 스키마의 정규식 하나가 요청 전체를 400 으로 만든다** — llama.cpp 의 GBNF 변환기가
-  `pattern` 을 못 다룬다. 앵커를 붙여도 안 된다 ([docs/build/openclaw-agent.md](docs/build/openclaw-agent.md))
+  `pattern` 을 못 다룬다. 앵커를 붙여도 안 된다 ([runtime/agent-gateway.md](runtime/agent-gateway.md))
 - **에이전트 워크스페이스의 인격 파일은 지워도 다시 생긴다** — `openclaw agents add` 가
   깔아 두는 6,122바이트가 시스템 프롬프트에 통째로 실리는데, 삭제하면 재기동 때
   시드된다. **비워서 남겨야** 시드가 안 돈다 (§7-2)

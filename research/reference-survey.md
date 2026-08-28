@@ -1,6 +1,6 @@
 # 레퍼런스 조사 — GitHub 생태계 전수 스캔
 
-> 조사일: 2026-08-15 / 도구: [`scripts/gh-api-collect.py`](../scripts/gh-api-collect.py) · [`scripts/gh-research*.mjs`](../scripts/) · [`scripts/gh-analyze.py`](../scripts/gh-analyze.py)
+> 조사일: 2026-08-15 / 도구: [`bench/gh-api-collect.py`](../bench/gh-api-collect.py) · [`scripts/gh-research*.mjs`](../bench/) · [`bench/gh-analyze.py`](../bench/gh-analyze.py)
 > 원본: [`results/gh-final.json`](../results/gh-final.json)
 > 제외 조건: 자율주행 관련, 아카이브됨, 1년 6개월 이상 방치, 별 3개 미만
 

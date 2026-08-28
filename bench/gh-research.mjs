@@ -1,5 +1,5 @@
 // GitHub 저장소 조사 — Playwright
-// 실행: node scripts/gh-research.mjs [출력파일]
+// 실행: node bench/gh-research.mjs [출력파일]
 //
 // 여러 검색어를 순회하며 저장소 메타데이터를 수집한다.
 // GitHub 검색 페이지는 JS 렌더링이라 정적 fetch로는 안 된다.

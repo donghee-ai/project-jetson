@@ -1,6 +1,6 @@
 # 모델 3종 비교 — 무인 스위트 결과
 
-> 측정일: 2026-08-14 / 무인 실행: [`scripts/run-model-suite.sh`](../scripts/run-model-suite.sh)
+> 측정일: 2026-08-14 / 무인 실행: [`bench/run-model-suite.sh`](../bench/run-model-suite.sh)
 > 원본 결과: [`results/`](../results) / 관련: [performance.md](performance.md)
 
 동일 조건(`-ngl 99 -c 32768 --parallel 1 -fa on -ctk/-ctv q8_0`, thinking off)으로
@@ -35,7 +35,7 @@
 
 ## 1. ★ 툴 콜링 — 에이전트 적합성 (가장 결정적)
 
-측정: [`scripts/tool-bench.py`](../scripts/tool-bench.py). 6케이스 중 2개는
+측정: [`bench/tool-bench.py`](../bench/tool-bench.py). 6케이스 중 2개는
 **"툴을 부르지 말아야" 정답**(과잉 호출 검증).
 
 | 케이스 | Qwen3-8B | Qwen3-30B-A3B | EXAONE 3.5 |
@@ -242,4 +242,4 @@ EXAONE의 이점이 크다.
 - [ ] 툴 콜링 반복 측정 — 각 1회뿐. 30B의 "불규칙성"이 확률적인지 확인 필요
 - [ ] EXAONE 툴 콜링 실패 원인 — 모델 한계인지 llama.cpp 템플릿 문제인지 분리
 - [ ] 다단계 에이전트 실전 테스트 — 툴 호출 5회 이상 연쇄하는 실제 작업
-- [ ] 지속 부하 발열 (`scripts/thermal-test.sh 300`)
+- [ ] 지속 부하 발열 (`bench/thermal-test.sh 300`)

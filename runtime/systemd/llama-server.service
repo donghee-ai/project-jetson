@@ -6,7 +6,7 @@ After=network.target
 [Service]
 Type=exec
 Environment=HOME=/home/user
-ExecStart=/home/user/project/project-jetson/openclaw-setup/bin/llama-server-qwen3.sh
+ExecStart=/home/user/project/project-jetson/runtime/llama-server-qwen3.sh
 
 # 모델 로드(약 10초, 페이지 캐시가 비면 그 이상)가 끝나 /health 가 200 을 줄 때까지
 # 유닛을 "기동 중"으로 잡아둔다. 이게 있어야 openclaw-gateway 의 After= 가 실제로

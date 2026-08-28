@@ -18,10 +18,10 @@
 
 | 문서 | 무엇 | 상태 |
 |---|---|---|
-| [build/llm-runtime.md](build/llm-runtime.md) | llama.cpp CUDA 빌드, llama-server 운영, 모델 로드 | ✅ `llama-server.service` active |
-| [build/openclaw-agent.md](build/openclaw-agent.md) | OpenClaw 게이트웨이 + 로컬 LLM 결합, **함정 14가지** | ✅ 게이트웨이 active (Slack 채널만 꺼짐) |
+| [build/llm-runtime.md](../runtime/llm-runtime.md) | llama.cpp CUDA 빌드, llama-server 운영, 모델 로드 | ✅ `llama-server.service` active |
+| [build/openclaw-agent.md](../runtime/agent-gateway.md) | OpenClaw 게이트웨이 + 로컬 LLM 결합, **함정 14가지** | ✅ 게이트웨이 active (Slack 채널만 꺼짐) |
 
-실행 자산(유닛·스크립트)은 문서가 아니라 [`openclaw-setup/`](../openclaw-setup/) 에 있다.
+실행 자산(유닛·스크립트)은 문서가 아니라 [`openclaw-setup/`](../runtime/) 에 있다.
 
 > **`build/openclaw-agent.md §4` 는 코드에서 직접 참조된다.** `llm/client.py`,
 > `llm/tools.py`, `llm/trigger.py` 등이 주석에서 §번호로 가리킨다

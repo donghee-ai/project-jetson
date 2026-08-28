@@ -1,7 +1,7 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────
 # JetPack 설치 후 검증 — sudo 불필요
-# 실행: bash scripts/verify-jetpack.sh
+# 실행: bash bench/verify-jetpack.sh
 # ─────────────────────────────────────────────────────────────
 CUDA_BIN=/usr/local/cuda/bin
 [ -d "$CUDA_BIN" ] && export PATH="$CUDA_BIN:$PATH"

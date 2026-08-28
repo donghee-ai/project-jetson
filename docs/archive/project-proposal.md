@@ -213,7 +213,7 @@ IP캠 RTSP ─→ Frigate  [NVDEC 디코딩 · 모션 · 이벤트 · 녹화 · 
       DLA에서 검출을 돌리는 동안 GPU의 tok/s가 몇 % 떨어지는가?
       (연산 자원은 분리돼 있지만 **60 GB/s 메모리는 공유**한다 — 이 설계의 최대 미지수)
 - [ ] `sudo apt install docker.io docker-compose-v2`
-- [ ] `bash scripts/thermal-test.sh 300` — 아직 미실행. 24시간 가동 주장의 근거
+- [ ] `bash bench/thermal-test.sh 300` — 아직 미실행. 24시간 가동 주장의 근거
 
 ### Phase 1 — 파이프라인 (영상 파일로)
 
@@ -311,7 +311,7 @@ EXAONE 한국어 토큰 19% 절약 + `sherpa-onnx`/`whisper_trt`.
   -p '이 이미지를 {"objects":[],"activity":"","confidence":0.0} 형식 JSON으로만 답하라'
 
 # ② 발열 — 24시간 가동 주장의 근거 (미실행 상태)
-bash scripts/thermal-test.sh 300
+bash bench/thermal-test.sh 300
 
 # ③ Docker (Frigate 전제조건)
 sudo apt install -y docker.io docker-compose-v2 && sudo usermod -aG docker $USER

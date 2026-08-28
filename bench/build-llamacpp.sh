@@ -5,7 +5,7 @@
 # 사전 조건:
 #   sudo apt install -y cmake ninja-build ccache libcurl4-openssl-dev
 #
-# 실행: bash scripts/build-llamacpp.sh        (sudo 불필요)
+# 실행: bash bench/build-llamacpp.sh        (sudo 불필요)
 # ─────────────────────────────────────────────────────────────
 set -u
 SRC="${LLAMA_SRC:-$HOME/llama.cpp}"

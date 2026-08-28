@@ -2,7 +2,7 @@
 
 > ★ **2026-08-27: 가중치는 이 폴더에 없다. `~/models/` 로 옮겼다.**
 > 서비스도 그 경로를 본다 (`systemd/llama-embed.service` ·
-> `openclaw-setup/bin/llama-server-qwen3.sh`). 이 폴더는 **무엇을 왜 골랐는지**를
+> `runtime/llama-server-qwen3.sh`). 이 폴더는 **무엇을 왜 골랐는지**를
 > 남기는 자리다 — 가중치는 git 에 못 올리므로 어차피 문서만 남는다.
 
 ## 지금 디스크에 있는 것 (`~/models/`, 2026-08-28 실측)
@@ -26,7 +26,7 @@
 
 > **8B 스택과 4B 는 동시에 못 올린다.** 가용 13.4 GB 안에서 공존이 안 되고 포트도
 > 같다(8080). 둘 중 하나만 돌아간다 —
-> [openclaw-agent.md §5](../docs/build/openclaw-agent.md) 참조.
+> [openclaw-agent.md §5](../runtime/agent-gateway.md) 참조.
 
 ### 재다운로드
 

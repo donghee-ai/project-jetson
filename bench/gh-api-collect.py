@@ -6,12 +6,13 @@ GitHub REST API 기반 저장소 수집 — Playwright 스크래핑 보완
 API는 별도 리밋(미인증 검색 10회/분)이고 라이선스·갱신일·별 수를
 정확히 제공한다. 분류 기준에 필요한 필드가 스크래핑보다 완전하다.
 
-실행: python3 scripts/gh-api-collect.py <출력.json>
+실행: python3 bench/gh-api-collect.py <출력.json>
 """
-import json, sys, time, urllib.request, urllib.error
+import json
+import pathlib, sys, time, urllib.request, urllib.error
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else \
-    "/home/user/project/project-jetson/results/gh-api.json"
+    str(pathlib.Path(__file__).resolve().parent.parent / "results" / "gh-api.json")
 
 QUERIES = [
     # ── 에이전트 프레임워크

@@ -240,7 +240,7 @@ Frigate                                               │
 | VLM 캡션 품질 미달 | 높음 | **Phase 0에서 조기 검증.** 못 쓰면 중단 |
 | 이벤트 큐 적체 | 중간 | 이벤트 필터링 선행. 처리량 상한 측정 |
 | Frigate 젯슨 호환성 | 중간 | TensorRT 검출기 지원 확인됨. DLA 사용 가능 여부는 미검증 |
-| 발열 — 디코딩+검출+VLM 동시 | 중간 | [thermal-test.sh](../../scripts/thermal-test.sh) 미실행 상태. **선행 필요** |
+| 발열 — 디코딩+검출+VLM 동시 | 중간 | [thermal-test.sh](../../bench/thermal-test.sh) 미실행 상태. **선행 필요** |
 | 카메라 미보유 | 낮음 | Phase 0는 영상 파일로 가능 |
 
 ### 미검증 항목
@@ -277,7 +277,7 @@ sudo apt install -y docker.io docker-compose-v2
 sudo usermod -aG docker $USER && newgrp docker
 
 # 2. 발열 선행 측정 (미실행 상태)
-bash scripts/thermal-test.sh 300
+bash bench/thermal-test.sh 300
 
 # 3. VLM 단독 테스트 — 카메라 불필요
 ~/llama.cpp/build/bin/llama-mtmd-cli \

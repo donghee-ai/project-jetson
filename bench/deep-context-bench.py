@@ -5,7 +5,7 @@
 각 깊이마다 컨텍스트 '맨 앞'에 심어둔 고유 사실을 묻는다(needle-in-haystack).
 속도만이 아니라 "깊어져도 앞쪽 정보를 찾아내는가"를 함께 본다.
 
-실행: python3 scripts/deep-context-bench.py
+실행: python3 bench/deep-context-bench.py
 """
 import json, time, urllib.request, subprocess
 

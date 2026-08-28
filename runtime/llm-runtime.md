@@ -1,7 +1,7 @@
 # LLM 런타임 구축 기록 — llama.cpp on Jetson Orin NX 16GB
 
 > 구축일: 2026-08-14
-> 관련: [hardware.md](../../research/hardware.md)
+> 관련: [hardware.md](../research/hardware.md)
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 2. 벤치마크 요약
 
-> **전체 측정 결과는 [performance.md](../../research/performance.md)** 참조.
+> **전체 측정 결과는 [performance.md](../research/performance.md)** 참조.
 > 컨텍스트 깊이별 곡선, 품질 검증 7단계, 장거리 검색, 메모리 안정성 포함.
 
 조건: `-ngl 99 -p 512 -n 128 -fa 1 -r 2` / MAXN
@@ -58,7 +58,7 @@
 #### 실무 환산 (입력 3,000 / 출력 300 토큰)
 
 > ⚠️ 아래는 **빈 컨텍스트 속도 기준의 초기 추정**이다.
-> 실제로는 깊이에 따라 생성이 느려지므로 **[benchmark-results.md §7](../../research/performance.md#7-실무-기준표)의
+> 실제로는 깊이에 따라 생성이 느려지므로 **[benchmark-results.md §7](../research/performance.md#7-실무-기준표)의
 > 실측 기준표(건당 약 40초)를 사용할 것.**
 
 | | 프롬프트 | 생성 | 합계 |
@@ -254,7 +254,7 @@ grant-radar 등 사업화 대상에는 Qwen3 계열이 안전하다.
 | 정확한 단어 수 준수 | ✅ 정확히 5단어 |
 | 장거리 검색 (최대 31,901 토큰) | ✅ **10/10** |
 
-상세: [benchmark-results.md §5](../../research/performance.md#5-품질-검증--실제-대화-7단계)
+상세: [benchmark-results.md §5](../research/performance.md#5-품질-검증--실제-대화-7단계)
 
 > 각 항목 1회 측정이므로 통계적 견고성은 없다. 다회 검증 필요.
 
@@ -291,10 +291,10 @@ pkill -f "[l]lama-server"  # 문자클래스로 자기매칭 회피
 ## 9. 다음 작업
 
 - [x] ~~IQ2_M 품질 A/B~~ — **완료.** JSON·조건대조·지시이행 전부 통과
-      ([benchmark-results.md §5](../../research/performance.md#5-품질-검증--실제-대화-7단계))
+      ([benchmark-results.md §5](../research/performance.md#5-품질-검증--실제-대화-7단계))
 - [x] ~~컨텍스트 깊이별 성능~~ — **완료.** 32K에서 3.96 tok/s (−70%)
-      ([benchmark-results.md §4](../../research/performance.md#4--컨텍스트-깊이별-성능-가장-중요한-측정))
-- [ ] 지속 부하 발열 — `scripts/thermal-test.sh 300` (MAXN에서 미실행)
+      ([benchmark-results.md §4](../research/performance.md#4--컨텍스트-깊이별-성능-가장-중요한-측정))
+- [ ] 지속 부하 발열 — `bench/thermal-test.sh 300` (MAXN에서 미실행)
 - [ ] 8B 모델의 깊이별 곡선 — 깊은 컨텍스트에서 순위 역전 가능성
 - [ ] EXAONE 3.5 7.8B 한국어 품질 비교 (라이선스 확인 선행)
 - [ ] 헤드리스 전환으로 메모리 0.5GB 확보

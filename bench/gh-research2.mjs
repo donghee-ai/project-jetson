@@ -1,5 +1,5 @@
 // GitHub 저장소 조사 v2 — 레이트 리밋 대응 + 검색어 대폭 확장
-// 실행: node scripts/gh-research2.mjs <출력.json>
+// 실행: node bench/gh-research2.mjs <출력.json>
 //
 // v1에서 24개 중 12개가 레이트 리밋으로 실패 → 간격 8초, 실패 시 2회 재시도.
 

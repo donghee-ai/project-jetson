@@ -5,7 +5,7 @@
 llama-bench 의 합성 벤치마크와 달리 운영 설정(q8_0 KV, thinking off)
 그대로 측정하며, 응답 내용을 남겨 품질 판단 근거로 쓴다.
 
-실행: python3 scripts/chat-bench.py
+실행: python3 bench/chat-bench.py
 """
 import json, time, urllib.request, sys
 

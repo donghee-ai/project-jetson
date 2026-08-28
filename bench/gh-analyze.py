@@ -8,12 +8,12 @@ GitHub 조사 결과 통합·분류 — 젯슨 적합성 기준
   ③ 젯슨 적합   메모리·아키텍처·엣지 언급
   ④ 관련도      검색어 매칭 횟수
 
-실행: python3 scripts/gh-analyze.py
+실행: python3 bench/gh-analyze.py
 """
 import json, pathlib, re
 from collections import Counter
 
-R = pathlib.Path("/home/user/project/project-jetson/results")
+R = pathlib.Path(__file__).resolve().parent.parent / "results"
 
 # ── 상업적 사용 안전 라이선스
 SAFE = {"MIT", "Apache-2.0", "BSD-3-Clause", "BSD-2-Clause", "ISC",

@@ -1610,7 +1610,7 @@ def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
     ours = report["total"] + prompt_tokens
     total = ours + catalog_mod.FRAMEWORK_TOKENS
     print(f"우리 몫 {ours} 토큰 + OpenClaw 골격 약 {catalog_mod.FRAMEWORK_TOKENS} = 약 {total}")
-    # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`docs/build/openclaw-agent.md §3`).
+    # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`runtime/agent-gateway.md §3`).
     print(f"→ 첫 호출 프롬프트 처리 약 {total / 295:.1f}초 (295 tok/s 실측 기준)")
     print("참고: OpenClaw 기본 구성은 12,541 토큰 = 42.5초, 첫 턴부터 압축이 걸렸다")
 

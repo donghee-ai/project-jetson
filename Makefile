@@ -20,22 +20,22 @@ help:  ## 이 목록
 	@echo "  측정 환경: environment.md   ·   결론: README.md"
 
 verify:  ## JetPack·CUDA·전력모드 점검 → environment.md 갱신
-	@bash scripts/verify-jetpack.sh
+	@bash bench/verify-jetpack.sh
 
 bench:  ## 모델 벤치 무인 실행 (llama-server 를 직접 띄운다 — 약 40분)
 	@echo "★ 실행 중인 llama-server.service 와 :8080 을 다투므로 먼저 내릴 것:"
 	@echo "    systemctl --user stop llama-server"
 	@echo
-	@bash scripts/run-model-suite.sh
+	@bash bench/run-model-suite.sh
 
 figures:  ## results/ 와 benchmarks/results/ 에서 그림 재생성
-	@$(PY) scripts/plot.py --out $(FIGURES)
+	@$(PY) bench/plot.py --out $(FIGURES)
 
 clean-figures:  ## 그림 삭제 (재생성 확인용)
 	@rm -f $(FIGURES)/*.png
 
 links:  ## 문서의 상대경로 링크가 전부 실재하는지
-	@bash scripts/check-links.sh
+	@bash bench/check-links.sh
 
 test:  ## Life Trainer 테스트 (네트워크 불필요 — conftest 가 소켓을 막는다)
 	@cd Life_Trainer && .venv/bin/python -m pytest tests/ -q
