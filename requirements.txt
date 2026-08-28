@@ -1,0 +1,9 @@
+# 측정·작도 의존성.  이 기기(JetPack 6.2.3 / Python 3.10)에 설치된 버전으로 고정.
+#
+# ★ 벤치마크 스크립트 자체는 **표준 라이브러리만** 쓴다 (urllib).
+#   여기 있는 것은 그림을 그릴 때만 필요하다.
+matplotlib==3.5.1
+
+# `scripts/gh-research*.mjs` 는 node + playwright 가 따로 필요하다 (npm i playwright).
+# `benchmarks/bench/analyze.py` 는 업스트림 `whichllm` 패키지를 import 한다 —
+#   PyPI 에 없다. 작업 사본: ~/project/opensource/upstream-whichllm/

@@ -106,6 +106,21 @@ K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 
 
 ---
 
+## 다시 돌리려면
+
+```bash
+make verify     # JetPack·CUDA·전력모드 점검 → environment.md
+make bench      # 모델 벤치 무인 실행 (약 40분)
+make figures    # results/ 에서 그림 재생성
+make links      # 문서 링크 418개 검사
+make test       # Life Trainer 테스트 (네트워크 불필요)
+```
+
+측정 환경 스냅숏은 [environment.md](environment.md) — **이 저장소의 모든 수치가
+그 환경에서 나왔다.**
+
+---
+
 ## 디렉토리 구조
 
 **폴더가 곧 상태다.** `research/` 는 잰 것, `docs/build/` 는 돌고 있는 것,

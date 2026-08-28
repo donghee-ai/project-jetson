@@ -1,0 +1,36 @@
+name: ci
+
+# 이 저장소의 측정은 Jetson 실기기에서만 돌아간다 (CUDA · nvpmodel · llama-server).
+# CI 가 할 수 있는 것은 **문서가 자기 자신과 어긋나지 않는지** 와
+# Life Trainer 테스트뿐이다 — 후자는 conftest 가 소켓을 막아 네트워크 없이 돈다.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  links:
+    name: 문서 링크
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 상대경로 링크가 전부 실재하는가
+        run: bash scripts/check-links.sh
+
+  tests:
+    name: Life Trainer 테스트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: 설치
+        working-directory: Life_Trainer
+        run: |
+          python -m pip install -q --upgrade pip
+          pip install -q -e '.[dev]'
+      - name: 테스트
+        working-directory: Life_Trainer
+        run: python -m pytest tests/ -q
