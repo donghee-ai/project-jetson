@@ -10,7 +10,7 @@ FIGURES   := figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status links check-docs check-fast check test hooks
+.PHONY: help verify bench figures clean-figures status host-status links check-docs check-fast check test hooks
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -38,6 +38,12 @@ clean-figures:  ## 그림 삭제 (재생성 확인용)
 
 status:  ## 지금 이 기기의 현황 (서비스 · 실데이터 · 링크)
 	@bash bench/status.sh
+
+# ★ status 는 **앱**, host-status 는 **기기**다. lt doctor 17항목이 전부 앱이라
+#   기기가 죽어가는 것(디스크 수명 · OOM · 발열 · BSP 어긋남 · 재시작 반복)은
+#   아무도 안 보고 있었다.
+host-status:  ## 기기 상태 (디스크 · OOM · 발열 · BSP · 서비스 재시작 이력)
+	@bash bench/host-status.sh
 
 links:  ## 문서의 상대경로 링크가 전부 실재하는지
 	@bash bench/check-links.sh
