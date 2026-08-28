@@ -14,6 +14,46 @@
 
 ---
 
+## 진행 상황 (2026-08-29 갱신)
+
+**P0·P1 전부 닫혔다.** `lt doctor` OK 17 / WARN 0 / FAIL 0 · `verify-boot` 통과 ·
+`make check` 통과 (링크 · 문서 지표 · shellcheck · 유닛 · 테스트).
+
+| | | 커밋 |
+|---|---|---|
+| **A-1** 검증기 오판정 + `environment.md` 생성기 | ✅ | `d6669da` |
+| **A-2** handbook 시제 분리 · HANDOFF §4 흡수 | ✅ | `e22bbee` |
+| **A-3** `check-docs` + fixture + 훅 + CI | ✅ | `f1e532d` · `0eeeece` |
+| **A-4** journal 영속화 | ✅ | `c519215` · 사용자 실행 |
+| **B-1** 백업 자동화 + **복원 실증** | ✅ | `e02ea4e` |
+| **B-2** BSP — 조사 → **36.5.2 로 통일** | ✅ | `e7e00c7` · `234d29d` |
+| **C-1** desired-state 통합 · 유닛 `%h` | ✅ | `f34fb58` |
+| **C-2** 큐·임베딩·OpenClaw WARN 셋 | ✅ | `70f7499` · `5f707ed` · `6c6d51d` |
+| **C-3** `make host-status` | ✅ | `3d369cb` |
+| **C-4** 감시 3계층 + dead-man heartbeat | ✅ | `f2053c1` |
+| **E-5** 안 쓰는 포트 차단 | ✅ | `9d45310` · 사용자 실행 |
+
+**계획에 없던 것도 나왔다** — `make verify` 가 `environment.md` 를 안 쓰고 있었고,
+OpenClaw 가 시스템 Node 로 **절반만** 옮겨져 있었고, CI `shellcheck` 이 추가 후
+push 다섯 번을 빨간불로 있었다. 전부 닫혔다.
+
+**아래 §A~C 는 이제 기록이다.** 남은 것은 §E(공개 준비) · §F(미룸)과
+[사람이 정할 몫](#사람이-정할-몫) 이다.
+
+---
+
+## 사람이 정할 몫
+
+| | 상태 |
+|---|---|
+| 백업 **자동** 외부 복제 | ❌ **안 하기로 함** (2026-08-29). 수동 묶음(`make recovery-bundle`)으로 대신한다 |
+| 디스크 암호화 · Secure Boot | ❌ 판단 안 됨 — 적용하든 안 하든 **근거를 기록해야** 재검토가 안 반복된다 |
+| 방화벽 · SSH tailnet 제한 | ❌ Tailscale 이 죽었을 때 잠기는 위험과 같이 판단 |
+| avahi(5353) | ❌ `ubuntu.local` 이 필요한지 |
+| `maintenance-plan*.md` 처분 | ❌ 그대로 / `docs/plans/` 이동 / 이력 제거 |
+
+---
+
 ## 0. 검증 결과 요약 — 무엇이 사실이고 무엇이 아니었나
 
 | 리뷰의 주장 | 판정 | 근거 |
@@ -32,7 +72,7 @@
 | `thermal-test.sh` 의 "92°C = 스로틀링 영역" 표기가 부정확 | **✅ 확인** | 프로젝트 경보값을 BSP 임계값처럼 적고 있다 |
 | 파이썬 의존성이 하한만 있고 lock 이 없다 | **✅ 확인** | [pyproject.toml](Life_Trainer/pyproject.toml) 전부 `>=` |
 | **llama-server 가 같은 부팅에서 기동 타임아웃·강제 종료를 여러 번 냈다** | **✏️ 정정 — 재현 안 됨** | `NRestarts=0` · `ExecMainStatus=0`. 13:23 의 기동은 그 시각의 디코드 프로파일링(서버 재기동)과 일치한다. **그런데 확인하려다 §A-4 를 찾았다** |
-| OC 이벤트 카운터 `oc2=15 · oc3=37` | **❓ 미검증** | 해당 sysfs 노드를 권한 없이 못 읽었다. 검사 자체는 값싸므로 §C-3 에 넣되 **값은 인용하지 않는다** |
+| OC 이벤트 카운터 `oc2=15 · oc3=37` | **✅ 확인 (정정)** | 처음엔 셋 다 0 이라 "재현 안 됨" 으로 적었다. **조용한 시점에 읽은 것이었다** — 임베딩 배출로 CPU 를 태우자 `oc2=89 · oc3=120` 까지 올랐다. **부팅마다 리셋되므로 한 번 읽은 값으로 단정할 수 없다** |
 
 > **리뷰를 그대로 안 옮긴 이유.** 이 저장소의 반복된 실패 1번이 *"조사 문서를 사실로 믿었다"* 다
 > ([CLAUDE.md](Life_Trainer/CLAUDE.md)). 리뷰도 조사 문서다. 재현되는 것만 계획에 넣는다.
@@ -504,27 +544,28 @@ diff 에서 보이는 부류다.
 
 ## 최종 체크리스트
 
-### P0 — 거짓과 소실
+### ~~P0 — 거짓과 소실~~ ✅ 전부 완료 (2026-08-28~29)
 
-- [ ] `verify-jetpack.sh` 의 L4T · CUDA · DLA 판정 수정 (§A-1)
-- [ ] Super Mode 안내를 장비 지원 여부에 맞게 제한 (§A-1)
-- [ ] **journal 영속화 + 용량 상한** (§A-4) ← 5분, 나머지 전부의 전제
-- [ ] handbook §8·§9 삭제, HANDOFF §4 흡수 (§A-2)
-- [ ] `make check` / `check-docs` / pre-push (§A-3)
-- [ ] 자동 백업 + 무결성 검사 + **외부 암호화 복제** (§B-1)
-- [ ] **실제 복원 시험** 1회 + 복구 대상 runbook (§B-1)
-- [ ] BSP 불일치와 `hold` 이유 판정 (§B-2)
+- [x] `verify-jetpack.sh` 의 L4T · CUDA · DLA 판정 수정 (§A-1)
+- [x] Super Mode 안내를 장비 지원 여부에 맞게 제한 (§A-1)
+- [x] **journal 영속화 + 용량 상한** (§A-4) — 재부팅을 넘기는 것 확인
+- [x] handbook §8·§9 삭제, HANDOFF §4 흡수 (§A-2)
+- [x] `make check` / `check-docs` / pre-push (§A-3)
+- [x] 자동 백업 + 무결성 검사 (§B-1)
+- [x] **실제 복원 시험** 1회 + 복구 대상 runbook (§B-1)
+- [x] BSP 불일치와 `hold` 이유 판정 (§B-2) → **36.5.2 로 통일까지 완료**
+- [ ] ~~외부 암호화 복제~~ — **안 하기로 함.** `make recovery-bundle` 수동 묶음으로 대신한다
 
-### P1 — 재구축과 감시
+### ~~P1 — 재구축과 감시~~ ✅ 전부 완료
 
-- [ ] install/uninstall desired-state 통합 + web·llama-embed 추가 (§C-1)
-- [ ] 유닛 12개의 `/home/user` 제거 (§C-1)
-- [ ] doctor 큐 판정 (창 + backlog + lease + 최소 표본) (§C-2a)
-- [ ] 임베딩 **용량** 수정 — 손으로 돌려서 닫지 않는다 (§C-2b)
-- [ ] system Node 전환 + rollback 문서화 (§C-2c)
-- [ ] `make host-status` — NVMe SMART · OOM · zram · 팬 · 재시작 이력 (§C-3)
-- [ ] 외부 dead-man heartbeat (§C-4)
-- [ ] rpcbind · CUPS 판정 (§E-5)
+- [x] install/uninstall desired-state 통합 + web·llama-embed 추가 (§C-1)
+- [x] 유닛 12개의 `/home/user` 제거 (§C-1)
+- [x] doctor 큐 판정 — **판정 축을 "지금 실패하고 있나" 로** (§C-2a · `issues/0016` 닫음)
+- [x] 임베딩 **용량** 수정 — 한도 분리 + OOM 재시작 견딤 (§C-2b)
+- [x] system Node 전환 + rollback 문서화 (§C-2c) — **절반만 옮겨져 있던 것 발견**
+- [x] `make host-status` (§C-3)
+- [x] 외부 dead-man heartbeat (§C-4) — healthchecks.io 연결됨
+- [x] rpcbind · CUPS 판정 (§E-5) — 껐다
 
 ### P2 — 공개
 
@@ -532,15 +573,23 @@ diff 에서 보이는 부류다.
 - [ ] 타사 스크린샷 — 현재 트리 + 이력 (§E-2)
 - [ ] `thermal-test.sh` 의 92°C 라벨 정정 (§E-3)
 - [ ] 30~60분 열 안정성 · **24시간 앱 soak** (§E-3)
+      ★ **OC 카운터 전후 비교를 반드시 넣는다** — 부하에서 오르는 것이 확인됐다
 - [ ] 15W 측정 · README 에 "1회 측정" 명시 (§E-3)
 - [ ] 의존성 lock · 버전 matrix (§E-4)
-- [ ] LICENSE · NOTICE · 보안 신고 경로 (§E-5)
+- [ ] LICENSE · NOTICE · 보안 신고 경로 (§E-5) — **LICENSE 가 없다**
 - [ ] 디스크 암호화·Secure Boot **판단 기록** (§B-1 · §E-5)
 
 ### P3
 
 - [ ] 원격 죽은 브랜치 3개 정리
 - [ ] `bench/` ↔ `benchmarks/` 이름 결정
+
+### 계획 밖에서 열린 것
+
+- [ ] `converse` 은퇴 — 폴백 경고 한 줄 넣고, 2~3주 뒤 실사용 빈도 보고 결정
+- [ ] `h-0008` → `h-0009` → `h-0010` 사슬 — 채점기를 실사용 조건에 맞춘다
+- [ ] `h-0007` 에이전트 26~106초 — **에이전트가 기본값이 됐으므로 이제 주 UX 문제**
+- [ ] 죽은 DKMS 빌드 2개 정리 (해롭지 않음)
 
 ---
 
