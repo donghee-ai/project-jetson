@@ -187,14 +187,17 @@ Environment=JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>
 
 | 포트 | 무엇 | 판정 |
 |---|---|---|
-| 111 | rpcbind | ❌ **NFS 마운트 0건.** 아무도 안 쓴다. 원격 취약점 이력이 길다 |
-| 631 | snap `cupsd` | ❌ 프린터 없음. 헤드리스 서버다 |
+| 111 | rpcbind | ~~❌ **NFS 마운트 0건**~~ ✅ **2026-08-28 껐다** (`disabled`) |
+| 631 | snap `cupsd` | ~~❌ 프린터 없음~~ ✅ **2026-08-28 껐다** (`disabled`) |
 | 5353 | avahi (mDNS) | ⚠️ **사람이 정할 몫** — 끄면 `ubuntu.local` 로 못 찾는다 |
 | 22 | SSH | 필요. 다만 tailnet 제한 여부는 판단 필요 (§아래) |
 
 ```bash
 sudo bash bench/harden-network.sh    # 111·631 을 끈다. rollback 절차 포함
 ```
+
+**2026-08-28 적용 완료.** 끈 뒤 `verify-boot.sh` 로 우리 서비스가 안 다쳤는지 확인했고
+(전부 통과), 남은 전체 개방 포트는 **SSH(22)와 mDNS(5353)뿐**이다.
 
 ★ **안 쓰는 것을 끄는 것이 방화벽 규칙보다 먼저다** — 규칙은 잊히지만 꺼진 서비스는
 잊혀도 안 열린다. `make host-status` 가 이 상태를 계속 본다.

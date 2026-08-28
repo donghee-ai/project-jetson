@@ -311,8 +311,16 @@ ExecStart=/usr/local/bin/node \
 나머지 절반을 옮기는 것 (sudo 필요, **rollback 절차가 스크립트 안에 있다**):
 
 ```bash
-sudo bash Life_Trainer/deploy/install-openclaw-system.sh
+bash Life_Trainer/deploy/install-openclaw-system.sh   # ★ sudo 로 감싸지 않는다
 ```
+
+★ **`sudo bash` 로 돌리면 실패한다.** root 의 PATH 에는 `openclaw` 가 없고
+`systemctl --user` 는 사용자 버스에 못 붙는다 — **읽어야 하는 상태는 사용자 것이고
+설치만 root 가 필요하다.** 스크립트가 내부에서만 `sudo npm` 을 쓴다.
+
+★ **Node 메이저가 같이 바뀐다** (nvm v22 → 시스템 v24). 변수가 둘이 되는데,
+게이트웨이는 **이미 시스템 Node 로 돌고 있어** 데몬 경로는 확인됐다. 안 해 본 것은
+CLI 경로뿐이고 smoke test 3번이 그걸 본다.
 
 ★ **nvm 설치본을 먼저 지우지 않는다.** 둘이 공존하는 동안에만 되돌릴 수 있고,
 시스템 쪽이 며칠 멀쩡히 돈 뒤에 지운다. 그리고 **버전을 고정해서 옮긴다** —

@@ -709,7 +709,7 @@ def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doc
             warn(
                 "에이전트 Slack 위임",
                 f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다{also}. "
-                "옮기는 법: `sudo bash Life_Trainer/deploy/install-openclaw-system.sh` "
+                "옮기는 법: `bash Life_Trainer/deploy/install-openclaw-system.sh` (sudo 로 감싸지 말 것) "
                 "(`openclaw-agent.md §4-10`)",
             )
         else:
