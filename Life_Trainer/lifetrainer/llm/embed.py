@@ -52,6 +52,7 @@ class EmbedResult:
     embedded: int = 0
     skipped: int = 0
     failed: int = 0
+    restarts: int = 0  # 배치 도중 서버가 죽었다 살아난 횟수 (누수 천장의 지표)
 
 
 def source_text(row, max_chars: int) -> str:
@@ -161,6 +162,36 @@ def pending_docs(conn: sqlite3.Connection, cfg: "Config", limit: int) -> list[sq
     return out
 
 
+def wait_for_server(cfg: "Config", *, timeout: float = 90.0, interval: float = 3.0) -> bool:
+    """임베딩 서버가 `/health` 를 줄 때까지 기다린다. 살아나면 True.
+
+    ★ 왜 필요한가 (2026-08-28)
+      이 서버는 **누수가 있고, 그래서 일부러 죽게 두는 설계**다 —
+      `MemoryMax=2500M` + `MemorySwapMax=0` + `Restart=on-failure` 로,
+      스왑으로 기어들어가 기기 전체를 끌어내리는 대신 빨리 죽고 빨리 살아난다
+      ([HISTORY 08-23](../../HISTORY/2026-08-23-raising-the-memory-cap-made-it-worse.md)).
+
+      **그 설계는 맞는데 배치가 그걸 몰랐다.** `embed_pending` 이 `EmbedUnavailable`
+      을 그대로 올려버려서, 계획된 재시작 한 번에 **그날 밤 배치 전체가 끝났다.**
+      누수 천장이 약 60건이라 야간 한도 60건과 우연히 같았고, 그래서 밀린 것이
+      한도 탓인지 죽음 탓인지 구분이 안 됐다.
+
+      죽음은 사고가 아니라 **밸브**다. 배치는 멈추지 말고 기다렸다 이어야 한다.
+    """
+    import requests   # 주변 코드와 같게 지연 import 한다 (상주 메모리 규칙)
+
+    url = cfg.embed.base_url.rstrip("/").removesuffix("/v1") + "/health"
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            if requests.get(url, timeout=5).ok:
+                return True
+        except requests.RequestException:
+            pass
+        time.sleep(interval)
+    return False
+
+
 def embed_pending(
     conn: sqlite3.Connection, cfg: "Config", *, limit: int = 500, now: float | None = None
 ) -> EmbedResult:
@@ -196,7 +227,13 @@ def embed_pending(
         try:
             vecs = embed_texts(cfg, texts)
         except EmbedUnavailable:
-            raise
+            # 계획된 죽음일 수 있다 (위 wait_for_server 주석 참조). 한 번만 기다렸다
+            # 이 배치를 다시 시도한다. 두 번째도 안 되면 진짜로 죽은 것이라 올린다.
+            logger.warning("임베딩 서버가 끊겼다 — 재기동을 기다린다 (%d건 대기)", len(texts))
+            if not wait_for_server(cfg):
+                raise
+            result.restarts += 1
+            vecs = embed_texts(cfg, texts)
         except EmbedError as exc:
             logger.warning("임베딩 배치 실패 (%d건 건너뜀): %s", len(texts), exc)
             result.failed += len(texts)
@@ -220,8 +257,8 @@ def embed_pending(
                 result.embedded += 1
 
     logger.info(
-        "임베딩 완료: %d건 생성 · %d건 건너뜀 · %d건 실패",
-        result.embedded, result.skipped, result.failed,
+        "임베딩 완료: %d건 생성 · %d건 건너뜀 · %d건 실패 · 서버 재기동 %d회",
+        result.embedded, result.skipped, result.failed, result.restarts,
     )
     return result
 

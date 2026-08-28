@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import shutil
+import time
 import sqlite3
 import sys
 from dataclasses import replace
@@ -523,10 +524,37 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             n_vec = conn.execute("SELECT COUNT(*) FROM doc_embedding").fetchone()[0] if conn else 0
             n_doc = conn.execute("SELECT COUNT(*) FROM doc WHERE dup_of IS NULL").fetchone()[0] if conn else 0
             _rq.get(cfg.embed.base_url.rstrip("/") + "/models", timeout=3).raise_for_status()
-            if n_doc and n_vec >= n_doc:
-                ok("임베딩", f"{cfg.embed.model} · 벡터 {n_vec}/{n_doc}건")
+
+            # ★ 행 수 비교만으로는 "밀리는 중" 과 "밀린 채 멈춤" 을 구분 못 한다 (2026-08-28).
+            #   전에는 부족하면 무조건 `lt embed --all` 을 권했는데, 그건 증상을 손으로
+            #   지우는 것이지 원인을 고치는 게 아니다. 실제 원인은 둘이었다:
+            #   야간 한도가 요약 한도에 묶여 유입의 1/6 이었고, 서버가 누수로 죽으면
+            #   배치가 그 자리에서 통째로 끝났다. **가장 오래 밀린 문서의 나이**가
+            #   그 둘을 구분한다 — 어제 것만 밀렸으면 따라잡는 중이고,
+            #   열흘 된 것이 남아 있으면 구조적으로 못 따라가는 것이다.
+            stale = conn.execute(
+                "SELECT MIN(d.fetched_at) FROM doc d"
+                " LEFT JOIN doc_embedding e ON e.doc_id = d.id"
+                " WHERE d.dup_of IS NULL AND e.doc_id IS NULL"
+            ).fetchone()[0] if conn else None
+            # 설정과 다른 모델·차원으로 만들어진 벡터는 검색에서 조용히 틀린 이웃을 준다.
+            mism = conn.execute(
+                "SELECT COUNT(*) FROM doc_embedding WHERE model <> ? OR dim <> ?",
+                (cfg.embed.model, cfg.embed.dim),
+            ).fetchone()[0] if conn else 0
+
+            age_d = (time.time() - stale) / 86400 if stale else 0.0
+            if mism:
+                warn("임베딩", f"벡터 {n_vec}/{n_doc}건 · **{mism}건이 다른 모델·차원**"
+                               f" (설정 {cfg.embed.model}/{cfg.embed.dim}) — `lt embed --all --force`")
+            elif stale and age_d > 2:
+                warn("임베딩", f"벡터 {n_vec}/{n_doc}건 · 가장 오래 밀린 문서 {age_d:.0f}일"
+                               f" — 야간 한도({cfg.nightly.embed_limit})가 유입을 못 따라가는지 본다")
+            elif stale:
+                ok("임베딩", f"{cfg.embed.model} · 벡터 {n_vec}/{n_doc}건 ·"
+                             f" 밀린 것 {n_doc - n_vec}건 (가장 오래된 것 {age_d * 24:.0f}시간 — 따라잡는 중)")
             else:
-                warn("임베딩", f"서버는 살아 있는데 벡터가 {n_vec}/{n_doc}건 — `lt embed --all`")
+                ok("임베딩", f"{cfg.embed.model} · 벡터 {n_vec}/{n_doc}건 · 밀린 것 없음")
         except Exception as exc:  # noqa: BLE001
             warn("임베딩", f"서버에 닿지 않습니다 ({cfg.embed.base_url}) — 검색이 키워드로만 간다: {exc}")
 
@@ -1246,7 +1274,7 @@ def cmd_nightly(args: argparse.Namespace, cfg: Config) -> int:
                 from lifetrainer.llm import embed as E
 
                 try:
-                    r = E.embed_pending(conn, cfg, limit=cfg.nightly.summary_limit * 2)
+                    r = E.embed_pending(conn, cfg, limit=cfg.nightly.embed_limit)
                     print(f"임베딩 {r.embedded}건 생성 (실패 {r.failed}건).")
                 except E.EmbedUnavailable as exc:
                     print(f"임베딩 서버 없음 — 건너뜁니다: {exc}")

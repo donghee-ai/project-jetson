@@ -103,6 +103,7 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
     "nightly": {
         "summary_limit": 600,
         "tag_limit": 20,
+        "embed_limit": 1000,
     },
     "web": {
         "host": "127.0.0.1",
@@ -263,6 +264,13 @@ class NightlyConfig:
     # 600건이면 약 3.3시간이라 05:50 중단 시각 전에 끝난다.
     summary_limit: int = 600
     tag_limit: int = 20  # 미분류 상위 N개를 한 번의 호출로 묶어 태깅
+
+    # ★ 임베딩 한도는 요약 한도에서 파생시키지 않는다 (2026-08-28).
+    #   전에는 `summary_limit * 2` 였는데 둘은 성격이 다르다 — 요약은 GPU 를 잡고
+    #   건당 22초지만, 임베딩은 CPU(-ngl 0) 이고 건당 1초 미만이다. 묶어 두면
+    #   운영값 30 이 임베딩 한도 60 을 낳고, **유입이 하루 약 400건이라 구조적으로 밀린다.**
+    #   실제로 미임베딩이 1,700건까지 쌓였고 가장 오래된 것이 10일 전이었다.
+    embed_limit: int = 1000
 
 
 @dataclass(frozen=True)
@@ -550,6 +558,7 @@ def load_config(path: str | Path | None = None) -> Config:
     nightly = NightlyConfig(
         summary_limit=int(raw["nightly"]["summary_limit"]),
         tag_limit=int(raw["nightly"]["tag_limit"]),
+        embed_limit=int(raw["nightly"]["embed_limit"]),
     )
 
     web = WebConfig(
