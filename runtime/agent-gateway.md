@@ -353,8 +353,48 @@ openclaw_bin = "/usr/local/bin/openclaw"
 **둘 다 "설치했으니 됐다" 와 "실제로 그게 불린다" 가 다른 경우다.** 이 저장소가
 반복해서 겪은 부류 — 살아 있다 ≠ 서빙 가능하다, 툴을 불렀다 ≠ 일을 했다 — 와 같다.
 
-★ nvm 설치본은 **아직 지우지 않았다.** 며칠 멀쩡히 돈 뒤에 지운다:
-`rm -rf ~/.nvm/versions/node/v22.23.2/lib/node_modules/openclaw`
+### nvm 설치본 삭제 — 2026-08-28 같은 날 지웠다
+
+원래 "며칠 멀쩡히 돈 뒤에" 지울 생각이었는데, 그 전에 **양쪽 경로를 실제로 재서**
+Node 24 에서 도는 것을 확인했으므로 앞당겼다 (아래 §측정).
+
+```bash
+rm -f  ~/.nvm/versions/node/v22.23.2/bin/openclaw
+rm -rf ~/.nvm/versions/node/v22.23.2/lib/node_modules/openclaw   # 370MB
+```
+
+**Node 22 자체는 남겼다** — `@playwright` 가 거기 붙어 있고 `bench/gh-research*.mjs`
+와 디자인 캡처가 그걸 쓴다. 지웠으면 그 도구가 조용히 죽었을 것이다.
+
+지운 뒤 확인: 셸의 `openclaw` 가 `/usr/local/bin` 으로 바뀌고, 게이트웨이 재기동 ·
+위임 · `lt doctor` 17/17 · `verify-boot` 전부 통과.
+
+**되돌리려면** (시스템 쪽이 나중에 깨지면):
+```bash
+PATH=$HOME/.nvm/versions/node/v22.23.2/bin:$PATH npm install -g openclaw@2026.7.1-2
+```
+
+### ★ 측정 — "경로가 시스템이다" 와 "런타임이 시스템이다" 는 다르다
+
+`/usr/local/bin/openclaw` 의 shebang 은 `#!/usr/bin/env node` 다. **경로가 아니라
+PATH 가 런타임을 정한다.** 그래서 옮긴 직후의 smoke test 는 개발 셸에서 돌아
+**Node 22 로 실행됐고**, "Node 24 에서 확인했다" 는 말은 틀렸었다.
+
+| 경로 | 런타임 | 어떻게 쟀나 |
+|---|---|---|
+| 게이트웨이 | v24.19.0 | `readlink -f /proc/<MainPID>/exe` |
+| **Slack 위임** | v24.19.0 | `delegate.ask()` 를 부르고 **그 파이썬 프로세스의 자식**을 잡아 `/proc/<pid>/exe` |
+| 개발 셸 | (삭제 전) v22 | PATH 에서 nvm 이 앞이었다 |
+
+운영이 24 인 이유는 두 겹이다 — `lifetrainer-slack.service` 의 PATH 에 nvm 이 없고,
+`delegate.py` 가 그 앞에 `/usr/local/bin` 을 한 번 더 덧붙인다.
+
+**재는 동안 함정 둘을 밟았다:**
+1. `pgrep -f openclaw` 가 **측정 스크립트 자신**을 잡았다 — 루트 README 가
+   *"`pkill -f` 자기매칭"* 으로 적어 둔 그것이다
+2. 그다음엔 **항상 떠 있는 게이트웨이**를 잡았다. CLI 자식이 아니다
+
+→ **부모 PID 의 자식만 본다.** `pgrep -P <파이썬 PID>` 로 좁히면 둘 다 안 걸린다.
 
 ---
 
