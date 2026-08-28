@@ -1,0 +1,9 @@
+[Unit]
+Description=젯슨 일일 점검 (앱 + 기기) — 상태가 바뀌었을 때만 알린다
+Documentation=file://%h/project/project-jetson/runtime/README.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/project/project-jetson
+# --post 가 있어야 Slack 으로 나간다 (CLAUDE.md: 발송은 명시적 지시가 있을 때만)
+ExecStart=%h/project/project-jetson/bench/daily-check.sh --post

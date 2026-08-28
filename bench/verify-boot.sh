@@ -39,11 +39,24 @@ done < <(systemctl --user list-units --state=active --no-legend 'lifetrainer-*' 
          2>/dev/null | awk '{print $1}')
 
 echo
-echo "▶ 1b. 서비스 — 공유 자산 (runtime/ 소유)"
-for u in llama-server openclaw-gateway; do
-  s=$(systemctl --user is-active "$u" 2>&1)
-  [ "$s" = active ] && ok "$u" || bad "$u — $s"
-done
+echo "▶ 1b. 서비스 — 공유 자산 (runtime/systemd/desired-state.txt)"
+while read -r u cond; do
+  case "$u" in ''|\#*) continue;; esac
+  case "$cond" in
+    optional=*)
+      var=${cond#optional=}
+      val=$(systemctl --user show "$u" -p Environment --value 2>/dev/null | tr ' ' '\n' | grep "^$var=" | cut -d= -f2-)
+      if [ -z "$val" ]; then
+        # ★ 미설정을 실패로 세지 않는다. 다만 **조용히 넘어가지도 않는다** —
+        #   heartbeat 가 안 도는 것과 "설정을 안 한 것" 은 다른 사실이다.
+        wr "$u — $var 미설정 (바깥에서 이 기기의 죽음을 못 알아챈다)"; continue
+      fi ;;
+  esac
+  case "$u" in
+    *.timer) systemctl --user is-active "$u" >/dev/null 2>&1 && ok "$u" || bad "$u — 안 떠 있다" ;;
+    *) st=$(systemctl --user is-active "$u" 2>&1); [ "$st" = active ] && ok "$u" || bad "$u — $st" ;;
+  esac
+done < runtime/systemd/desired-state.txt
 
 echo
 echo "▶ 2. ★ ctx.conf 드롭인 (끊기면 조용히 KV 가 두 배가 된다)"

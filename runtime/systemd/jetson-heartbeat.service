@@ -1,0 +1,14 @@
+[Unit]
+Description=외부 dead-man heartbeat — 침묵이 곧 경보다
+Documentation=file://%h/project/project-jetson/runtime/README.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/project/project-jetson
+# ★ 여기를 채워야 동작한다. healthchecks.io 등의 ping 주소.
+#   비어 있으면 스크립트가 78(EX_CONFIG)로 끝난다 — 실패가 아니라 미설정이다.
+#   나가는 것은 "이 기기가 방금 정상이었다" 는 사실 하나뿐이다.
+Environment=JETSON_HEARTBEAT_URL=
+ExecStart=%h/project/project-jetson/bench/heartbeat.sh
+# 미설정(78)은 실패로 세지 않는다
+SuccessExitStatus=78

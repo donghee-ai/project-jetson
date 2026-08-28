@@ -1,0 +1,11 @@
+# runtime/ 이 소유한 것 — **공유 자산**이라 Life Trainer 의 목록과 따로 둔다.
+#
+# ★ 형식과 이유는 Life_Trainer/systemd/desired-state.txt 와 같다.
+#   목록을 스크립트 안에 박으면 install·uninstall·검사가 서로 어긋난다 (2026-08-28).
+#
+# 조건: always | optional=<환경변수>  (그 값이 비어 있으면 "미설정" 으로 표시)
+
+llama-server.service          always
+openclaw-gateway.service      always
+jetson-daily-check.timer      always
+jetson-heartbeat.timer        optional=JETSON_HEARTBEAT_URL

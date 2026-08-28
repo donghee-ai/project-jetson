@@ -1,0 +1,12 @@
+[Unit]
+Description=젯슨 일일 점검
+
+[Timer]
+# 야간 배치(02:00~05:50)와 백업(06:20)이 끝난 뒤. 아침 다이제스트(07:34) 전에
+# 사람이 한 번 볼 수 있게.
+OnCalendar=*-*-* 07:00:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

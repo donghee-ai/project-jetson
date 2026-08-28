@@ -1,0 +1,12 @@
+[Unit]
+Description=외부 dead-man heartbeat (15분)
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+# ★ Persistent 를 쓰지 않는다. 밀린 heartbeat 를 나중에 몰아 보내면
+#   "그동안 살아 있었다" 는 거짓말이 된다.
+Persistent=false
+
+[Install]
+WantedBy=timers.target
