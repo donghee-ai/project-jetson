@@ -5,7 +5,7 @@
 
 <!-- verify:begin — 이 블록은 `make verify` 가 생성한다. 손으로 고치지 말 것 -->
 
-> 생성 시각: 2026-08-28 15:51 KST
+> 생성 시각: 2026-08-29 00:09 KST
 
 ```
 ════════════════════════════════════════════════
@@ -14,10 +14,8 @@
 
 ▶ 1. 패키지
   ✅ nvidia-jetpack             6.2.3+b81
-  ✅ L4T (nv_tegra_release)     R36.5.0
-     nvidia-l4t-core           36.5.0-20260115194252  (APT 후보 36.5.2-20260716114719)
-  ⚠️  BSP 일관성              설치본과 APT 후보가 다르다 — 유지보수 창에서 한 릴리스로 통일할 것
-  ⚠️  패키지 hold             nvidia-l4t-kernel nvidia-l4t-kernel-headers — hold 이유가 기록돼 있는지 확인
+  ✅ L4T (nv_tegra_release)     R36.5.2
+     nvidia-l4t-core           36.5.2-20260716114719  (APT 후보 36.5.2-20260716114719)
 
 ▶ 2. CUDA
   ✅ nvcc                       release 12.6
@@ -51,10 +49,10 @@
   ⚠️  Super Mode                 이 보드에서는 불가 — 부팅마다 되돌려진다 (research/hardware.md)
 
 ▶ 7. 온도 / 전력
-     RAM 10959/15643MB
+     RAM 11115/15643MB
      GR3D_FREQ 0%
-     tj@56.812C
-     VDD_IN 4917mW
+     tj@58.531C
+     VDD_IN 4958mW
 
 ════════════════════════════════════════════════
  §PATH 설정 (nvcc 가 안 잡히면)
@@ -80,8 +78,12 @@
 | **전력 모드** | 이 저장소의 성능 수치는 **전부 MAXN(`pmode:0000`)** 이다. 15W·25W 에서는 재지 않았다 |
 | **Super Mode 비활성** | conf 파일은 있으나 부팅마다 되돌려지고 하드웨어 과전류 보호가 25W 로 잡힌다. **검증기가 활성화 절차를 더 이상 안내하지 않는다** — 같은 시도를 반복하지 않기 위해서다 |
 | **DLA 노드** | 노드와 `libcudla` 가 **있다**. 다만 노드 존재는 가용성이 아니다 — `trtexec --useDLACore` 로 재 본 적이 없어서 이 저장소는 DLA 를 안 썼다 |
-| **BSP 일관성 ⚠️** | `nvidia-jetpack` 은 6.2.3 인데 L4T 구성요소가 36.5.0 이고 APT 후보가 36.5.2 다. 커널·헤더가 `hold` 다 — **hold 이유가 기록돼 있지 않다** |
+| **BSP 일관성** | 2026-08-29 에 36.5.2 로 통일했다. 커널 `hold` 의 이유(DKMS WiFi 드라이버)와 경위는 [research/hardware.md §8](research/hardware.md) |
 | RAM 사용량 | 측정 시점의 값이다. LLM 가용 예산은 [README ③](README.md) 참조 |
+
+> **2026-08-29.** L4T 를 36.5.2 로 통일하면서 커널이 5.15.199-tegra 가 됐다.
+> WiFi 드라이버(DKMS `mt7601u`)는 새 커널에 자동 재빌드됐다 —
+> 그 걱정이 커널을 `hold` 하고 있던 이유였다 ([research/hardware.md §8](research/hardware.md)).
 
 > **2026-08-28 정정.** 이 문서는 오랫동안 `L4T:` 빈칸 · `libcudart` 외 3종 ❌ ·
 > `DLA 없음` 을 **실측 결과로** 싣고 있었다. 셋 다 [`bench/verify-jetpack.sh`](bench/verify-jetpack.sh)

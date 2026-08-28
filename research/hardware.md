@@ -375,27 +375,25 @@ MoE는 저비트 양자화에 **상대적으로 취약하다.** 토큰당 활성
 
 ---
 
-## 8. BSP 버전이 왜 어긋나 있나 (2026-08-28 조사)
+## 8. BSP 버전 불일치 — 조사하고 해소했다 (2026-08-28 → 08-29)
 
-`make verify` 가 이제 이걸 경고로 잡는다. **조사해서 원인을 찾았으므로 여기 남긴다** —
-기록 없는 `hold` 는 다음 사람에게 사고다.
+`make verify` 가 경고를 내면서 시작해, **원인 규명 → 업그레이드 → 검증**까지 갔다.
+경고를 내는 것만으로는 아무것도 안 바뀌므로 그 전말을 남긴다.
 
-### 관측
+### ① 무엇이 어긋나 있었나
 
 ```
-nvidia-jetpack        6.2.3+b81          ← JetPack 6.2.3 은 Jetson Linux 36.5.2 를 포함한다
-nvidia-l4t-core       36.5.0             (APT 후보 36.5.2)
-nvidia-l4t-bootloader 36.5.0             (APT 후보 36.5.2)
-nvidia-l4t-kernel     5.15.185-tegra     (APT 후보 5.15.199-tegra) ← hold
-nvidia-l4t-kernel-headers                                          ← hold
+nvidia-jetpack        6.2.3+b81        ← JetPack 6.2.3 은 Jetson Linux 36.5.2 를 포함한다
+nvidia-l4t-core       36.5.0           (APT 후보 36.5.2)
+nvidia-l4t-kernel     5.15.185-tegra   (후보 5.15.199-tegra) ← hold
+nvidia-l4t-kernel-headers                                     ← hold
 ```
 
-**섞임이 이미 실재한다.** `nvidia-l4t-*` 46개 중 **3개가 이미 36.5.2** 다 —
-`dla-compiler` · `gstreamer` · `jetson-multimedia-api`. 나머지 43개가 36.5.0 이다.
-JetPack 메타패키지를 6.2.3 으로 올리면서 커널 계열만 고정돼, 그때 딸려 온 유저스페이스
-일부가 앞서 나간 상태다.
+**섞임이 이미 실재했다.** `nvidia-l4t-*` 46개 중 3개가 이미 36.5.2 였다
+(`dla-compiler` · `gstreamer` · `jetson-multimedia-api`). JetPack 메타패키지를 올리면서
+커널 계열만 고정돼, 딸려 온 유저스페이스 일부가 앞서 나간 상태였다.
 
-### ★ hold 의 원인 — 외부 WiFi 드라이버
+### ② hold 의 원인 — 외부 WiFi 드라이버
 
 ```
 $ dkms status
@@ -405,39 +403,56 @@ $ nmcli device
 wlxEXAMPLEMAC : wifi : connected      ← 이 어댑터가 그 드라이버로 돈다
 ```
 
-**USB WiFi 어댑터(MediaTek MT7601U)가 DKMS 외부 모듈로 붙어 있고, 지금 실제로 접속에
-쓰이고 있다.** 커널을 5.15.199-tegra 로 올리면 DKMS 가 새 커널에 맞춰 다시 빌드해야 하는데,
-빌드가 실패하면 **WiFi 가 죽는다.** 커널을 고정한 이유가 이것으로 보인다.
+USB WiFi 어댑터(MediaTek MT7601U)가 **DKMS 외부 모듈**로 현재 커널에 묶여 있었고,
+그것이 실제 접속에 쓰이고 있었다. 커널을 올리면 DKMS 가 다시 빌드해야 하고
+**실패하면 WiFi 가 죽는다.** 커널을 고정한 이유가 이것으로 보인다.
 
-> 이 저장소 초기 커밋에 *"wifi 드라이버 작업을 상위 폴더로 분리"* 가 있다 —
-> 정황이 맞는다. 다만 **`apt-mark hold` 를 누가 언제 왜 걸었는지는 어디에도 안 적혀 있다.**
-> `dpkg` 로그에도 `apt` history 에도 hold 는 안 남는다. 위는 **정황 추론**이고,
-> 확정된 사실은 "DKMS 모듈이 현재 커널에 묶여 있고 그게 지금 쓰이는 WiFi 다" 까지다.
+> 저장소 초기 커밋에 *"wifi 드라이버 작업을 상위 폴더로 분리"* 가 있고, 소스는
+> `~/project/wifi/` 에 있다 (복구 묶음에 포함시킨 이유). 다만 **`apt-mark hold` 는
+> `dpkg` 로그에도 `apt` history 에도 안 남는다** — 위는 정황 추론이고, 확정된 것은
+> "DKMS 모듈이 현재 커널에 묶여 있었고 그게 쓰이는 WiFi 였다" 까지다.
 
-### 위험은 생각보다 낮다 — 유선이 살아 있다
+### ③ 왜 지금 해도 된다고 판단했나
 
 ```
-enP8p1s0        : ethernet : connected   ← 유선도 붙어 있다
-tailscale0      : tun      : connected
+apt -s install …   갱신 12개 · 제거 0개              ← 깨끗하다
+nvbootctrl         num_slots: 2, 둘 다 normal        ★ 부트로더 A/B — 실패해도 이전 슬롯
+dkms               mt7601u 소스 존재                  ← 다시 빌드 가능
+ip -br addr        이더넷 + Tailscale 별도            ← WiFi 죽어도 기기를 안 잃는다
 ```
 
-WiFi 가 죽어도 **기기를 잃지는 않는다.** 유선과 Tailscale 이 별개 경로다.
-헤드리스 기기에서 네트워크가 하나뿐이라면 커널 업그레이드는 기기를 잃는 일이지만,
-여기서는 그 조건이 아니다.
+**부트로더 A/B 가 결정적이었다.** 이게 없으면 부트로더 갱신 실패 = 재플래시다.
+그리고 직전에 `make recovery-bundle` 로 기기 밖 사본을 떠 뒀다.
 
-### 그래서 무엇을 할 것인가 — **아직 안 한다**
+### ④ 실행 — 한 번에 안 끝났다
 
-업그레이드는 **선결조건 뒤에** 둔다 — 되돌릴 수 없는 작업이라 순서를 지킨다:
+```bash
+sudo apt-mark unhold nvidia-l4t-kernel nvidia-l4t-kernel-headers
+sudo apt install nvidia-l4t-kernel nvidia-l4t-kernel-headers   # ← 좁았다
+```
 
-1. ~~백업·복원 체계~~ ✅ 2026-08-28 (`Life_Trainer/scripts/backup.sh` · `restore-test.sh`)
-2. **원본 밖 사본** ❌ — 재플래시로 돌아갈 수 있어야 커널을 건드린다
-3. `apt -s full-upgrade` 로 제거 예정 패키지 검토
-4. 유지보수 창에서 한 릴리스로 통일 → 재부팅 후 bootloader·kernel·userspace 일치 확인
-5. DKMS 가 mt7601u 를 새 커널에 다시 빌드했는지 확인 (`dkms status`)
-6. CUDA · llama.cpp · TensorRT · OpenClaw · 타이머 smoke test
+★ **`apt install nvidia-l4t-kernel` 은 커널 계열 12개만 끌어온다.** `nvidia-l4t-core` ·
+`-cuda` · `-firmware` 등은 의존성에 안 걸려 36.5.0 으로 남았다. **섞임이 줄지 않고
+경계만 옮겨졌다** (36.5.2 15개 / 36.5.0 33개). `full-upgrade` 로 나머지를 마저 올렸다.
 
-> **업데이트를 막는 것과 검증 없이 따라가는 것은 둘 다 위험하다.** 지금은 전자이고,
-> 그 상태가 **기록 없이** 유지되고 있던 것이 문제였다. 이 절이 그 기록이다.
+→ **부분 업그레이드는 불일치를 해소하지 않는다.** 옮길 거면 전부 옮긴다.
+
+### ⑤ 결과 — 검증됨
+
+```
+L4T          48개 전부 36.5.2 · hold 없음
+커널          5.15.199-tegra
+DKMS         mt7601u 가 새 커널에 자동 재빌드됨 · WiFi connected
+CUDA         12.6 정상 · llama-server {"status":"ok"}
+verify-boot  통과 (서비스·타이머·드롭인·journal 전부)
+```
+
+WiFi 가 죽을까 걱정한 것이 **DKMS 가 알아서 다시 빌드하면서 해결**됐다.
+`make host-status` 의 BSP 노란불 둘이 초록불이 됐다.
+
+> **남은 것**: 안 쓰는 커널용 DKMS 빌드 2개가 잔재로 남아 있다
+> (`5.15.185-tegra` · `5.15.0-190-generic`). 해롭지 않아 `host-status` 가 회색으로만
+> 알린다. 지우려면 `sudo dkms remove mt7601u/5.15.185 -k <커널>`.
 
 ---
 

@@ -118,9 +118,16 @@ held=$(apt-mark showhold 2>/dev/null | tr '\n' ' ')
                || ok "패키지 hold" "없음"
 if command -v dkms >/dev/null; then
   krel=$(uname -r)
+  # ★ 근거로 보여주는 줄은 **판정에 쓴 줄**이어야 한다. 전에는 head -1 이라
+  #   현재 커널이 아닌 옛 빌드를 보여주면서 "현재 커널에 빌드돼 있다" 고 적었다
+  #   (2026-08-29). 판정과 표시가 다르면 사람이 판정을 못 믿는다.
   dkms status 2>/dev/null | grep -q "$krel" \
-    && ok "DKMS" "$(dkms status 2>/dev/null | head -1) — 현재 커널에 빌드돼 있다" \
+    && ok "DKMS" "$(dkms status 2>/dev/null | grep "$krel" | head -1)" \
     || bad "DKMS" "현재 커널($krel)용 모듈이 없다 — WiFi 가 죽을 수 있다"
+  # 안 쓰는 커널용 빌드는 실패가 아니라 잔재다. 알리되 노란불로 세지 않는다.
+  stale=$(dkms status 2>/dev/null | grep -vc "$krel" || true)
+  [ "${stale:-0}" -gt 0 ] && printf "  \033[90m—\033[0m  %-22s %s\n" \
+    "DKMS 잔재" "다른 커널용 빌드 ${stale}개 — 지우려면 dkms remove ... -k <커널>"
 fi
 
 echo
