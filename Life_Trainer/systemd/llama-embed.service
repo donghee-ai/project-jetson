@@ -21,7 +21,7 @@ Wants=network-online.target
 #   더 크게(16384/8 · -b 16384) 잡았더니 MemoryMax=2G 에 걸려 OOM 으로 죽었다.
 # -b 는 한 요청에 들어오는 **총 토큰**이다. 16건 × 800토큰이 한 번에 오므로 넉넉히 준다.
 ExecStart=/home/user/llama.cpp/build/bin/llama-server \
-  -m /home/user/project/project-jetson/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
+  -m /home/user/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
   --alias qwen3-embedding-0.6b \
   --embedding \
   -ngl 0 \

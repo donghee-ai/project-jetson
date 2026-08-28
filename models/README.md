@@ -1,15 +1,28 @@
 # models/
 
-가중치 저장 위치. **git에서 제외됨** (`.gitignore`). 전체 약 23 GB.
+> ★ **2026-08-27: 가중치는 이 폴더에 없다. `~/models/` 로 옮겼다.**
+> 서비스도 그 경로를 본다 (`systemd/llama-embed.service` ·
+> `openclaw-setup/bin/llama-server-qwen3.sh`). 이 폴더는 **무엇을 왜 골랐는지**를
+> 남기는 자리다 — 가중치는 git 에 못 올리므로 어차피 문서만 남는다.
 
-## LLM (GGUF)
+## 지금 디스크에 있는 것 (`~/models/`, 2026-08-28 실측)
 
 | 파일 | 크기 | 용도 |
 |---|---|---|
-| `Qwen3-8B-Q4_K_M.gguf` | 4.68 GB | **상시 가동.** 에이전트·툴콜링 (툴 6/6). `llama-server` 가 이걸 물고 있다 |
-| `Qwen3-30B-A3B-IQ2_M.gguf` | 9.71 GB | 짧은 대화 (~9K 깊이). 깊이가 깊어지면 8B 에 역전당한다 |
-| `EXAONE-3.5-7.8B-Q4_K_M.gguf` | 4.44 GB | 한국어 문서 (토큰 19% 절약) |
-| `Qwen3-4B-Q4_K_M.gguf` | 2.33 GB | 음성 에이전트 실측용 — 툴콜 2.45초로 8B(3.54초)보다 빠르다 |
+| `Qwen3-8B-Q4_K_M.gguf` | 4.68 GB | **상시 가동.** 에이전트·툴콜링 (툴 6/6) |
+| `Qwen3-Embedding-0.6B-Q8_0.gguf` | 0.60 GB | RAG 임베딩. **`-ngl 0`(CPU)** — GPU 에 올리면 8B 가 CUDA 버퍼를 못 잡는다 |
+
+## 벤치마크에만 쓰고 지운 것
+
+아래 셋은 [llm-models.md](../research/llm-models.md) 의 비교를 위해 받았고
+**지금은 디스크에 없다.** 결론이 나온 뒤로 쓸 일이 없어서다 — 필요하면 아래 명령으로
+다시 받는다.
+
+| 파일 | 크기 | 무엇을 알아냈나 |
+|---|---|---|
+| `Qwen3-30B-A3B-IQ2_M.gguf` | 9.71 GB | 얕은 깊이에서 가장 빠르지만 **9,600 토큰에서 8B 에 역전당한다** |
+| `EXAONE-3.5-7.8B-Q4_K_M.gguf` | 4.44 GB | 한국어 토큰 19% 절약. 툴콜 2/6 은 **채팅 템플릿 탓**이었다 |
+| `Qwen3-4B-Q4_K_M.gguf` | 2.33 GB | 음성 실측 — 툴콜 2.45초로 8B(3.54초)보다 빠르다 |
 
 > **8B 스택과 4B 는 동시에 못 올린다.** 가용 13.4 GB 안에서 공존이 안 되고 포트도
 > 같다(8080). 둘 중 하나만 돌아간다 —
@@ -18,7 +31,7 @@
 ### 재다운로드
 
 ```bash
-cd models
+cd ~/models
 curl -L -o Qwen3-8B-Q4_K_M.gguf \
   "https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf"
 curl -L -o Qwen3-30B-A3B-IQ2_M.gguf \

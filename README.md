@@ -65,7 +65,7 @@
 ├── openclaw-setup/      OpenClaw 실행 자산 (systemd 유닛 · 설치 스크립트)
 ├── scripts/             측정 · 자동화 도구
 ├── results/             측정 원본 데이터 (음성 wav 포함)
-├── models/              GGUF · 음성 모델 가중치 (git 제외)
+├── models/              어떤 가중치를 왜 골랐나 (실물은 `~/models/`, git 제외)
 └── reference/           타 프로젝트 클론 (git 제외)
 ```
 

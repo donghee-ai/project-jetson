@@ -7,7 +7,7 @@
 set -euo pipefail
 
 BIN="${LLAMA_BIN:-$HOME/llama.cpp/build/bin/llama-server}"
-MODEL="${LLAMA_MODEL:-$HOME/project/project-jetson/models/Qwen3-8B-Q4_K_M.gguf}"
+MODEL="${LLAMA_MODEL:-$HOME/models/Qwen3-8B-Q4_K_M.gguf}"
 PORT="${LLAMA_PORT:-8080}"
 
 # 컨텍스트 40960 = Qwen3-8B 의 학습 컨텍스트(n_ctx_train) 상한.
