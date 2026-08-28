@@ -375,6 +375,72 @@ MoE는 저비트 양자화에 **상대적으로 취약하다.** 토큰당 활성
 
 ---
 
+## 8. BSP 버전이 왜 어긋나 있나 (2026-08-28 조사)
+
+`make verify` 가 이제 이걸 경고로 잡는다. **조사해서 원인을 찾았으므로 여기 남긴다** —
+기록 없는 `hold` 는 다음 사람에게 사고다.
+
+### 관측
+
+```
+nvidia-jetpack        6.2.3+b81          ← JetPack 6.2.3 은 Jetson Linux 36.5.2 를 포함한다
+nvidia-l4t-core       36.5.0             (APT 후보 36.5.2)
+nvidia-l4t-bootloader 36.5.0             (APT 후보 36.5.2)
+nvidia-l4t-kernel     5.15.185-tegra     (APT 후보 5.15.199-tegra) ← hold
+nvidia-l4t-kernel-headers                                          ← hold
+```
+
+**섞임이 이미 실재한다.** `nvidia-l4t-*` 46개 중 **3개가 이미 36.5.2** 다 —
+`dla-compiler` · `gstreamer` · `jetson-multimedia-api`. 나머지 43개가 36.5.0 이다.
+JetPack 메타패키지를 6.2.3 으로 올리면서 커널 계열만 고정돼, 그때 딸려 온 유저스페이스
+일부가 앞서 나간 상태다.
+
+### ★ hold 의 원인 — 외부 WiFi 드라이버
+
+```
+$ dkms status
+mt7601u/5.15.185, 5.15.185-tegra, aarch64: installed
+
+$ nmcli device
+wlxEXAMPLEMAC : wifi : connected      ← 이 어댑터가 그 드라이버로 돈다
+```
+
+**USB WiFi 어댑터(MediaTek MT7601U)가 DKMS 외부 모듈로 붙어 있고, 지금 실제로 접속에
+쓰이고 있다.** 커널을 5.15.199-tegra 로 올리면 DKMS 가 새 커널에 맞춰 다시 빌드해야 하는데,
+빌드가 실패하면 **WiFi 가 죽는다.** 커널을 고정한 이유가 이것으로 보인다.
+
+> 이 저장소 초기 커밋에 *"wifi 드라이버 작업을 상위 폴더로 분리"* 가 있다 —
+> 정황이 맞는다. 다만 **`apt-mark hold` 를 누가 언제 왜 걸었는지는 어디에도 안 적혀 있다.**
+> `dpkg` 로그에도 `apt` history 에도 hold 는 안 남는다. 위는 **정황 추론**이고,
+> 확정된 사실은 "DKMS 모듈이 현재 커널에 묶여 있고 그게 지금 쓰이는 WiFi 다" 까지다.
+
+### 위험은 생각보다 낮다 — 유선이 살아 있다
+
+```
+enP8p1s0        : ethernet : connected   ← 유선도 붙어 있다
+tailscale0      : tun      : connected
+```
+
+WiFi 가 죽어도 **기기를 잃지는 않는다.** 유선과 Tailscale 이 별개 경로다.
+헤드리스 기기에서 네트워크가 하나뿐이라면 커널 업그레이드는 기기를 잃는 일이지만,
+여기서는 그 조건이 아니다.
+
+### 그래서 무엇을 할 것인가 — **아직 안 한다**
+
+업그레이드는 **선결조건 뒤에** 둔다 — 되돌릴 수 없는 작업이라 순서를 지킨다:
+
+1. ~~백업·복원 체계~~ ✅ 2026-08-28 (`Life_Trainer/scripts/backup.sh` · `restore-test.sh`)
+2. **원본 밖 사본** ❌ — 재플래시로 돌아갈 수 있어야 커널을 건드린다
+3. `apt -s full-upgrade` 로 제거 예정 패키지 검토
+4. 유지보수 창에서 한 릴리스로 통일 → 재부팅 후 bootloader·kernel·userspace 일치 확인
+5. DKMS 가 mt7601u 를 새 커널에 다시 빌드했는지 확인 (`dkms status`)
+6. CUDA · llama.cpp · TensorRT · OpenClaw · 타이머 smoke test
+
+> **업데이트를 막는 것과 검증 없이 따라가는 것은 둘 다 위험하다.** 지금은 전자이고,
+> 그 상태가 **기록 없이** 유지되고 있던 것이 문제였다. 이 절이 그 기록이다.
+
+---
+
 ## 참고 자료
 
 - [Seeed reComputer J4012 제품 페이지](https://www.seeedstudio.com/reComputer-J4012-p-5586.html)
