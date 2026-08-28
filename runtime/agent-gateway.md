@@ -567,6 +567,10 @@ systemctl --user enable --now openclaw-gateway
 기록**이다. 코드는 [`Life_Trainer/lifetrainer/agent/`](../Life_Trainer/lifetrainer/agent/),
 설치는 [`scripts/install-agent.sh`](../Life_Trainer/scripts/install-agent.sh).
 
+> **층 구분은 여기 없다.** *"에이전트가 정하는 것 / 앱이 이미 정한 것 / 그 사이 경계"* 는
+> 판정이라 [`Life_Trainer/docs/architecture.md §2-7`](../Life_Trainer/docs/architecture.md) 에 있다.
+> 이 문서는 **어떻게 붙였나**(재현·함정)를 다룬다.
+
 ### 7-1. 구성
 
 ```
