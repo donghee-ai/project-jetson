@@ -32,6 +32,18 @@ systemctl --user show llama-server -p Environment --value | tr ' ' '\n' | grep L
 # → LLAMA_CTX=20480
 ```
 
+## 재부팅 검증 — 2026-08-28 통과
+
+`openclaw-setup/` 를 해체한 뒤 **콜드 부팅으로 확인했다** (`up 0 minutes`).
+서비스 6개 · `LLAMA_CTX=20480` · 끊긴 심링크 0 · 헬스 2개 · 타이머 7개 전부 정상.
+
+```bash
+bash bench/verify-boot.sh
+```
+
+**살아 있는 상태만 보고 넘어가지 않는다** — 심링크는 프로세스가 도는 동안엔
+안 깨진 것처럼 보인다. 유닛 경로를 건드리면 이 스크립트를 다시 돌린다.
+
 ## 설치
 
 ```bash
