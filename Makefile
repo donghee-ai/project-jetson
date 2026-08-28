@@ -10,7 +10,7 @@ FIGURES   := figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status links test
+.PHONY: help verify bench figures clean-figures status links check-docs check-fast check test hooks
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -41,6 +41,30 @@ status:  ## 지금 이 기기의 현황 (서비스 · 실데이터 · 링크)
 
 links:  ## 문서의 상대경로 링크가 전부 실재하는지
 	@bash bench/check-links.sh
+
+check-docs:  ## 문서가 운영 지표를 옮겨 적고 있는지 (검사기 자기검사 포함)
+	@bash bench/check-docs.sh --self-test
+	@bash bench/check-docs.sh
+
+# ★ pre-push 는 이걸 부른다. 6분짜리 테스트는 여기 안 넣는다 — 훅이 느리면 꺼진다.
+check-fast:  ## 링크 + 문서 지표 (즉시. pre-push 훅이 부르는 것)
+	@$(MAKE) --no-print-directory links
+	@$(MAKE) --no-print-directory check-docs
+
+check: check-fast  ## check-fast + 유닛 정적검사 + 테스트
+	@echo
+	@echo "▶ systemd 유닛 정적 검사"
+	@systemd-analyze verify Life_Trainer/systemd/*.service Life_Trainer/systemd/*.timer \
+	   runtime/systemd/llama-server.service 2>&1 \
+	   | grep -vE '^/(lib|etc)/systemd/system/' || true
+	@echo "  (위에 이 저장소 유닛 관련 줄이 없으면 통과)"
+	@echo
+	@$(MAKE) --no-print-directory test
+
+hooks:  ## pre-push 훅 설치 (git 이 훅을 안 따라가므로 명시적으로 건다)
+	@install -m 755 bench/pre-push.sh .git/hooks/pre-push
+	@echo "  .git/hooks/pre-push 설치됨 — make check-fast 를 돌린다"
+
 
 test:  ## Life Trainer 테스트 (네트워크 불필요 — conftest 가 소켓을 막는다)
 	@cd Life_Trainer && .venv/bin/python -m pytest tests/ -q

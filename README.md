@@ -131,10 +131,11 @@ K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 
 ## 다시 돌리려면
 
 ```bash
-make verify     # JetPack·CUDA·전력모드 점검 → environment.md
+make verify     # JetPack·CUDA·전력모드 점검 → environment.md 를 생성
 make bench      # 모델 벤치 무인 실행 (약 40분)
 make figures    # results/ 에서 그림 재생성
-make links      # 문서 링크 418개 검사
+make check      # 링크 + 문서 지표 + 유닛 정적검사 + 테스트
+make check-fast # 그중 즉시 끝나는 것만 (pre-push 훅이 부른다 — `make hooks`)
 make test       # Life Trainer 테스트 (네트워크 불필요)
 ```
 

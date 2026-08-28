@@ -18,6 +18,31 @@ jobs:
       - name: 상대경로 링크가 전부 실재하는가
         run: bash bench/check-links.sh
 
+  docs:
+    name: 문서 지표
+    runs-on: ubuntu-latest
+    # 이 저장소는 같은 숫자가 서로 다르게 적힌 사고를 네 번 겪었다. 세 번은 규칙으로
+    # 막으려다 실패했고, 네 번째에 명령(make status)으로 대체했다. 그것도 강제하는
+    # 것이 없으면 다시 어긋난다 — 그래서 검사로 만든다.
+    steps:
+      - uses: actions/checkout@v4
+      - name: 검사기가 헐거워지지 않았는가 (fixture)
+        run: bash bench/check-docs.sh --self-test
+      - name: 문서가 운영 지표를 옮겨 적고 있는가
+        run: bash bench/check-docs.sh
+
+  shell:
+    name: 셸 스크립트
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        # 이 기기에는 shellcheck 이 없다. CI 에서만 돈다.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          shellcheck -S warning bench/*.sh Life_Trainer/scripts/*.sh \
+                     Life_Trainer/deploy/*.sh runtime/*.sh
+
   tests:
     name: Life Trainer 테스트
     runs-on: ubuntu-latest
