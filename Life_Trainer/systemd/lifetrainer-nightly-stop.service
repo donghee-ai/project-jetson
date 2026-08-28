@@ -3,8 +3,10 @@ Description=Life Trainer — 새벽 창 종료 (남은 배치 잡 비우기)
 Documentation=https://github.com/
 
 [Service]
+# ★ 경로는 %h(사용자 홈)로 쓴다. 절대경로를 박으면 다른 사용자·다른 설치 위치에서
+#   조용히 깨진다 — 유닛 12개가 전부 /home/user 에 묶여 있었다 (2026-08-28).
 Type=oneshot
-WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
-ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt nightly --stop
+WorkingDirectory=%h/project/project-jetson/Life_Trainer
+ExecStart=%h/project/project-jetson/Life_Trainer/.venv/bin/lt nightly --stop
 
 MemoryMax=256M

@@ -4,6 +4,8 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
+# ★ 경로는 %h(사용자 홈)로 쓴다. 절대경로를 박으면 다른 사용자·다른 설치 위치에서
+#   조용히 깨진다 — 유닛 12개가 전부 /home/user 에 묶여 있었다 (2026-08-28).
 # 대화 모델(:8080)과 **다른 프로세스**다. llama.cpp 는 프로세스당 모델 하나라
 # 임베딩 전용 서버를 따로 띄운다. 0.6B Q8_0 이 약 610MB 라 8B(10.2GB) 옆에 든다.
 #
@@ -20,8 +22,8 @@ Wants=network-online.target
 #   8192/4 = 슬롯당 2048 토큰 — 상한 1600자에 여유가 있다.
 #   더 크게(16384/8 · -b 16384) 잡았더니 MemoryMax=2G 에 걸려 OOM 으로 죽었다.
 # -b 는 한 요청에 들어오는 **총 토큰**이다. 16건 × 800토큰이 한 번에 오므로 넉넉히 준다.
-ExecStart=/home/user/llama.cpp/build/bin/llama-server \
-  -m /home/user/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
+ExecStart=%h/llama.cpp/build/bin/llama-server \
+  -m %h/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
   --alias qwen3-embedding-0.6b \
   --embedding \
   -ngl 0 \

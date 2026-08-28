@@ -4,10 +4,12 @@ Documentation=https://github.com/
 After=network-online.target
 
 [Service]
+# ★ 경로는 %h(사용자 홈)로 쓴다. 절대경로를 박으면 다른 사용자·다른 설치 위치에서
+#   조용히 깨진다 — 유닛 12개가 전부 /home/user 에 묶여 있었다 (2026-08-28).
 Type=oneshot
-WorkingDirectory=/home/user/project/project-jetson/Life_Trainer
-ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt sync
-ExecStart=/home/user/project/project-jetson/Life_Trainer/.venv/bin/lt rollup --today
+WorkingDirectory=%h/project/project-jetson/Life_Trainer
+ExecStart=%h/project/project-jetson/Life_Trainer/.venv/bin/lt sync
+ExecStart=%h/project/project-jetson/Life_Trainer/.venv/bin/lt rollup --today
 
 # 이 기기는 가용 메모리가 2.8GB 뿐이고 llama-server 가 이미 10.4GB 를 쓴다.
 # 파이썬 배치가 폭주해 모델 서버를 밀어내면 안 되므로 상한을 건다.

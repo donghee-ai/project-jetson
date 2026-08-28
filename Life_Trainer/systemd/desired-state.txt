@@ -1,0 +1,31 @@
+# 이 기기에서 **켜져 있어야 하는 것**. 한 곳에만 적는다.
+#
+# ★ 왜 이 파일이 생겼나 (2026-08-28)
+#   install-units.sh 와 uninstall-units.sh 가 서로 다른 목록을 각자 들고 있었다.
+#   install 은 web·llama-embed·backup 을 안 켰고, uninstall 은 nightly·nightly-stop·
+#   web·llama-embed 를 안 껐다. 그래서 "자동화 전체 끄기" 가 전체를 안 껐고,
+#   설치 스크립트로 세운 기기는 지금 도는 기기와 달랐다.
+#   이 저장소의 반복 실패 2번 — **같은 값을 여러 곳에서 각자 계산했다** — 와 같은 모양이다.
+#
+#   형식:  <unit>  <조건>
+#     always        항상 켠다
+#     slack=bolt    config/lifetrainer.toml 의 [slack].mode 가 bolt 일 때만
+#
+#   install-units.sh · uninstall-units.sh · ../bench/verify-boot.sh 가 전부 이 파일을 읽는다.
+
+lifetrainer-sync.timer           always
+lifetrainer-daily.timer          always
+lifetrainer-weekly.timer         always
+lifetrainer-collect.timer        always
+lifetrainer-digest.timer         always
+lifetrainer-nightly.timer        always
+lifetrainer-nightly-stop.timer   always
+lifetrainer-backup.timer         always
+lifetrainer-worker.service       always
+lifetrainer-web.service          always
+llama-embed.service              always
+
+# ★ mode="notify"(발송 전용)면 슬래시·DM 을 받을 필요가 없어 안 켠다.
+#   전에는 이 조건이 주석으로만 있었고 스크립트가 무조건 안 켰다 — 그 사이 운영이
+#   bolt 로 바뀌어서, 주석은 notify 를 말하는데 기기는 bolt 로 돌고 있었다.
+lifetrainer-slack.service        slack=bolt
