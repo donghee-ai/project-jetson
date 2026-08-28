@@ -1,0 +1,13 @@
+[env] stopping llama-server.service to free unified memory
+[env] will also restore: openclaw-gateway.service
+[env] collecting environment
+[env] 3 models in /home/user/project/opensource/models-round2
+[bench] Qwen3-30B-A3B-IQ2_M (9.71 GiB)
+[bench] ok
+[bench] Qwen3-32B-IQ2_M (10.58 GiB)
+[bench] ok
+[bench] Qwen3-4B-Q8_0 (3.98 GiB)
+[bench] ok
+[env] sweep complete -> /home/user/project/opensource/results/raw/run-20260818T072731Z
+[env] restarting llama-server.service
+[env] restarting openclaw-gateway.service

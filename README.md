@@ -43,7 +43,7 @@ Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨�
 
 라이선스도 봤다 — Qwen3 계열은 Apache 2.0, EXAONE 은 `other` 다.
 
-→ [research/llm-models.md](research/llm-models.md) · [research/performance.md](research/performance.md)
+→ [research/llm-models.md](research/llm-models.md) · [research/performance.md](research/performance.md) · [benchmarks/](benchmarks/) (13종 실측)
 
 ---
 
@@ -112,6 +112,7 @@ K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 
 `docs/plans/` 는 안 끝난 것, `docs/archive/` 는 접은 것.
 
 ```
+├── benchmarks/          모델 13종 실측 (2026-08-18) → 색인: benchmarks/README.md
 ├── research/            조사 · 실측  → 색인: research/README.md
 │   ├── hardware.md          하드웨어 실측 · 전력모드 · 메모리 예산
 │   ├── performance.md       벤치마크 (대역폭 · 깊이별 곡선 · 품질)

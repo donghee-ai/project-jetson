@@ -1,0 +1,54 @@
+{
+  "collected_at_utc": "2026-08-18T07:27:35.791903+00:00",
+  "board": {
+    "device_tree_model": "NVIDIA Jetson Orin NX Engineering Reference Developer Kit",
+    "device_tree_compatible": [
+      "nvidia,p3768-0000+p3767-0000",
+      "nvidia,p3767-0000",
+      "nvidia,tegra234"
+    ],
+    "soc": "tegra234",
+    "module_part_number": "p3767-0000"
+  },
+  "power": {
+    "nvpmodel_status": "pmode:0000",
+    "gpu_max_freq_hz": 918000000,
+    "gpu_cur_freq_hz": 306000000,
+    "cpu_max_freq_khz": 1984000,
+    "cpu_count": 8
+  },
+  "software": {
+    "l4t": "R36 (release), REVISION: 5.0, GCID: 43688277, BOARD: generic, EABI: aarch64, DATE: Fri Jan 16 03:50:45 UTC 2026",
+    "jetpack": "6.2.3+b81",
+    "llama_cpp": "a94d563 common: apply CPU parameters across tools (#27026)"
+  },
+  "nvml": {
+    "name": "Orin (nvgpu)",
+    "count": 1,
+    "memory_total_error": "NVMLError_NotSupported",
+    "compute_capability": [
+      8,
+      7
+    ],
+    "cuda_driver": "12.6"
+  },
+  "nvidia_smi_whichllm_query": "Orin (nvgpu), [N/A], [N/A]",
+  "memory": {
+    "MemTotal": 16402784256,
+    "MemFree": 7607603200,
+    "MemAvailable": 12431851520,
+    "SwapTotal": 8201371648,
+    "SwapFree": 6970626048
+  },
+  "thermal_c": {
+    "cv0-thermal": 53.437,
+    "cpu-thermal": 54.906,
+    "soc2-thermal": 52.406,
+    "soc0-thermal": 54.437,
+    "cv1-thermal": 53.312,
+    "gpu-thermal": 52.25,
+    "tj-thermal": 56.656,
+    "soc1-thermal": 56.656,
+    "cv2-thermal": 52.343
+  }
+}

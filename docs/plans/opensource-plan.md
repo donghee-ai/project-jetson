@@ -93,7 +93,7 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 > 이 상태로 트랙 C 글("사양 102.4, 실측 60 — 대역폭 괴리")을 냈으면 두 번째
 > 오정보가 될 뻔했다. → 해당 소재 철회 (§6).
 
-근거: [benchmark-results.md](../../../opensource/docs/benchmark-results.md) §5
+근거: [benchmarks/benchmark-results.md](../../benchmarks/benchmark-results.md) §5 (2026-08-28 저장소로 흡수)
 
 ## 3. 보유 자산
 
@@ -167,8 +167,8 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 
 ### 할 일
 
-- [x] `whichllm` 데이터 스키마 확인 → [opensource/docs/whichllm-contribution-format.md](../../../opensource/docs/whichllm-contribution-format.md)
-- [x] 젯슨 탐지 패치 + 테스트 40개 작성 → [opensource/contribution/](../../../opensource/contribution/)
+- [x] `whichllm` 데이터 스키마 확인 → `~/project/opensource/docs/whichllm-contribution-format.md` (저장소 밖)
+- [x] 젯슨 탐지 패치 + 테스트 40개 작성 → `~/project/opensource/contribution/` (저장소 밖)
 - [ ] PR 제출 — **승인 대기**
 - [ ] `jetson-containers`에 Super Mode 이슈 등록 (재현 절차 포함)
 - [ ] llama.cpp `-no-cnv` 이슈 — 재현 최소 예제 첨부

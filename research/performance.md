@@ -75,7 +75,7 @@ D2D 복사 (읽기+쓰기)          69.5 GB/s
 > Q4_K_M·Q6_K 가 55~57 GB/s 에서 평평해지는 것은 대역폭이 아니라 **슈퍼블록 언패킹
 > 연산 비용** 때문이다. 즉 K-quant 는 대역폭이 아니라 **연산**에 먼저 막힌다.
 >
-> 근거: [../../opensource/docs/benchmark-results.md](../../opensource/docs/benchmark-results.md) §5
+> 근거: [benchmarks/benchmark-results.md](../benchmarks/benchmark-results.md) §5 — **2026-08-28 에 저장소로 들어왔다**
 > (whichllm 기여 과정에서 발견)
 
 ---

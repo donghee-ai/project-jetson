@@ -1,0 +1,27 @@
+[env] stopping llama-server.service to free unified memory
+[env] collecting environment
+[env] 11 models in /home/user/project/opensource/models
+[bench] EXAONE-3.5-7.8B-Q4_K_M (4.44 GiB)
+[bench] ok
+[bench] gemma-3-4b-it-Q4_K_M (2.31 GiB)
+[bench] ok
+[bench] gpt-oss-20b-MXFP4 (11.27 GiB)
+[bench] ok
+[bench] Meta-Llama-3.1-8B-Instruct-Q4_K_M (4.58 GiB)
+[bench] ok
+[bench] Qwen3-14B-Q4_K_M (8.38 GiB)
+[bench] ok
+[bench] Qwen3-1.7B-Q4_K_M (1.03 GiB)
+[bench] ok
+[bench] Qwen3-30B-A3B-IQ2_M (9.71 GiB)
+[bench] ok
+[bench] Qwen3-4B-Q4_K_M (2.32 GiB)
+[bench] ok
+[bench] Qwen3-8B-Q4_K_M (4.68 GiB)
+[bench] ok
+[bench] Qwen3-8B-Q6_K (6.26 GiB)
+[bench] ok
+[bench] Qwen3-8B-Q8_0 (8.11 GiB)
+[bench] ok
+[env] sweep complete -> /home/user/project/opensource/results/raw/run-20260818T045209Z
+[env] restarting llama-server.service

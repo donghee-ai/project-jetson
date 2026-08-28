@@ -1,0 +1,470 @@
+{
+  "environment": {
+    "collected_at_utc": "2026-08-18T04:52:13.000736+00:00",
+    "board": {
+      "device_tree_model": "NVIDIA Jetson Orin NX Engineering Reference Developer Kit",
+      "device_tree_compatible": [
+        "nvidia,p3768-0000+p3767-0000",
+        "nvidia,p3767-0000",
+        "nvidia,tegra234"
+      ],
+      "soc": "tegra234",
+      "module_part_number": "p3767-0000"
+    },
+    "power": {
+      "nvpmodel_status": "pmode:0000",
+      "gpu_max_freq_hz": 918000000,
+      "gpu_cur_freq_hz": 306000000,
+      "cpu_max_freq_khz": 1984000,
+      "cpu_count": 8
+    },
+    "software": {
+      "l4t": "R36 (release), REVISION: 5.0, GCID: 43688277, BOARD: generic, EABI: aarch64, DATE: Fri Jan 16 03:50:45 UTC 2026",
+      "jetpack": "6.2.3+b81",
+      "llama_cpp": "a94d563 common: apply CPU parameters across tools (#27026)"
+    },
+    "nvml": {
+      "name": "Orin (nvgpu)",
+      "count": 1,
+      "memory_total_error": "NVMLError_NotSupported",
+      "compute_capability": [
+        8,
+        7
+      ],
+      "cuda_driver": "12.6"
+    },
+    "nvidia_smi_whichllm_query": "Orin (nvgpu), [N/A], [N/A]",
+    "memory": {
+      "MemTotal": 16402784256,
+      "MemFree": 6974832640,
+      "MemAvailable": 12529549312,
+      "SwapTotal": 8201371648,
+      "SwapFree": 6899060736
+    },
+    "thermal_c": {
+      "cv0-thermal": 54.437,
+      "cpu-thermal": 55.781,
+      "soc2-thermal": 53.468,
+      "soc0-thermal": 55.468,
+      "cv1-thermal": 54.187,
+      "gpu-thermal": 53.187,
+      "tj-thermal": 57.5,
+      "soc1-thermal": 57.5,
+      "cv2-thermal": 53.375
+    }
+  },
+  "quant_efficiency": [
+    {
+      "model": "Qwen3-1.7B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 39.78856606970471,
+      "achieved": 0.38856021552446,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "gemma-3-4b-it-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 41.98216987071692,
+      "achieved": 0.40998212764371994,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "Qwen3-4B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 41.99224847486208,
+      "achieved": 0.410080551512325,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "EXAONE-3.5-7.8B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 55.55050003009152,
+      "achieved": 0.5424853518563625,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "Meta-Llama-3.1-8B-Instruct-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 56.10251301834163,
+      "achieved": 0.5478761036947425,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "Qwen3-8B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 55.950852042981374,
+      "achieved": 0.54639503948224,
+      "whichllm_quant_efficiency": 0.55
+    },
+    {
+      "model": "Qwen3-8B-Q6_K",
+      "quant": "Q6_K",
+      "traffic_gbps": 54.52286625423769,
+      "achieved": 0.53244986576404,
+      "whichllm_quant_efficiency": 0.5
+    },
+    {
+      "model": "Qwen3-8B-Q8_0",
+      "quant": "Q8_0",
+      "traffic_gbps": 86.42143303954022,
+      "achieved": 0.8439593070267599,
+      "whichllm_quant_efficiency": 0.45
+    },
+    {
+      "model": "Qwen3-14B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "traffic_gbps": 57.22913590326272,
+      "achieved": 0.5588782803053,
+      "whichllm_quant_efficiency": 0.55
+    }
+  ],
+  "peak_bandwidth_used_gbps": 102.4,
+  "measured": [
+    {
+      "model": "EXAONE-3.5-7.8B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 4766449920,
+      "n_params": 7818448960,
+      "model_type": "exaone 8B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 366.257537,
+      "pp512_sd": 4.194289,
+      "tg128_tok_s": 11.654481,
+      "tg128_sd": 0.0056,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 101.00090914562094
+    },
+    {
+      "model": "Meta-Llama-3.1-8B-Instruct-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 4912898304,
+      "n_params": 8030261312,
+      "model_type": "llama 8B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 365.765357,
+      "pp512_sd": 4.094623,
+      "tg128_tok_s": 11.419433,
+      "tg128_sd": 0.005534,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 102.00456912425749
+    },
+    {
+      "model": "Qwen3-1.7B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 1101457408,
+      "n_params": 1720574976,
+      "model_type": "qwen3 1.7B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 1393.039057,
+      "pp512_sd": 69.298706,
+      "tg128_tok_s": 36.123563,
+      "tg128_sd": 0.10058,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 72.34284739946308
+    },
+    {
+      "model": "Qwen3-14B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 8995793920,
+      "n_params": 14768307200,
+      "model_type": "qwen3 14B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 196.17375,
+      "pp512_sd": 1.532319,
+      "tg128_tok_s": 6.361766,
+      "tg128_sd": 0.000798,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 104.05297436956859
+    },
+    {
+      "model": "Qwen3-30B-A3B-IQ2_M",
+      "quant": "IQ2_M",
+      "file_size_bytes": 10424240128,
+      "n_params": 30532122624,
+      "model_type": "qwen3moe 30B.A3B IQ2_M - 2.7 bpw",
+      "is_moe": true,
+      "params_active": 3300000000,
+      "pp512_tok_s": 266.509495,
+      "pp512_sd": 4.392746,
+      "tg128_tok_s": 15.671851,
+      "tg128_sd": 0.165265,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563"
+    },
+    {
+      "model": "Qwen3-4B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 2491323904,
+      "n_params": 4022468096,
+      "model_type": "qwen3 4B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 608.119886,
+      "pp512_sd": 16.454329,
+      "tg128_tok_s": 16.855395,
+      "tg128_sd": 0.00439,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 76.34954268156741
+    },
+    {
+      "model": "Qwen3-8B-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 5021827072,
+      "n_params": 8190735360,
+      "model_type": "qwen3 8B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 355.347621,
+      "pp512_sd": 4.346542,
+      "tg128_tok_s": 11.141533,
+      "tg128_sd": 0.013757,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 101.72882189632978
+    },
+    {
+      "model": "Qwen3-8B-Q6_K",
+      "quant": "Q6_K",
+      "file_size_bytes": 6719942656,
+      "n_params": 8190735360,
+      "model_type": "qwen3 8B Q6_K",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 313.397756,
+      "pp512_sd": 4.153216,
+      "tg128_tok_s": 8.113591,
+      "tg128_sd": 0.008845,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 109.04573250847538
+    },
+    {
+      "model": "Qwen3-8B-Q8_0",
+      "quant": "Q8_0",
+      "file_size_bytes": 8703561728,
+      "n_params": 8190735360,
+      "model_type": "qwen3 8B Q8_0",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 410.721429,
+      "pp512_sd": 5.970646,
+      "tg128_tok_s": 9.929433,
+      "tg128_sd": 0.004559,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 192.04762897675604
+    },
+    {
+      "model": "gemma-3-4b-it-Q4_K_M",
+      "quant": "Q4_K_M",
+      "file_size_bytes": 2483218432,
+      "n_params": 3880099328,
+      "model_type": "gemma3 4B Q4_K - Medium",
+      "is_moe": false,
+      "params_active": null,
+      "pp512_tok_s": 682.34839,
+      "pp512_sd": 18.234124,
+      "tg128_tok_s": 16.906354,
+      "tg128_sd": 0.009946,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563",
+      "implied_bandwidth_gbps": 76.33121794675804
+    },
+    {
+      "model": "gpt-oss-20b-MXFP4",
+      "quant": "MXFP4",
+      "file_size_bytes": 12096558336,
+      "n_params": 20914757184,
+      "model_type": "gpt-oss 20B MXFP4 MoE",
+      "is_moe": true,
+      "params_active": 3600000000,
+      "pp512_tok_s": 413.752325,
+      "pp512_sd": 15.751946,
+      "tg128_tok_s": 16.640374,
+      "tg128_sd": 0.022189,
+      "backends": "CUDA",
+      "flash_attn": 1,
+      "n_gpu_layers": 99,
+      "type_k": "f16",
+      "type_v": "f16",
+      "build": "a94d563"
+    }
+  ],
+  "bandwidth_sweep": {
+    "34.0": {
+      "mape": 0.6466117206451616,
+      "bias": -0.6466117206451616,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 3.923255318708982,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 3.8063071618589728,
+        "Qwen3-1.7B-Q4_K_M": 16.977506224189835,
+        "Qwen3-14B-Q4_K_M": 2.0787492650787627,
+        "Qwen3-4B-Q4_K_M": 7.506049281659363,
+        "Qwen3-8B-Q4_K_M": 3.7237443129543113,
+        "Qwen3-8B-Q6_K": 2.5297834922477054,
+        "Qwen3-8B-Q8_0": 1.757901015486427,
+        "gemma-3-4b-it-Q4_K_M": 7.530549773238797
+      }
+    },
+    "51.2": {
+      "mape": 0.4678388263833022,
+      "bias": -0.4678388263833022,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 5.9079609505264665,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 5.731850784917042,
+        "Qwen3-1.7B-Q4_K_M": 25.566127019956458,
+        "Qwen3-14B-Q4_K_M": 3.1303518344715484,
+        "Qwen3-4B-Q4_K_M": 11.30322715355763,
+        "Qwen3-8B-Q4_K_M": 5.607520847742963,
+        "Qwen3-8B-Q6_K": 3.8095563177377207,
+        "Qwen3-8B-Q8_0": 2.647192117438384,
+        "gemma-3-4b-it-Q4_K_M": 11.340122011465484
+      }
+    },
+    "60.0": {
+      "mape": 0.3763736246679323,
+      "bias": -0.3763736246679323,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 6.923391738898204,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 6.717012638574658,
+        "Qwen3-1.7B-Q4_K_M": 29.960305101511473,
+        "Qwen3-14B-Q4_K_M": 3.668381056021346,
+        "Qwen3-4B-Q4_K_M": 13.245969320575346,
+        "Qwen3-8B-Q4_K_M": 6.571313493448785,
+        "Qwen3-8B-Q6_K": 4.464323809848891,
+        "Qwen3-8B-Q8_0": 3.1021782626231063,
+        "gemma-3-4b-it-Q4_K_M": 13.289205482186114
+      }
+    },
+    "68.0": {
+      "mape": 0.29322344129032324,
+      "bias": -0.29322344129032324,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 7.846510637417964,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 7.6126143237179456,
+        "Qwen3-1.7B-Q4_K_M": 33.95501244837967,
+        "Qwen3-14B-Q4_K_M": 4.157498530157525,
+        "Qwen3-4B-Q4_K_M": 15.012098563318727,
+        "Qwen3-8B-Q4_K_M": 7.447488625908623,
+        "Qwen3-8B-Q6_K": 5.059566984495411,
+        "Qwen3-8B-Q8_0": 3.515802030972854,
+        "gemma-3-4b-it-Q4_K_M": 15.061099546477594
+      }
+    },
+    "69.5": {
+      "mape": 0.27763278190702156,
+      "bias": -0.27763278190702156,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 8.01959543089042,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 7.7805396396823125,
+        "Qwen3-1.7B-Q4_K_M": 34.704020075917455,
+        "Qwen3-14B-Q4_K_M": 4.249208056558059,
+        "Qwen3-4B-Q4_K_M": 15.343247796333111,
+        "Qwen3-8B-Q4_K_M": 7.6117714632448426,
+        "Qwen3-8B-Q6_K": 5.171175079741633,
+        "Qwen3-8B-Q8_0": 3.5933564875384314,
+        "gemma-3-4b-it-Q4_K_M": 15.393329683532247
+      }
+    },
+    "102.4": {
+      "mape": 0.18512885434617427,
+      "bias": 0.0643223472333956,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 11.815921901052933,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 11.463701569834084,
+        "Qwen3-1.7B-Q4_K_M": 51.132254039912915,
+        "Qwen3-14B-Q4_K_M": 6.260703668943097,
+        "Qwen3-4B-Q4_K_M": 22.60645430711526,
+        "Qwen3-8B-Q4_K_M": 11.215041695485926,
+        "Qwen3-8B-Q6_K": 7.6191126354754415,
+        "Qwen3-8B-Q8_0": 5.294384234876768,
+        "gemma-3-4b-it-Q4_K_M": 22.680244022930967
+      }
+    },
+    "136.5": {
+      "mape": 0.4830252965053073,
+      "bias": 0.4187500038804541,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 15.750716205993413,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 15.281203752757348,
+        "Qwen3-1.7B-Q4_K_M": 68.1596941059386,
+        "Qwen3-14B-Q4_K_M": 8.345566902448562,
+        "Qwen3-4B-Q4_K_M": 30.134580204308918,
+        "Qwen3-8B-Q4_K_M": 14.949738197595986,
+        "Qwen3-8B-Q6_K": 10.156336667406228,
+        "Qwen3-8B-Q8_0": 7.057455547467566,
+        "gemma-3-4b-it-Q4_K_M": 30.232942471973406
+      }
+    },
+    "204.8": {
+      "mape": 1.1286446944667912,
+      "bias": 1.1286446944667912,
+      "per_model": {
+        "EXAONE-3.5-7.8B-Q4_K_M": 23.631843802105866,
+        "Meta-Llama-3.1-8B-Instruct-Q4_K_M": 22.92740313966817,
+        "Qwen3-1.7B-Q4_K_M": 102.26450807982583,
+        "Qwen3-14B-Q4_K_M": 12.521407337886194,
+        "Qwen3-4B-Q4_K_M": 45.21290861423052,
+        "Qwen3-8B-Q4_K_M": 22.430083390971852,
+        "Qwen3-8B-Q6_K": 15.238225270950883,
+        "Qwen3-8B-Q8_0": 10.588768469753536,
+        "gemma-3-4b-it-Q4_K_M": 45.360488045861935
+      }
+    }
+  },
+  "best_bandwidth_gbps": 102.4,
+  "best_mape": 0.18512885434617427,
+  "best_bias": 0.0643223472333956,
+  "bandwidth_bound_subset_min_gib": 3.0,
+  "best_bandwidth_gbps_bandwidth_bound": 102.4,
+  "best_mape_bandwidth_bound": 0.01005311760655131
+}

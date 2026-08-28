@@ -1,0 +1,358 @@
+
+{
+  "hardware": {
+    "gpus": [
+      {
+        "name": "Jetson Orin NX 16GB",
+        "vendor": "nvidia",
+        "vram_bytes": 16402784256,
+        "usable_vram_bytes": 15582645044,
+        "memory_bandwidth_gbps": 102.4,
+        "shared_memory": true
+      }
+    ],
+    "cpu": "ARMv8 Processor rev 1 (v8l)",
+    "cpu_cores": 8,
+    "ram_bytes": 16402784256,
+    "ram_budget_bytes": null,
+    "budget_notes": [
+      "VRAM headroom: 782 MB reserved per GPU"
+    ],
+    "os": "linux"
+  },
+  "models": [
+    {
+      "rank": 1,
+      "model_id": "google/gemma-4-26B-A4B-it",
+      "artifact_repo_id": null,
+      "artifact_filename": null,
+      "parameter_count": 26544131376,
+      "published_at": "2026-03-11T21:25:57.000Z",
+      "downloads": 9845922,
+      "quant_type": "Q3_K_M",
+      "file_size_bytes": 11613057477,
+      "vram_required_bytes": 13190194449,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 30.796992481203002,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        18.5,
+        49.3
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "MoE speed uses active parameters plus a bandwidth-scaled dispatch/read floor.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 79.58,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 2,
+      "model_id": "Qwen/Qwen3-30B-A3B",
+      "artifact_repo_id": "MaziyarPanahi/Qwen3-30B-A3B-GGUF",
+      "artifact_filename": "Qwen3-30B-A3B.Q3_K_M.gguf",
+      "parameter_count": 30532122624,
+      "published_at": "2025-04-27T03:43:05.000Z",
+      "downloads": 2647273,
+      "quant_type": "Q3_K_M",
+      "file_size_bytes": 13357803648,
+      "vram_required_bytes": 14823964416,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 39.00952380952381,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        23.4,
+        62.4
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "MoE speed uses active parameters plus a bandwidth-scaled dispatch/read floor.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 79.18,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 3,
+      "model_id": "openai/gpt-oss-20b",
+      "artifact_repo_id": "unsloth/gpt-oss-20b-GGUF",
+      "artifact_filename": "gpt-oss-20b-Q4_K_M.gguf",
+      "parameter_count": 21511953984,
+      "published_at": "2025-08-04T22:33:29.000Z",
+      "downloads": 7852041,
+      "quant_type": "Q4_K_M",
+      "file_size_bytes": 12100474116,
+      "vram_required_bytes": 13547473591,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 27.81234567901235,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        16.7,
+        44.5
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "MoE speed uses active parameters plus a bandwidth-scaled dispatch/read floor.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 75.24,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 4,
+      "model_id": "Qwen/Qwen3-14B",
+      "artifact_repo_id": "MaziyarPanahi/Qwen3-14B-GGUF",
+      "artifact_filename": "Qwen3-14B.Q4_K_M.gguf",
+      "parameter_count": 14768307200,
+      "published_at": "2025-04-27T03:42:45.000Z",
+      "downloads": 2208751,
+      "quant_type": "Q4_K_M",
+      "file_size_bytes": 8307172800,
+      "vram_required_bytes": 10755437070,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 6.779683215449666,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        4.1,
+        10.8
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 65.91,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 5,
+      "model_id": "microsoft/phi-4",
+      "artifact_repo_id": "MaziyarPanahi/phi-4-GGUF",
+      "artifact_filename": "phi-4.Q4_K_M.gguf",
+      "parameter_count": 14659507200,
+      "published_at": "2024-12-11T11:47:29.000Z",
+      "downloads": 690419,
+      "quant_type": "Q4_K_M",
+      "file_size_bytes": 8245972800,
+      "vram_required_bytes": 10683935879,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 6.830000700463141,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        4.1,
+        10.9
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 63.6,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "mit"
+    },
+    {
+      "rank": 6,
+      "model_id": "Qwen/Qwen3-8B",
+      "artifact_repo_id": "Qwen/Qwen3-8B-GGUF",
+      "artifact_filename": "Qwen3-8B-Q5_K_M.gguf",
+      "parameter_count": 8190735360,
+      "published_at": "2025-04-27T03:42:21.000Z",
+      "downloads": 15839401,
+      "quant_type": "Q5_K_M",
+      "file_size_bytes": 5631130560,
+      "vram_required_bytes": 7456629907,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 9.456005225352119,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        5.7,
+        15.1
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 62.23,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 7,
+      "model_id": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+      "artifact_repo_id": null,
+      "artifact_filename": null,
+      "parameter_count": 24011361280,
+      "published_at": "2025-06-19T17:41:13.000Z",
+      "downloads": 300146,
+      "quant_type": "Q3_K_M",
+      "file_size_bytes": 10504970560,
+      "vram_required_bytes": 13828367782,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 4.873883244847475,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        2.9,
+        7.8
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 61.87,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    },
+    {
+      "rank": 8,
+      "model_id": "google/gemma-3-27b-it",
+      "artifact_repo_id": "MaziyarPanahi/gemma-3-27b-it-GGUF",
+      "artifact_filename": "gemma-3-27b-it.Q3_K_M.gguf",
+      "parameter_count": 27432406640,
+      "published_at": "2025-03-01T19:10:19.000Z",
+      "downloads": 735008,
+      "quant_type": "Q3_K_M",
+      "file_size_bytes": 12001677905,
+      "vram_required_bytes": 15397286492,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 4.266070161628788,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        2.6,
+        6.8
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 58.81,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "gemma"
+    },
+    {
+      "rank": 9,
+      "model_id": "google/gemma-3-12b-it",
+      "artifact_repo_id": "MaziyarPanahi/gemma-3-12b-it-GGUF",
+      "artifact_filename": "gemma-3-12b-it.Q4_K_M.gguf",
+      "parameter_count": 12187325040,
+      "published_at": "2025-03-01T19:11:34.000Z",
+      "downloads": 1230913,
+      "quant_type": "Q4_K_M",
+      "file_size_bytes": 6855370335,
+      "vram_required_bytes": 8947447854,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 8.21545696991146,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        4.9,
+        13.1
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 56.86,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "gemma"
+    },
+    {
+      "rank": 10,
+      "model_id": "mistralai/Devstral-Small-2505",
+      "artifact_repo_id": null,
+      "artifact_filename": null,
+      "parameter_count": 23572403200,
+      "published_at": "2025-05-12T21:49:21.000Z",
+      "downloads": 2910,
+      "quant_type": "Q3_K_M",
+      "file_size_bytes": 10312926400,
+      "vram_required_bytes": 13594763043,
+      "vram_available_bytes": 15582645044,
+      "uses_multi_gpu": false,
+      "multi_gpu_effective_vram_bytes": null,
+      "estimated_tok_per_sec": 4.964643207382921,
+      "speed_confidence": "medium",
+      "speed_range_tok_per_sec": [
+        3.0,
+        7.9
+      ],
+      "speed_notes": [
+        "Speed is estimated from memory bandwidth, quantization, backend, and fit type.",
+        "This is a synthetic GGUF estimate for an official repo, not a measured GGUF file."
+      ],
+      "quality_score": 55.86,
+      "benchmark_status": "direct",
+      "benchmark_source": "direct",
+      "benchmark_confidence": 1.0,
+      "fit_type": "full_gpu",
+      "can_run": true,
+      "warnings": [],
+      "license": "apache-2.0"
+    }
+  ]
+}

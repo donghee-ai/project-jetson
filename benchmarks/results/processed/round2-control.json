@@ -1,0 +1,64 @@
+{
+  "control_experiment": {
+    "dense": {
+      "model": "Qwen3-32B-IQ2_M",
+      "params": 32762123264,
+      "size_bytes": 11356886016,
+      "tg128": 2.925974,
+      "achieved_bandwidth_gbps": 33.22995320377958
+    },
+    "moe": {
+      "model": "Qwen3-30B-A3B-IQ2_M",
+      "size_bytes": 10424240128,
+      "sessions": {
+        "2026-08-14": 14.22,
+        "2026-08-18a": 15.671851,
+        "2026-08-18b": 14.992535
+      },
+      "tg128_mean": 14.961462000000003,
+      "session_spread_pct": 10.20992264416314
+    },
+    "read_ratio_upper_bound": 0.21306459495275262,
+    "whichllm_assumed_ratio": 0.10819672131147541,
+    "understatement_factor": 1.9692333775936226,
+    "note": "Upper bound: assumes the MoE achieves the same bandwidth as the dense control in the same quantization. Scattered expert reads make the true value lower, but whichllm\u2019s 0.108 would require the MoE to reach only ~50% of the dense rate."
+  },
+  "achieved_bandwidth_by_quant_and_size": [
+    {
+      "quant": "IQ2_M",
+      "model": "Qwen3-32B",
+      "gib": 10.576924324035645,
+      "gbps": 33.22995320377958
+    },
+    {
+      "quant": "Q4_K_M",
+      "model": "Qwen3-8B",
+      "gib": 4.68,
+      "gbps": 56.0
+    },
+    {
+      "quant": "Q4_K_M",
+      "model": "Qwen3-14B",
+      "gib": 8.38,
+      "gbps": 57.2
+    },
+    {
+      "quant": "Q6_K",
+      "model": "Qwen3-8B",
+      "gib": 6.26,
+      "gbps": 54.5
+    },
+    {
+      "quant": "Q8_0",
+      "model": "Qwen3-4B",
+      "gib": 3.9808902740478516,
+      "gbps": 61.053780007028735
+    },
+    {
+      "quant": "Q8_0",
+      "model": "Qwen3-8B",
+      "gib": 8.11,
+      "gbps": 86.4
+    }
+  ]
+}
