@@ -9,3 +9,6 @@
 - GPU 잡 done 1,679 · failed 203
 - 분류 규칙 47개
 - make links 로 링크 435 개 검사
+- 타이머 7개와 상시 서비스 3개가 돈다
+- systemd 유닛 파일 17개
+- 서비스 6개 active

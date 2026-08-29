@@ -35,10 +35,12 @@ systemctl --user show llama-server -p Environment --value | tr ' ' '\n' | grep L
 ## 재부팅 검증 — 2026-08-28 통과
 
 `openclaw-setup/` 를 해체한 뒤 **콜드 부팅으로 확인했다** (`up 0 minutes`).
+<!-- check-docs: ok — 그날 확인한 값이다. 지금 값이 아니라 기록이다 -->
 서비스 6개 · `LLAMA_CTX=20480` · 끊긴 심링크 0 · 헬스 2개 · 타이머 전부 정상.
 
 ### 두 번째 콜드 부팅 — 2026-08-28 오후, 그날 바꾼 것을 검증
 
+<!-- check-docs: ok — 그때 바꾼 개수다. 지금 유닛 수가 아니다 -->
 같은 날 오후에 **유닛 12개의 절대경로를 `%h` 로 바꾸고**, 유닛 목록을
 `desired-state.txt` 하나로 합치고, 백업 타이머를 신설하고, journal 을 영속화했다.
 넷 다 `daemon-reload` 로만 확인한 상태였다 — **심링크와 경로는 프로세스가 도는

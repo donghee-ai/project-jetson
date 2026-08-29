@@ -91,7 +91,7 @@ llama-bench   pp512 353.7 tok/s · tg128 11.14 tok/s · VDD_IN 20.4W · tj 67°C
 실사용 깊이    463 토큰 10.69 → 9,603 토큰 7.80 → 31,901 토큰 4.74 tok/s
 ```
 
-이 설정 위에서 [Life Trainer](Life_Trainer/) 가 타이머 7개와 상시 서비스 3개로
+이 설정 위에서 [Life Trainer](Life_Trainer/) 가 타이머와 상시 서비스로
 재부팅을 넘겨 돌고 있다.
 
 ---
@@ -152,7 +152,9 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 ```
 ├── CLAUDE.md            저장소 전체 작업 규칙 — **검사·경보를 붙이기 전에 읽는다**
 ├── folder-structure.md  폴더 구조 목표안 — **지금 구조는 아래가 정본이다**
-├── bench/               측정 도구 (하드웨어 · 모델 · 프로파일링 · 생태계 조사)
+├── bench/               ★ 이름은 "측정" 인데 지금 절반만 측정이다 — 운영·검사 스크립트가
+│                        같이 있다. 새 스크립트를 넣기 전에 CLAUDE.md §6 을 볼 것.
+│                        목표 구조는 folder-structure.md
 ├── results/             측정 원본 데이터
 ├── figures/             results/ 에서 재생성되는 그림  ← make figures
 ├── benchmarks/          모델 13종 실측 (2026-08-18) → 색인: benchmarks/README.md
@@ -183,7 +185,7 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 
 하루 활동을 10분 단위 144슬롯으로 계측하고, 야간에 관심사 문서를 수집·요약하고,
 Slack 으로 리포트를 보내며, **물어보면 자기 기록을 근거로 답하는** 온디바이스 개인 에이전트.
-**실사용 중** — 타이머 7개와 상시 서비스 3개가 재부팅을 넘겨 돌고 있다.
+**실사용 중** — 타이머와 상시 서비스가 재부팅을 넘겨 돌고 있다.
 
 ```
 ActivityWatch(PC) ──Tailscale──┐
