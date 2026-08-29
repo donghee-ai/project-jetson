@@ -60,8 +60,10 @@
 - **백업은 검증까지가 백업이다** — `scripts/backup.sh` 가 `quick_check` 와 내용 유무를
   보고, 실패하면 그 파일을 지운다. 깨진 파일을 "백업 있음" 으로 세지 않기 위해서다.
   **월 1회 `scripts/restore-test.sh` 로 실제로 복원해 본다**
-  ([runbook](docs/runbook-backup-restore.md)). ★ 원본 밖 사본은 **아직 없다** —
-  같은 NVMe 의 사본은 디스크 고장·도난에 무력하다
+  ([runbook](docs/runbook-backup-restore.md)).
+  ★ **원본 밖 자동 복제는 안 하기로 했다** (2026-08-29). 같은 NVMe 의 사본은 디스크
+  고장·도난에 무력하므로, **되돌릴 수 없는 작업 직전에** `make recovery-bundle` 로
+  기기 밖에 둔다 — 저장소 밖 자산(openclaw 배선·터널 자격증명·WiFi 드라이버)까지 들어간다
 
 ## 대화 프롬프트 규칙 (`llm/context.py`·`converse.py`)
 
