@@ -159,16 +159,21 @@ WARN 유지  → 안 알린다   ← 이미 아는 것. 알려진 WARN 은 docs/
 
 항목 **이름**만 비교한다. 뒤의 숫자까지 비교하면 매일 "변화" 가 된다.
 
-### 바깥 — `jetson-heartbeat.timer` (15분) ★ **아직 미설정**
+### 바깥 — `jetson-heartbeat.timer` (15분) ✅ **2026-08-29 연결됨**
 
 **같은 기기가 보내는 알림은 그 기기의 죽음을 못 알린다.** 전원 단절 · 네트워크 단절 ·
 부팅 실패 · user manager 미기동 · Slack 경로 자체 장애 — 전부 *"알림이 안 온다"* 로만
 나타나고, **안 오는 것은 눈에 안 띈다.** 그래서 판정을 바깥에 둔다.
 
-```ini
-# runtime/systemd/jetson-heartbeat.service
-Environment=JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>
+```bash
+# ★ 유닛 파일에 넣지 않는다 — runtime/systemd/ 는 git 에 추적되므로
+#   URL 이 GitHub 에 공개되고, 그걸 아는 사람은 기기가 죽어도 "살아 있다" 를 위조할 수 있다.
+mkdir -p ~/.config/jetson && umask 077
+echo 'JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>' > ~/.config/jetson/heartbeat.env
+systemctl --user restart jetson-heartbeat.timer
 ```
+
+유닛은 `EnvironmentFile=-%h/.config/jetson/heartbeat.env` 로 읽는다.
 
 - 나가는 것은 **"이 기기가 방금 정상이었다" 는 사실 하나**다. 개인 기록은 안 나간다
 - 살아 있음을 **증명한 뒤에만** 보낸다 (`/health` + 핵심 유닛). 프로세스가 도는 것과
@@ -179,6 +184,10 @@ Environment=JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>
   *"그동안 살아 있었다"* 는 거짓말이 된다
 
 미설정이면 `verify-boot.sh` 가 노란불로 남긴다. **실패는 아니지만 조용히 넘어가지도 않는다.**
+
+★ 그 검사도 두 번 틀렸다 — **타이머**에서 환경변수를 찾았고(환경은 서비스에 있다),
+그다음엔 `EnvironmentFile` 이 **실행 시점에 읽히므로 `systemctl show -p Environment`
+에 안 나온다**는 것을 몰랐다. 설정을 마쳐도 계속 "미설정" 이 뜨는 검사였다.
 
 ## 이 기기가 LAN 에 열어 둔 것 (2026-08-28 실측)
 
