@@ -79,7 +79,7 @@ check: check-fast  ## check-fast + 유닛 정적검사 + 테스트
 	@echo
 	@echo "▶ systemd 유닛 정적 검사"
 	@systemd-analyze verify Life_Trainer/systemd/*.service Life_Trainer/systemd/*.timer \
-	   runtime/systemd/llama-server.service 2>&1 \
+	   runtime/systemd/*.service runtime/systemd/*.timer 2>&1 \
 	   | grep -vE '^/(lib|etc)/systemd/system/' || true
 	@echo "  (위에 이 저장소 유닛 관련 줄이 없으면 통과)"
 	@echo

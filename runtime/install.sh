@@ -22,8 +22,14 @@ ln -sf "$RUNTIME_DIR/systemd/llama-server.service" "$UNIT_DIR/llama-server.servi
 ln -sf "$RUNTIME_DIR/systemd/llama-server.service.d/ctx.conf" \
        "$UNIT_DIR/llama-server.service.d/ctx.conf"
 
+chmod +x "$RUNTIME_DIR/restart-llama-server.sh"
+ln -sf "$RUNTIME_DIR/systemd/llama-server-restart.service" "$UNIT_DIR/llama-server-restart.service"
+ln -sf "$RUNTIME_DIR/systemd/llama-server-restart.timer"   "$UNIT_DIR/llama-server-restart.timer"
+
 systemctl --user daemon-reload
 systemctl --user enable --now llama-server
+# ★ 8B 는 자란다 (2026-08-30 전역 OOM). 매일 06:10 에 재기동해 회수한다.
+systemctl --user enable --now llama-server-restart.timer
 
 # 헤드리스 부팅에서 사용자 서비스가 뜨려면 linger 가 필요하다.
 # 없으면 SSH 로 로그인할 때까지 아무것도 안 뜬다.

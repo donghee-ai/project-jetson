@@ -9,3 +9,4 @@ llama-server.service          always
 openclaw-gateway.service      always
 jetson-daily-check.timer      always
 jetson-heartbeat.timer        optional=JETSON_HEARTBEAT_URL
+llama-server-restart.timer    always

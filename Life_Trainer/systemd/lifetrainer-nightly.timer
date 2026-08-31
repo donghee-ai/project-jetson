@@ -1,10 +1,13 @@
 [Unit]
-Description=Life Trainer — 매일 02:00 야간 배치 적재
+Description=Life Trainer — 매일 02:10 야간 배치 적재
 
 [Timer]
 # 사용자가 자는 시간. daily(23:30)·digest(07:30) 와 겹치지 않는다.
 # 요약 20건 ≈ 7분이라 아침까지 여유가 크다.
-OnCalendar=*-*-* 02:00:00
+# ★ 02:00 → 02:10 (2026-08-31). 02:00 에 `llama-server-restart` 가 8B 를 비운다 —
+#   요약 30건이 이 배치의 최대 부하라, 20시간 자란 서버(약 9,400MB)가 아니라
+#   갓 뜬 서버(6,818MB)에서 시작하게 한다. 10분은 로드(10~30초)의 20배 여유다.
+OnCalendar=*-*-* 02:10:00
 RandomizedDelaySec=5min
 Persistent=true
 
