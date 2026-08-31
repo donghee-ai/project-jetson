@@ -54,7 +54,8 @@
 - **5분 미만 기기 전환은 앞 활동으로 흡수한다** (`rollup.absorb_short_switches`).
   "코딩 10분 → 폰 3분 → 코딩 10분" 은 코딩 23분이다 — 잠깐 딴짓까지 다 찍히면
   플래너를 읽을 수 없다. 임계값은 `rollup.switch_absorb_sec`
-- 활동 카테고리 **9개** (게임·SNS 포함) + 구조 상태 3개 · 분류 규칙 **47개** (앱 41 · URL 6 · 제목 4)
+- 활동 카테고리 **9개** (게임·SNS 포함) + 구조 상태 3개.
+  분류 규칙은 앱 · URL · 창 제목 세 갈래이고 **개수는 `make status`** 가 말한다
 - **색은 `config/palette.yaml` 하나에서만 온다.** `rules.yaml` 에는 색이 없다 (2026-08-25)
 - 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지. **변주(파스텔·네온)는
   같은 파일의 `themes:` 에 있고 `scripts/derive_theme_palette.py` 가 계산한다**
