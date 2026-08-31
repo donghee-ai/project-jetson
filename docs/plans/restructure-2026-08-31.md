@@ -1,23 +1,47 @@
 # 세대 전환 — 실행 계획과 참조 지도
 
-> 작성 2026-08-31 · **상태: 단계 0 완료 · 게이트 대기**
-> 이 문서는 **세션이 끊겨도 이어받을 수 있게** 쓴 것이다.
-> 계획의 근거·측정값은 [§2](#2-왜-하는가--측정된-근거-셋) 에, 무엇을 읽고 시작할지는 [§4](#4-단계별-실행--무엇을-읽고-시작하나) 에 있다.
+> 작성 2026-08-31 · **상태: 단계 1~4 완료 · 재부팅 검증만 남음**
+> 계획의 근거·측정값은 [§2](#2-왜-하는가--측정된-근거-셋) 에 있다.
 
 ---
 
-## 1. 지금 어디까지 왔나
+## 1. 어디까지 왔나
 
 ```
 ✅ 단계 0   태그 pre-restructure-2026-08-31 + 백업 3종 + sha256
-⏸  게이트   사용자가 3개 파일을 내려받고 sha256 대조    ← 여기서 멈춰 있다
-   단계 1   ff-only 머지 · push · stale 브랜치 3개 · git gc
-   단계 2   끊긴 참조 복구 + 코드→문서 검사 신설 + HISTORY 한 건
-   단계 3   중복 제거 + 정비계획 잔여를 issues/ 로
-   단계 4   폴더 재구조화 + 참조 치환 + 재부팅 검증
+✅ 게이트   사용자가 3개 파일을 내려받고 sha256 대조
+✅ 단계 1   ff-only 머지 · push · stale 브랜치 3개 · git gc (27M → 13M)
+✅ 단계 2   끊긴 참조 복구 + 코드→문서 검사 신설 + HISTORY 한 건
+✅ 단계 3   중복 제거 + 낡은 수치 정리 + 정비계획을 issues/ 로
+✅ 단계 4   measure/ · operate/ · life-trainer/ · refs/ 로 재구조화
+⏸  마지막   **재부팅 검증** — 유닛의 `%h/…` 는 재기동만으로는 증명이 안 된다
 ```
 
-**게이트를 통과하기 전에는 단계 1로 가지 않는다.**
+### 무엇이 나왔나 — 계획에 없던 것들
+
+계획은 *"참조를 고치고 폴더를 옮긴다"* 였는데, 실제로 값이 컸던 것은 **검사가 없던 자리**였다.
+
+| 어디서 | 무엇 |
+|---|---|
+| 단계 2 | 코드→문서 참조 검사를 만들자 **틀린 절 번호 둘**이 같이 나왔다. 개명 때 깨진 게 아니라 **처음부터 틀려 있었다** |
+<!-- check-docs: ok — 아래 줄은 **그때 서로 달랐던 옛 값**을 증거로 인용한다 -->
+| 단계 3 | 중복을 지우자 **낡은 수치 다섯**이 나왔다. `lt doctor` 항목 수를 네 곳은 17, 한 곳은 15 로 적고 있었고 `check-docs` 는 전부 통과시켰다 |
+| 단계 3 | `backup.sh` 가 **자기 검사가 만든 `-wal`·`-shm`** 을 매일 백업 옆에 남기고 있었다 ([HISTORY](../../life-trainer/HISTORY/2026-08-31-the-backup-kept-what-its-own-check-created.md)) |
+| 단계 4 | `operate/tools/install.sh` 가 유닛 목록을 **본문에 박고** 있어, 심링크를 지우자 감시 타이머 둘이 안 돌아왔다 ([HISTORY](../../life-trainer/HISTORY/2026-08-31-the-symlinks-that-were-already-there-hid-the-gap.md)) |
+| 단계 4 | 저장소 규칙이 **홈 아래 경로**까지 바꿔 `~/models` 가 `~/refs/models` 가 됐다. llama-server·llama-embed 가 모델을 못 찾았다 |
+
+**공통점**: 전부 *"한 곳에서 고쳤으니 그 부류가 닫혔다"* 였다.
+
+### 되돌리는 법
+
+```bash
+git reset --hard pre-move-2026-08-31        # 재구조화 직전
+git reset --hard pre-restructure-2026-08-31 # 세션 시작 시점
+```
+
+★ **git 만으로는 안 돌아온다.** venv 의 셸뱅 23개 · `~/.openclaw/openclaw.json` ·
+`~/.config/systemd/user/` 의 심링크는 저장소 밖이다. 되돌리면 이 셋도 같이 되돌린다
+(`operate/tools/install.sh` · `life-trainer/scripts/install-units.sh` 를 다시 돌리면 된다).
 
 ### 백업 3종 (`~/` 에 있다)
 
@@ -28,13 +52,6 @@
 | `recovery-bundle-*.tar.gz` | 저장소 밖 자산 | `~/.openclaw` · 터널 자격증명 · WiFi 드라이버 |
 
 뒤의 둘은 `0600` 이고 **토큰·개인 활동 기록이 들어 있다.** 옮길 때 암호화한다.
-
-### 되돌리는 법
-
-```bash
-git reset --hard pre-restructure-2026-08-31     # git 안의 것
-# git 밖의 것은 위 백업 ②③ 에서
-```
 
 ---
 
@@ -90,7 +107,7 @@ git reset --hard pre-restructure-2026-08-31     # git 안의 것
 
 ## 4. 단계별 실행 — **무엇을 읽고 시작하나**
 
-### 단계 1 — 머지와 이력 정리
+### ~~단계 1 — 머지와 이력 정리~~ ✅
 
 ```bash
 git checkout main && git merge --ff-only llama-server-memory-growth
@@ -109,7 +126,7 @@ git gc --aggressive --prune=now
 
 ---
 
-### 단계 2 — 끊긴 참조 복구 + 검사 신설
+### ~~단계 2 — 끊긴 참조 복구 + 검사 신설~~ ✅
 
 | 무엇 | 어디로 |
 |---|---|
@@ -139,7 +156,7 @@ git grep -ohE '[A-Za-z0-9_./-]+\.md' -- '*.py' '*.sh' '*.service' '*.timer' Make
 
 ---
 
-### 단계 3 — 중복 제거 + 정비계획 이관
+### ~~단계 3 — 중복 제거 + 정비계획 이관~~ ✅
 
 | 중복 | 남길 곳 |
 |---|---|
@@ -181,7 +198,7 @@ git grep -ohE '[A-Za-z0-9_./-]+\.md' -- '*.py' '*.sh' '*.service' '*.timer' Make
 
 ---
 
-### 단계 4 — 폴더 재구조화
+### ~~단계 4 — 폴더 재구조화~~ ✅ (재부팅 검증만 남음)
 
 목표 구조는 [`docs/folder-structure.md`](../folder-structure.md) 의 §목표 구조 그대로.
 `measure/`(잰 것) · `operate/`(도는 것) · `life-trainer/`(만든 것) · `docs/` · `refs/`.
