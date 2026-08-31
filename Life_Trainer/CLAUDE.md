@@ -37,6 +37,9 @@
   + 게이트웨이 0.3GB). ctx 를 40960 → 20480 으로 낮춰 KV 2.99GB → 1.50GB (08-23).
   ★ **모델 파일 크기 ≠ 상주 메모리.** 0.6B(610MB)를 GPU 에 올렸더니 3,144MB 가 되어
   8B 가 CUDA 버퍼를 못 잡고 죽었다. 임베딩은 `-ngl 0`(CPU) 로 양보시킨다.
+  ★ **그리고 `-ngl 0` 은 CUDA 를 끄지 않는다** — 레이어를 안 올릴 뿐 백엔드는 초기화되어
+  dmabuf(nvmap)를 잡는다. 끄려면 `CUDA_VISIBLE_DEVICES=` 를 같이 준다
+  ([HISTORY](HISTORY/2026-08-29-a-cpu-only-server-was-holding-gpu-memory.md))
   헤드리스 크로미움 같은 **일시적 스파이크**는 이 규칙이 아니라 GPU 잡과의 직렬화 문제다
 - **GPU 잡 동시 실행 금지** — `fcntl.flock`
 - **모델 id 까지 확인** — 포트만 보는 헬스체크가 1시간 무중단 다운을 낸 적 있다.

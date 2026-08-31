@@ -1,0 +1,14 @@
+[Unit]
+Description=llama.cpp 8B 서버 주기 재기동 (매일 06:10)
+
+[Timer]
+# 05:50 야간 창 종료 → 06:10 여기 → 06:20 백업.
+# 8B 로드가 10~30초라 백업까지 여유가 있다.
+OnCalendar=*-*-* 06:10:00
+# ★ Persistent=false 로 둔다. 놓친 실행을 부팅 직후에 따라잡으면
+#   방금 뜬 서버를 다시 내리는 꼴이다 — 이 작업은 밀려도 다음 날이면 된다.
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

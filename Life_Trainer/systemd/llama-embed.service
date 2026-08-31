@@ -22,6 +22,15 @@ Wants=network-online.target
 #   8192/4 = 슬롯당 2048 토큰 — 상한 1600자에 여유가 있다.
 #   더 크게(16384/8 · -b 16384) 잡았더니 MemoryMax=2G 에 걸려 OOM 으로 죽었다.
 # -b 는 한 요청에 들어오는 **총 토큰**이다. 16건 × 800토큰이 한 번에 오므로 넉넉히 준다.
+# ★★ 2026-08-29 — `-ngl 0` 인데 CUDA 백엔드가 켜져 dmabuf(nvmap) 646MB 를 쥐고 있었다.
+#   CUDA_VISIBLE_DEVICES 를 비우면 장치를 못 찾아 초기화를 건너뛴다 (실측 646MB -> 0).
+#   상주는 1,793 -> 1,702MB. 요청당 증가는 **입력 길이**가 정하지 요청 수가 아니다
+#   (짧은 문장 60건 +75MB / 1,600자 문서 40건 +1,137MB, 둘 다 그 뒤 평탄).
+#   근거와 남은 것: docs/issues/0018
+#   되돌리기: 이 세 줄을 지우고 daemon-reload && restart llama-embed
+Environment=CUDA_VISIBLE_DEVICES=
+Environment=MALLOC_ARENA_MAX=2
+Environment=MALLOC_TRIM_THRESHOLD_=131072
 ExecStart=%h/llama.cpp/build/bin/llama-server \
   -m %h/models/Qwen3-Embedding-0.6B-Q8_0.gguf \
   --alias qwen3-embedding-0.6b \
