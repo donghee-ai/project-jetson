@@ -10,7 +10,7 @@ FIGURES   := measure/figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck check-fast check test hooks lock
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck check-fast check test hooks lock smoke smoke-live
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -93,6 +93,14 @@ check: check-fast  ## check-fast + 유닛 정적검사 + 테스트
 #   CI 가 이 고정본으로 설치한다 — 그래야 CI 와 이 기기가 같은 판을 쓴다.
 lock:  ## 의존성 버전 고정본 재생성 (life-trainer/constraints.txt)
 	@bash operate/tools/lock-deps.sh
+
+# ★ 업그레이드 **뒤에** 부르는 관문이다. 알림도 타이머도 아니다 —
+#   `npm install -g openclaw@…` 는 유닛도 헬스체크도 안 깨뜨리면서 배선을 바꾼다.
+smoke:  ## 업그레이드 뒤 에이전트 경로가 성립하는지 (모델 호출 없음)
+	@bash operate/tools/smoke-agent.sh
+
+smoke-live:  ## smoke + 실제로 한 턴 돌려 툴이 불리는지 (30~100초)
+	@bash operate/tools/smoke-agent.sh --live
 
 hooks:  ## pre-push 훅 설치 (git 이 훅을 안 따라가므로 명시적으로 건다)
 	@install -m 755 operate/tools/pre-push.sh .git/hooks/pre-push

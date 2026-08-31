@@ -1,0 +1,16 @@
+# 전역 npm 패키지 — **prefix 별로** 적는다. 이 기기에는 node 가 둘이다.
+#
+# 왜 나눠 적나: 사용자 셸의 `npm -g` 는 nvm 을 가리키는데(NVM 이 prefix 를 깐다)
+# 게이트웨이가 실행하는 openclaw 는 시스템 쪽에 있다. 한쪽만 보면 틀린다.
+# node 가 번들로 갖고 오는 npm·corepack 은 고른 것이 아니라 안 적는다.
+#
+# 새 기기에 세울 때:  sudo npm install -g <아래 그대로>
+# 다시 뽑기:         make lock
+#
+# 뽑은 시각: 2026-08-31 14:59 KST
+
+[/usr/local]  node v24.19.0
+openclaw@2026.7.1-2
+
+[/home/user/.nvm/versions/node/v22.23.2]  node v22.23.2
+@playwright/mcp@0.0.79

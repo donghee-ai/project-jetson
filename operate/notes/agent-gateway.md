@@ -48,6 +48,22 @@ openclaw CLI 2026.7.1-2 (0790d9f)   (npm -g / 런타임은 /usr/local/bin/node v
 
 설정 `~/.openclaw/openclaw.json` · 워크스페이스 `~/.openclaw/workspace`
 
+> ★ **`npm -g` 는 아직 nvm 을 가리킨다** (2026-08-31 확인). `~/.npmrc` 는 없고
+> nvm 이 환경변수로 prefix 를 깐다 — 사용자 셸에서 `npm ls -g` 를 치면
+> **엉뚱한 트리**가 나온다. 실제 openclaw 는 `/usr/local/lib/node_modules/` 에 있다.
+>
+> ```
+> npm root -g (사용자 셸)   ~/.nvm/versions/node/v22.23.2/lib/node_modules
+> readlink -f $(command -v openclaw)   /usr/local/lib/node_modules/openclaw/openclaw.mjs
+> ```
+>
+> **`sudo npm install -g` 는 root 가 그 환경을 안 물려받아 `/usr/local` 로 간다** —
+> 그래서 지금까지 맞게 깔렸다. 근거가 아니라 **우연에 가깝다.**
+> `npm install -g` 를 sudo 없이 치면 nvm 쪽에 깔려 **두 판이 공존**하고,
+> 무엇이 불리는지는 PATH 가 정한다 — §10-B 의 "절반만 옮겨진 상태" 와 같은 모양이다.
+>
+> 고정본은 `operate/npm-globals.txt` 가 **prefix 별로** 갖는다. `make smoke` 가 대조한다.
+
 Socket Mode 는 Slack 쪽으로 나가는 연결이라 게이트웨이를 외부에 열 필요가 없다.
 LAN/Tailscale 노출을 한 번 구성했다가 **되돌렸다** — Slack 만 쓸 거면 불필요하다.
 

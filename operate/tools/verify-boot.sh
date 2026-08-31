@@ -72,9 +72,22 @@ while read -r u cond; do
 done < operate/systemd/desired-state.txt
 
 echo
-echo "▶ 2. ★ ctx.conf 드롭인 (끊기면 조용히 KV 가 두 배가 된다)"
+echo "▶ 2. ★ 드롭인 — 유닛 본체는 openclaw 가 다시 생성한다. 살아남는 건 드롭인뿐이다"
 ctx=$(systemctl --user show llama-server -p Environment --value | tr ' ' '\n' | grep '^LLAMA_CTX=' || true)
 [ "$ctx" = "LLAMA_CTX=20480" ] && ok "$ctx" || bad "${ctx:-LLAMA_CTX 없음} — 기본값 40960 으로 돌아갔다"
+
+# ★ 2026-08-31 추가. 재구조화로 심링크를 지웠다 다시 걸 때 **게이트웨이 드롭인 둘이
+#   안 돌아왔다.** install-gateway.sh 는 별도 스크립트라 다른 설치본이 안 부른다.
+#   증상은 없었다 — 게이트웨이는 잘 떠 있었다. 없어진 것은 **순서 보장**이라,
+#   다음 재부팅에서 llama-server 보다 먼저 뜨면 그때 모든 턴이 실패한다 (§4-8 함정).
+#   ctx.conf 와 정확히 같은 부류인데 이쪽만 안 보고 있었다.
+req=$(systemctl --user show openclaw-gateway -p Requires --value 2>/dev/null)
+case "$req" in *llama-server.service*) ok "openclaw-gateway → llama-server 의존" ;;
+  *) bad "openclaw-gateway 가 llama-server 를 안 기다린다 — bash life-trainer/deploy/install-gateway.sh" ;; esac
+gwpath=$(systemctl --user show openclaw-gateway -p Environment --value 2>/dev/null | tr ' ' '\n' | grep '^PATH=' || true)
+case "$gwpath" in *nvm*) bad "게이트웨이 PATH 에 nvm 이 있다 — 버전 매니저를 갈면 조용히 끊긴다" ;;
+  "") bad "게이트웨이 PATH 드롭인 없음 — 20-system-node.conf 가 안 걸렸다" ;;
+  *) ok "게이트웨이 PATH (nvm 없음)" ;; esac
 
 echo
 echo "▶ 3. 끊긴 심링크"
