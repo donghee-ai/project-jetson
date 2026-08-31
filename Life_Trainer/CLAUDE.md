@@ -106,7 +106,7 @@
 
 ```bash
 .venv/bin/python -m pytest tests/ -q     # 기준선은 HANDOFF §1. 아래로 내려가면 안 된다
-.venv/bin/lt doctor                       # 17항목 점검 (임베딩 · 에이전트 포함)
+.venv/bin/lt doctor                       # 환경 점검 (임베딩 · 에이전트 포함)
 ```
 
 ### ★ 현황 숫자는 **한 곳에만** 적는다 — [HANDOFF §1](HANDOFF.md)

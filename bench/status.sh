@@ -43,4 +43,6 @@ import yaml
 # ★ rules 만 센다. categories(12)·browser_apps(14) 를 같이 더하면 73 이 나오는데
 #   그건 분류 규칙이 아니다 — 실제로 그렇게 잘못 세서 맞는 문서를 고칠 뻔했다.
 print(len(yaml.safe_load(open('$LT/config/rules.yaml'))['rules']))" 2>/dev/null || echo '?')"
-printf "   문서 링크    %s\n" "$(bash bench/check-links.sh 2>/dev/null | tail -1 | sed 's/^ *//')"
+# ★ check-links.sh 는 2026-08-31 부터 **두 줄**을 찍는다 (마크다운 링크 · 코드→문서 참조).
+#   `tail -1` 로 뒀더니 링크 수 자리에 참조 수가 올라왔다 — 둘 다 보여준다.
+bash bench/check-links.sh 2>/dev/null | grep -E '검사' | sed 's/^ */   /' 

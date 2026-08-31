@@ -99,7 +99,7 @@ bash ../Life_Trainer/deploy/install-gateway.sh # 게이트웨이 드롭인 (에�
 
 ## 기기 자체는 누가 보나 — `make host-status` (2026-08-28 신설)
 
-`lt doctor` 17항목은 **전부 애플리케이션**이다 (DB·AW·LLM·Slack·큐·임베딩·에이전트).
+`lt doctor` 는 **전부 애플리케이션**을 본다 (DB·AW·LLM·Slack·큐·임베딩·에이전트).
 기기가 죽어가는 것은 아무도 안 보고 있었다 — **앱이 초록불인 채로 기기가 나빠질 수 있다.**
 
 ```bash
@@ -133,7 +133,7 @@ make host-status
 
 | 계층 | 무엇 | 언제 |
 |---|---|---|
-| **앱** | `lt doctor` 17항목 — DB·AW·LLM·Slack·큐·임베딩·에이전트 | 일 1회 |
+| **앱** | `lt doctor` — DB·AW·LLM·Slack·큐·임베딩·에이전트 | 일 1회 |
 | **기기** | `make host-status` — 디스크·OOM·발열·BSP·재시작 이력 | 일 1회 |
 | **바깥** | `bench/heartbeat.sh` — dead-man switch | 15분 |
 
