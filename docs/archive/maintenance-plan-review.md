@@ -1,5 +1,17 @@
 # 정비 계획 리뷰 — Jetson 장기 운영 관점
 
+> ## ★ 2026-08-31 — **아카이브**
+>
+> 이 문서는 장기 운영 관점의 **외부 리뷰**다. 여기 담긴 주장은
+> [`maintenance-plan.md`](maintenance-plan.md) 가 **하나씩 이 기기에서 재현해**
+> ✅ 확인 / ✏️ 정정 / ❓ 미검증 으로 판정했다 — 두 건은 과장이었다.
+>
+> **그러니 이 문서를 사실로 읽지 말 것.** 판정본이 정비 계획 쪽에 있고,
+> 거기서 살아남은 항목은 다시 [`docs/issues/`](../../Life_Trainer/docs/issues/) 로 갔다.
+> 이 저장소의 반복된 실패 1번이 *"조사 문서를 사실로 믿었다"* 이고,
+> 이 파일이 바로 그 조사 문서다.
+
+
 > 작성일: 2026-08-28  
 > 검토 대상: [`maintenance-plan.md`](maintenance-plan.md)  
 > 범위: 저장소 신뢰성, Jetson BSP, 장기 운영, 복구, 보안, 공개 준비
@@ -60,11 +72,11 @@ SQLite           PRAGMA quick_check = ok · WAL
 ## P0-1. `verify-jetpack.sh`가 현재 거짓 결과를 생성한다
 
 계획의 핵심은 시스템이 자기 상태를 정직하게 말하게 하는 것이다. 그러나 현재
-[`bench/verify-jetpack.sh`](bench/verify-jetpack.sh)가 다음 항목을 잘못 판정한다.
+[`bench/verify-jetpack.sh`](../../bench/verify-jetpack.sh)가 다음 항목을 잘못 판정한다.
 
 ### L4T 버전이 빈칸으로 나온다
 
-[`verify-jetpack.sh:21`](bench/verify-jetpack.sh)의 정규식이 실제
+[`verify-jetpack.sh:21`](../../bench/verify-jetpack.sh)의 정규식이 실제
 `/etc/nv_tegra_release` 형식을 읽지 못한다.
 
 실제 값:
@@ -75,7 +87,7 @@ SQLite           PRAGMA quick_check = ok · WAL
 
 ### CUDA 라이브러리가 없다고 나온다
 
-[`verify-jetpack.sh:32`](bench/verify-jetpack.sh)는 심볼릭 링크인
+[`verify-jetpack.sh:32`](../../bench/verify-jetpack.sh)는 심볼릭 링크인
 `/usr/local/cuda/lib64`를 따라가지 않는다.
 
 실제로 다음 라이브러리는 설치돼 있고 `ldconfig`와 `llama-server`에서도 정상적으로
@@ -92,7 +104,7 @@ libcurand
 
 ### DLA가 없다고 나온다
 
-[`verify-jetpack.sh:48`](bench/verify-jetpack.sh)은 `/dev/nvhost-nvdla*`만 찾는다.
+[`verify-jetpack.sh:48`](../../bench/verify-jetpack.sh)은 `/dev/nvhost-nvdla*`만 찾는다.
 현재 기기에는 다음 항목이 존재한다.
 
 ```text
@@ -107,7 +119,7 @@ TensorRT에서 작은 엔진을 DLA 대상으로 빌드·실행하는 smoke test
 
 ### Super Mode 안내가 현재 장비 상태와 충돌한다
 
-[`verify-jetpack.sh:91`](bench/verify-jetpack.sh)은 conf 심링크를 바꾸고 Super Mode를
+[`verify-jetpack.sh:91`](../../bench/verify-jetpack.sh)은 conf 심링크를 바꾸고 Super Mode를
 활성화하라고 안내한다. 그러나 이 저장소는 해당 장비의 디바이스 트리와 전력 제한 때문에
 그 설정이 부팅 시 되돌아간다고 이미 기록하고 있다.
 
@@ -162,7 +174,7 @@ NVIDIA 공식 기준으로 JetPack 6.2.3은 Jetson Linux 36.5.2를 포함한다.
 
 ## P0-3. 백업을 실제 운영 체계로 만든다
 
-[`lt backup`](Life_Trainer/lifetrainer/cli.py)은 SQLite 온라인 백업 API를 사용하므로
+[`lt backup`](../../Life_Trainer/lifetrainer/cli.py)은 SQLite 온라인 백업 API를 사용하므로
 구현 방향은 올바르다. 그러나 현재 다음이 없다.
 
 - 자동 실행 타이머
@@ -211,7 +223,7 @@ rootfs A/B 연동 및 부팅 실패 시 fail-over를 지원한다. 다만 개인
 
 ## P0-4. 공개 전 Git 전체 이력의 비밀정보를 제거한다
 
-[`Life_Trainer/.gitignore`](Life_Trainer/.gitignore)는 실제 Serper API 키가 포함된 설정
+[`Life_Trainer/.gitignore`](../../Life_Trainer/.gitignore)는 실제 Serper API 키가 포함된 설정
 백업 네 개가 과거 커밋 `49581fa`에 들어갔다고 기록한다. 이 커밋은 현재 `origin/main`
 이력에 포함돼 있다.
 
@@ -280,7 +292,7 @@ rootfs A/B 연동 및 부팅 실패 시 fail-over를 지원한다. 다만 개인
 - 야간 처리량이 일일 유입량보다 큰지
 - 서버 재시작과 MemoryMax/OOM 발생 여부
 
-야간 종료 경로에는 이미 [`embed_pending`](Life_Trainer/lifetrainer/cli.py)이 연결돼 있다.
+야간 종료 경로에는 이미 [`embed_pending`](../../Life_Trainer/lifetrainer/cli.py)이 연결돼 있다.
 현재 문제는 배선이 아예 없는 것이 아니라 처리 한도와 유입량이 맞지 않아 backlog가 계속
 남을 수 있다는 점이다. 수동 `lt embed --all` 실행만으로 닫지 말고 용량 계획을 고쳐야 한다.
 
@@ -395,7 +407,7 @@ dead-man monitor가 필요하다.
 
 ## systemd와 설치 재현성
 
-현재 [`Life_Trainer/scripts/install-units.sh`](Life_Trainer/scripts/install-units.sh)은
+현재 [`Life_Trainer/scripts/install-units.sh`](../../Life_Trainer/scripts/install-units.sh)은
 실제로 활성화된 서비스를 완전히 재현하지 못한다.
 
 누락 또는 불일치 항목:
@@ -406,7 +418,7 @@ dead-man monitor가 필요하다.
 - runtime과 gateway 설치 순서
 - 서비스별 smoke test
 
-반대로 [`uninstall-units.sh`](Life_Trainer/scripts/uninstall-units.sh)은 다음을 누락한다.
+반대로 [`uninstall-units.sh`](../../Life_Trainer/scripts/uninstall-units.sh)은 다음을 누락한다.
 
 - nightly와 nightly-stop
 - web
@@ -417,7 +429,7 @@ dead-man monitor가 필요하다.
 또한 unit 파일의 `/home/user` 절대경로는 새 사용자나 다른 설치 위치에서 깨진다. `%h`,
 EnvironmentFile 또는 설치 시 unit을 생성하는 방식으로 경로를 한 곳에서 관리해야 한다.
 
-[`runtime/systemd/llama-server.service`](runtime/systemd/llama-server.service)의 readiness 처리도
+[`runtime/systemd/llama-server.service`](../../runtime/systemd/llama-server.service)의 readiness 처리도
 보완 대상이다. 현재 `ExecStartPost`가 `/health`를 최대 600초 동안 반복하고, 실패하면
 systemd가 프로세스를 강제 종료한다. 실제 journal에도 이 타임아웃이 여러 번 나타났다.
 
@@ -460,7 +472,7 @@ Secure Boot는 단순 설정 변경이 아니라 키 관리와 fuse 작업을 �
 
 ## 5분 발열 테스트는 24시간 가동 근거가 아니다
 
-[`bench/thermal-test.sh`](bench/thermal-test.sh)의 5분 실행은 빠른 냉각 이상 탐지에는 유용하다.
+[`bench/thermal-test.sh`](../../bench/thermal-test.sh)의 5분 실행은 빠른 냉각 이상 탐지에는 유용하다.
 하지만 24시간 운영 주장의 근거로는 부족하다.
 
 또한 스크립트의 92°C는 보수적 운영 경보값으로는 사용할 수 있지만 `스로틀링 영역`이라는

@@ -38,7 +38,7 @@ qc=$("$VENV/python" -c "
 import sqlite3, sys
 c = sqlite3.connect('file:$DB_OUT?mode=ro', uri=True)
 print(c.execute('PRAGMA quick_check').fetchone()[0])" 2>&1)
-[ "$qc" = "ok" ] || { rm -f "$DB_OUT"; fail "quick_check 실패 ($qc) — 이 백업은 버렸다"; }
+[ "$qc" = "ok" ] || { rm -f "$DB_OUT" "$DB_OUT-wal" "$DB_OUT-shm"; fail "quick_check 실패 ($qc) — 이 백업은 버렸다"; }
 
 # 복원했을 때 무엇이 들어 있는지도 같이 잰다. 파일 크기만으로는 빈 DB 를 못 거른다.
 "$VENV/python" - "$DB_OUT" <<'PY' || fail "백업 내용 확인 실패"
@@ -50,6 +50,24 @@ ev, doc = q("select count(*) from aw_event"), q("select count(*) from doc")
 assert ev > 0 and doc > 0, f"내용이 비었다 (aw_event={ev}, doc={doc})"
 print(f"   무결성    quick_check ok · schema v{ver[0] if ver else '?'} · aw_event {ev:,} · doc {doc:,}")
 PY
+
+# ★ 검사가 산출물을 더럽히면 안 된다 (CLAUDE.md §4).
+#   WAL 모드 DB 는 **읽기 전용으로 열어도** 옆에 `-wal`·`-shm` 이 생긴다. 위 두 검사가
+#   정확히 그걸 한다. 그대로 두면 복원본이 *"안전하게 뜬 백업"* 인지
+#   *"돌아가는 DB 를 그냥 복사한 것"* 인지 구분이 안 된다 — runbook 을 쓰게 만든 그 결함이다.
+#   `bench/make-recovery-bundle.sh` 는 같은 자리에서 이미 지우고 있었다. 여기만 안 했다.
+rm -f "$DB_OUT-wal" "$DB_OUT-shm"
+
+# 옛 정리 루틴이 `.db` 와 `.sha256` 만 지워서 **짝 잃은** `-wal`·`-shm` 이 남아 있다.
+# 지나간 것도 여기서 쓸어낸다. 단 `-wal` 이 비어 있지 않으면 손대지 않는다 —
+# 체크포인트 안 된 내용이 있다는 뜻이라, 지우면 복원했을 때 데이터가 준다.
+for stray in "$OUT_DIR"/*.db-wal "$OUT_DIR"/*.db-shm; do
+  [ -e "$stray" ] || continue
+  case "$stray" in
+    *-wal) if [ -s "$stray" ]; then info "건너뜀    $(basename "$stray") — 비어 있지 않다"; continue; fi ;;
+  esac
+  rm -f "$stray" && info "정리      $(basename "$stray") (짝 잃은 WAL 부산물)"
+done
 
 # ── 3. DB 밖의 것 — 이게 없으면 DB 만 있고 못 돌아온다 ────────
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
@@ -96,7 +114,8 @@ fi
 # ── 6. 보존 — 검증 통과한 오늘 백업이 생긴 뒤에만 지운다 ──────
 old=$(ls -1t "$OUT_DIR"/lifetrainer-????-??-??.db 2>/dev/null | tail -n +$((KEEP_DAILY+1)))
 if [ -n "$old" ]; then
-  echo "$old" | while read -r f; do rm -f "$f" "${f%.db}"*.sha256; info "정리      $(basename "$f")"; done
+  # `-wal`·`-shm` 까지 같이 지운다. 안 지우면 `.db` 만 사라지고 부산물이 영구히 남는다.
+  echo "$old" | while read -r f; do rm -f "$f" "$f-wal" "$f-shm" "${f%.db}"*.sha256; info "정리      $(basename "$f")"; done
 fi
 
 echo "▶ 완료. **복원해 보지 않은 백업은 아직 백업이 아니다** — scripts/restore-test.sh"

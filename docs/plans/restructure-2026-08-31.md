@@ -149,8 +149,8 @@ git grep -ohE '[A-Za-z0-9_./-]+\.md' -- '*.py' '*.sh' '*.service' '*.timer' Make
 | 한국어 토크나이저 실측 (세 곳) | [`research/performance.md`](../../research/performance.md) |
 | `HANDOFF` 의 `### B.`·`### C.` 가 각각 두 번 | 한 벌만 |
 
-**정비계획 두 문서** — [`maintenance-plan.md`](../../maintenance-plan.md) 는 P0·P1 완료,
-[`maintenance-plan-review.md`](../../maintenance-plan-review.md) 는 **인바운드 링크 0인 고아**.
+**정비계획 두 문서** — [`maintenance-plan.md`](../archive/maintenance-plan.md) 는 P0·P1 완료,
+[`maintenance-plan-review.md`](../archive/maintenance-plan-review.md) 는 **인바운드 링크 0인 고아**.
 **살아 있는 항목만 `docs/issues/` 로 옮기고 두 문서는 `docs/archive/` 로.**
 
 | → 새 이슈 (`0020~`) | 등급 |

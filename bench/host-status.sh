@@ -75,7 +75,7 @@ for z in /sys/devices/virtual/thermal/thermal_zone*/; do
   case "$t" in tj-thermal|cpu-thermal|gpu-thermal)
     c=$((v/1000))
     # ★ 85·92 는 **이 프로젝트가 정한 경보값**이다. BSP 의 실제 throttle 임계값과
-    #   다르며 그 값은 아직 확인 안 했다 (maintenance-plan §E-3).
+    #   다르며 그 값은 아직 확인 안 했다 (docs/archive/maintenance-plan.md §E-3).
     if   [ "$c" -ge 92 ]; then bad "$t" "${c}C — 프로젝트 위험선"
     elif [ "$c" -ge 85 ]; then wr  "$t" "${c}C — 프로젝트 경보선"
     else ok "$t" "${c}C"; fi ;;
