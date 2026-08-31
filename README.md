@@ -204,7 +204,7 @@ MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 
 → **[Life_Trainer/HANDOFF.md](Life_Trainer/HANDOFF.md)** (지금 상태 · 이어받는다면 여기부터) ·
 [README](Life_Trainer/README.md) · [전체 설명서](Life_Trainer/docs/handbook.md) ·
 [설계서](Life_Trainer/docs/life-trainer-design.md) ·
-[버그 기록](Life_Trainer/HISTORY/) (깨진 가정 21건)
+[버그 기록](Life_Trainer/HISTORY/) (깨진 가정만 남긴다)
 
 ---
 

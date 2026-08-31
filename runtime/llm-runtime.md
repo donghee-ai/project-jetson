@@ -2,6 +2,15 @@
 
 > 구축일: 2026-08-14
 > 관련: [hardware.md](../research/hardware.md)
+>
+> ★ **이 문서는 2026-08-14 시점의 구축 기록이다.** 그날의 후보는 30B-A3B 였고
+> 그 뒤 8B 로 정해졌다(README ②). **지금 무엇이 어떤 플래그로 도는지는 실물이 정본이다:**
+>
+> ```bash
+> cat runtime/llama-server-qwen3.sh                    # 기동 스크립트
+> cat runtime/systemd/llama-server.service.d/ctx.conf  # ctx 오버라이드 (08-23)
+> tr '\0' ' ' < /proc/$(pgrep -f Qwen3-8B)/cmdline     # 실제로 뜬 인자
+> ```
 
 ---
 
@@ -126,7 +135,10 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 | 설정 | 대화당 컨텍스트 | KV 캐시 |
 |---|---|---|
 | `-c 16384` (슬롯 4, 기본) | 16,384 | 4배 |
-| **`-c 32768 --parallel 1`** | **32,768** | **1배** ★ 현재 |
+| **`-c 32768 --parallel 1`** | **32,768** | **1배** ← 08-14 당시 선택 |
+
+> **08-23 에 8B / `-c 20480` 으로 내렸다.** KV 2.99GB → 1.50GB.
+> 근거는 `runtime/systemd/llama-server.service.d/ctx.conf` 주석에 있다.
 
 ### 메모리 여유 확보 수단
 
@@ -141,7 +153,7 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 
 ## 5. 실행 명령
 
-### 서버 (권장 — 현재 구성)
+### 서버 — 2026-08-14 당시의 30B 구성 (지금 도는 것이 아니다)
 
 ```bash
 ~/llama.cpp/build/bin/llama-server \
@@ -150,7 +162,7 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
   -fa on -ctk q8_0 -ctv q8_0 \
   --chat-template-kwargs '{"enable_thinking":false}' \
   --temp 0.7 --top-p 0.8 --top-k 20 \
-  --host 0.0.0.0 --port 8080
+  --host 0.0.0.0 --port 8080   # ★ 지금은 127.0.0.1 이다 (bench/harden-network.sh)
 ```
 
 접속 경로:
