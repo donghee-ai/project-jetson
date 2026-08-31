@@ -13,7 +13,7 @@
 2026-08-31 에 **공개를 안 하기로** 정했다. 대신 근거를 다시 세웠다 —
 `bench/` 혼재는 이미 비용을 냈고(운영 스크립트 9개가 하루에 잘못 들어갔다),
 `benchmarks/` 는 저장소 구조의 복제본이었고, 참조가 두 번 끊긴 것을 아무도 몰랐다.
-경위는 [`docs/plans/restructure-2026-08-31.md`](plans/restructure-2026-08-31.md).
+경위는 [`docs/plans/restructure-2026-08-31.md`](archive/restructure-2026-08-31.md).
 
 ### 옮기면서 나온 것 — 전부 "경로가 두 곳에 적혀 있었다"
 

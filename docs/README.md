@@ -32,7 +32,6 @@
 
 | 문서 | 무엇 | 어디까지 |
 |---|---|---|
-| **[plans/restructure-2026-08-31.md](plans/restructure-2026-08-31.md)** | **세대 전환 — 버전관리 정리·중복 제거·폴더 재구조화** | **단계 0 완료(태그+백업 3종) · 게이트 대기** |
 | [plans/opensource-plan.md](plans/opensource-plan.md) | 측정 자료 공개·`whichllm` 기여 | 스키마 확인·패치 작성 완료, **PR 승인 대기** · ★ 공개는 **안 하기로** (2026-08-31) |
 | [archive/grant-radar-plan.md](archive/grant-radar-plan.md) | 지원사업 자격요건 매칭 서비스 | **미착수인 채로 아카이브** (2026-08-28) |
 
@@ -48,6 +47,7 @@
 | [archive/project-candidates.md](archive/project-candidates.md) | 후보 7개 전체 비교 (CCTV·음향·인덱서 등) | 권고는 **B(음향 이상 감지)** 였으나, 실제로는 [Life Trainer](../life-trainer/) 로 갔다 |
 | [archive/project-proposal.md](archive/project-proposal.md) | Understudy — VLM 이 검출기를 가르치는 폐루프 카메라 | **미채택.** 카메라 하드웨어 미확보. 선생-학생 구조는 음성 쪽으로 계승됐다 |
 | [archive/vision-agent-plan.md](archive/vision-agent-plan.md) | Frigate 위에 VLM 레이어 얹기 | **전제 무효.** 클론한 Frigate 소스에 이미 구현돼 있었다 (문서 §서두 정정 참조) |
+| [archive/restructure-2026-08-31.md](archive/restructure-2026-08-31.md) | 세대 전환 — 이력 정리 · 중복 제거 · `measure`/`operate` 재구조화 | ✅ **끝났다 (2026-08-31, 재부팅 검증 포함).** 계획이 예측 못 한 것들이 §1 에 있다 |
 
 ---
 
