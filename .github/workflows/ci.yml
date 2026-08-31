@@ -1,5 +1,10 @@
 name: ci
 
+# ★ 액션 판 정책: 여기 쓰는 것은 전부 **first-party**(`actions/*`) 라 서드파티 고정은
+#   해당 사항이 없다. major 를 고정해 쓰고, **deprecation 경고가 뜨면 올린다** —
+#   2026-08-31 에 checkout v4 · setup-python v5 가 Node 20 을 태워 그렇게 올렸다.
+#   서드파티 액션을 처음 쓰게 되면 그때는 커밋 SHA 로 고정한다.
+
 # 이 저장소의 측정은 Jetson 실기기에서만 돌아간다 (CUDA · nvpmodel · llama-server).
 # CI 가 할 수 있는 것은 **문서가 자기 자신과 어긋나지 않는지** 와
 # Life Trainer 테스트뿐이다 — 후자는 conftest 가 소켓을 막아 네트워크 없이 돈다.
@@ -16,7 +21,7 @@ jobs:
     # 문서 개편 때 참조가 두 번 끊겼고 둘 다 몰랐다 (2026-08-31 에 넓혔다).
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 검사기가 헐거워지지 않았는가 (fixture)
         run: bash operate/tools/check-links.sh --self-test
       - name: 문서 참조가 전부 실재하는가
@@ -29,7 +34,7 @@ jobs:
     # 막으려다 실패했고, 네 번째에 명령(make status)으로 대체했다. 그것도 강제하는
     # 것이 없으면 다시 어긋난다 — 그래서 검사로 만든다.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 검사기가 헐거워지지 않았는가 (fixture)
         run: bash operate/tools/check-docs.sh --self-test
       - name: 문서가 운영 지표를 옮겨 적고 있는가
@@ -39,7 +44,7 @@ jobs:
     name: 셸 스크립트
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: shellcheck
         # 이 기기에는 shellcheck 이 없다. CI 에서만 돈다.
         run: |
@@ -51,15 +56,20 @@ jobs:
     name: Life Trainer 테스트
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - name: 설치
         working-directory: life-trainer
+        # ★ `-c constraints.txt` 로 **판을 고정**해 설치한다.
+        #   pyproject 가 전부 `>=` 라, 이게 없으면 CI 는 매번 최신을 깔고 이 기기는
+        #   몇 주 전 판을 쓴다 — 한쪽만 깨졌을 때 버전이 용의선상에서 빠진다.
+        #   고정본이 pyproject 와 안 맞으면 **여기서 시끄럽게 실패한다.** 그게 목적이다.
         run: |
           python -m pip install -q --upgrade pip
-          pip install -q -e '.[dev]'
+          pip install -q -e '.[dev]' -c constraints.txt
+          python -m pip check
       - name: 테스트
         working-directory: life-trainer
         run: python -m pytest tests/ -q

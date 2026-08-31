@@ -32,7 +32,7 @@
 ## 1. 구성
 
 ```
-openclaw CLI 2026.7.1-2   (npm -g / 런타임은 /usr/local/bin/node v24.19.0)
+openclaw CLI 2026.7.1-2 (0790d9f)   (npm -g / 런타임은 /usr/local/bin/node v24.19.0)
   │
   ├─ Slack (Socket Mode, 아웃바운드)   ← 인바운드 포트 불필요
   │
@@ -40,7 +40,10 @@ openclaw CLI 2026.7.1-2   (npm -g / 런타임은 /usr/local/bin/node v24.19.0)
        │  Requires= / After=
        └─ llama-server.service  127.0.0.1:8080
             └─ Qwen3-8B-Q4_K_M
-               -ngl 99 -c 40960 --parallel 1 -fa on -ctk/-ctv q8_0 --jinja
+               -ngl 99 -c 20480 --parallel 1 -fa on -ctk/-ctv q8_0 --jinja
+               ★ 20480 은 ctx.conf 드롭인이 준다. 스크립트 기본값은 40960 이고,
+                 링크가 끊기면 거기로 돌아가 KV 가 2.99GB 로 두 배가 된다
+                 (경위는 ../README.md 의 `ctx.conf` 절)
 ```
 
 설정 `~/.openclaw/openclaw.json` · 워크스페이스 `~/.openclaw/workspace`

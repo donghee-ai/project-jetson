@@ -114,7 +114,24 @@ project-jetson/
 | `systemd/` 3곳 유지 | **소유자 기준**이다 (`operate/`=공유 · 앱 · 게이트웨이 드롭인). [operate/README](../operate/README.md) 가 근거를 적어 뒀다 |
 | `apps/life-trainer/` 로 감싸지 않음 | **앱이 하나다.** 둘째가 생길 때 만든다 |
 | `life-trainer/docs/` 삼분할 | `progress`(기능) · `HISTORY`(깨진 가정) · `issues`(안 고친 것) 는 이 저장소에서 **가장 잘 작동하는 부분**이다 |
-| `measure/findings/` ↔ 앱의 `docs/measure/findings/` | 스코핑이라 정상. 다만 README 한 줄로 경계를 적는다 — **잰 것 / 읽은 것** |
+| `measure/findings/` ↔ 앱의 `docs/research/` | 스코핑이라 정상. 경계는 **잰 것 / 읽은 것** 이다 |
+| `life-trainer/`(하이픈) ↔ `lifetrainer`(패키지·유닛·DB·설정) | **다른 namespace 다.** 아래 참조 |
+
+### 왜 폴더만 하이픈인가 (2026-08-31)
+
+폴더는 `life-trainer/`, 그 안의 파이썬 패키지·systemd 유닛·DB·설정은 전부 `lifetrainer` 다.
+**한 번 통일할까 검토했고, 지금이 맞다고 판단했다.**
+
+- **패키지는 하이픈을 못 쓴다.** `import life-trainer` 는 문법 오류다.
+  선택지는 `lifetrainer` 아니면 `life_trainer` 뿐이고, 폴더만 그 제약 밖에 있다
+<!-- check-docs: ok — 아래 줄은 **그때 서로 달랐던 옛 값**을 예로 든다 -->
+- **이건 "같은 값이 두 곳"이 아니다.** 이 저장소가 네 번 겪은 사고는 값을 **베껴 적어서**
+  한쪽만 낡은 것이었다 (`lt doctor` 항목 수를 17 과 15 로). 폴더 이름과 import 이름은
+  서로를 베낀 것이 아니라 각자 다른 규칙을 따른다 — **조용히 어긋날 수가 없다**
+- 의존하는 패키지들이 이미 그렇게 한다: `scikit-learn`→`sklearn` · `slack-bolt`→`slack_bolt`
+- 루트가 `measure/ operate/ life-trainer/ docs/ refs/` 인데, 하이픈이 있어야 두 단어로 읽힌다
+
+★ **사람이 읽는 이름은 `Life Trainer`(공백)** 다. 문서 본문은 그걸 쓴다.
 
 ## 같이 정리할 것 — `reference` 가 네 곳이다
 

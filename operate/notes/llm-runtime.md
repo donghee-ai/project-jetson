@@ -21,7 +21,7 @@
 | llama.cpp | `b1-a94d563` (2026-08-13 커밋) |
 | 빌드 | CUDA 12.6 / `CMAKE_CUDA_ARCHITECTURES=87` / FA·CUDA Graphs ON |
 | 설치 경로 | `~/llama.cpp/build/bin/` |
-| 모델 저장소 | `~/project/project-jetson/refs/models/` |
+| 모델 저장소 | `~/models/` (2026-08-27 에 트리 밖으로. `refs/models/README.md` 가 무엇을 왜 골랐는지 갖는다) |
 | 전력 모드 | MAXN (CPU 8코어 1984MHz / GPU 8SM 918MHz) |
 | GPU 인식 | `CUDA0: Orin (15642 MiB)` |
 
