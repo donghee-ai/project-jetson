@@ -1,7 +1,7 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────
 # JetPack 설치 후 검증 — sudo 불필요
-# 실행: bash bench/verify-jetpack.sh
+# 실행: bash measure/tools/verify-jetpack.sh
 # ─────────────────────────────────────────────────────────────
 CUDA_BIN=/usr/local/cuda/bin
 [ -d "$CUDA_BIN" ] && export PATH="$CUDA_BIN:$PATH"
@@ -109,7 +109,7 @@ case "$c" in
     #   이 보드(p3767-0000)에서는 **이미 실측으로 안 된다고 결론난 것**이라
     #   절차를 노출하면 다음 사람이 같은 것을 다시 시도한다.
     if [ "$module" = "p3767-0000" ]; then
-      wr "Super Mode" "이 보드에서는 불가 — 부팅마다 되돌려진다 (research/hardware.md)"
+      wr "Super Mode" "이 보드에서는 불가 — 부팅마다 되돌려진다 (measure/findings/hardware.md)"
     else
       wr "Super Mode" "비활성 — 아래 §Super Mode 참조 (모듈 ${module:-불명})"
     fi ;;
@@ -140,7 +140,7 @@ cat <<'EOF'
 
    conf 심링크를 바꿔도 nvpower.sh 가 부팅마다 되돌리고,
    하드웨어 과전류 보호도 25W 로 설정된다.
-   근거와 재현 경위: research/hardware.md
+   근거와 재현 경위: measure/findings/hardware.md
 ════════════════════════════════════════════════
 EOF
 else

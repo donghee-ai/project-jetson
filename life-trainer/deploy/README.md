@@ -1,7 +1,7 @@
 # deploy/ — Life Trainer 를 이 기기에 세우는 것
 
 > **2026-08-28: `openclaw-setup/` 에서 갈라져 나왔다.** 그 폴더에는 소비자가 다른
-> 두 가지가 섞여 있었다 — 공유 추론 런타임은 [`../../runtime/`](../../runtime/) 으로,
+> 두 가지가 섞여 있었다 — 공유 추론 런타임은 [`../../operate/`](../../operate/) 으로,
 > 에이전트 경로에만 필요한 것은 여기로.
 
 | | |
@@ -19,7 +19,7 @@
 
 OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립트.
 
-**구축 기록·실측·함정 정리는 [../runtime/agent-gateway.md](../../runtime/agent-gateway.md)** 에 있다.
+**구축 기록·실측·함정 정리는 [../operate/notes/agent-gateway.md](../../operate/notes/agent-gateway.md)** 에 있다.
 이 폴더는 그 문서가 참조하는 실행 파일만 담는다.
 
 > ⚠️ `~/.config/systemd/user/` 의 드롭인이 이 폴더를 **심링크로 참조**한다.
@@ -43,9 +43,9 @@ OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립�
 | `slack-app-manifest.json` | Slack 앱 생성용 매니페스트 (플러그인 내장본 추출) |
 
 ★ **`lifetrainer` 에이전트 배선은 여기 없다.** Life Trainer 쪽에 있다 —
-`Life_Trainer/scripts/install-agent.sh` (에이전트 등록 · MCP 서버 · 툴 정책).
+`life-trainer/scripts/install-agent.sh` (에이전트 등록 · MCP 서버 · 툴 정책).
 게이트웨이가 살아 있는 것이 선행 조건이라 이 폴더의 `install.sh` 를 먼저 돌린다.
-자세한 것은 [agent-gateway.md §7](../../runtime/agent-gateway.md).
+자세한 것은 [agent-gateway.md §7](../../operate/notes/agent-gateway.md).
 
 ---
 
@@ -60,7 +60,7 @@ bash patch-cron-schema.sh
 
 # ★ 업그레이드는 에이전트 배선도 지울 수 있다 (openclaw.json 은 남지만
 #   워크스페이스 시드가 다시 돈다). 뒤이어 한 번 돌린다:
-bash ../Life_Trainer/scripts/install-agent.sh
+bash ../life-trainer/scripts/install-agent.sh
 
 # 상태 확인은 openclaw daemon status 가 아니라 systemd 에게
 systemctl --user show openclaw-gateway -p ExecStart -p Environment
@@ -68,4 +68,4 @@ systemctl --user status llama-server openclaw-gateway
 ```
 
 현재 상태와 되돌리는 방법은
-[../runtime/agent-gateway.md §5](../../runtime/agent-gateway.md) 참조.
+[../operate/notes/agent-gateway.md §5](../../operate/notes/agent-gateway.md) 참조.

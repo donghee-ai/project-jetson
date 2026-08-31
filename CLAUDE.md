@@ -1,7 +1,7 @@
 # 이 저장소에서 일하는 규칙
 
-Life Trainer 앱 안의 규칙은 [`Life_Trainer/CLAUDE.md`](Life_Trainer/CLAUDE.md) 에 있다.
-여기는 **저장소 전체** — 측정 도구(`bench/`) · 런타임(`runtime/`) · CI · 문서 규칙이다.
+Life Trainer 앱 안의 규칙은 [`life-trainer/CLAUDE.md`](life-trainer/CLAUDE.md) 에 있다.
+여기는 **저장소 전체** — 측정(`measure/`) · 운영(`operate/`) · CI · 문서 규칙이다.
 
 ---
 
@@ -12,7 +12,7 @@ Life Trainer 앱 안의 규칙은 [`Life_Trainer/CLAUDE.md`](Life_Trainer/CLAUDE
 
 | | 무엇을 만들었나 | 어떻게 틀렸나 |
 |---|---|---|
-| 1 | `lt doctor` 큐 판정 | **누적** 실패율이라 원인을 고쳐도 2주간 안 꺼졌다. 그 사이 새 실패와 구분이 안 된다 ([HISTORY](Life_Trainer/HISTORY/2026-08-28-a-ratio-that-could-not-fall.md)) |
+| 1 | `lt doctor` 큐 판정 | **누적** 실패율이라 원인을 고쳐도 2주간 안 꺼졌다. 그 사이 새 실패와 구분이 안 된다 ([HISTORY](life-trainer/HISTORY/2026-08-28-a-ratio-that-could-not-fall.md)) |
 | 2 | `verify-boot.sh` journal 검사 | **옳지만 아직 증명 못 한 상태**(영속화 직후)를 실패로 셌다. 다음 재부팅까지 빨간불이 상수가 됐을 것 |
 | 3 | `host-status.sh` OOM 집계 | 같은 사건을 **두 번 세어**(커널 줄 + 유저매니저 줄) 거짓 경보를 냈다 |
 | 4 | 일일 점검 알림 | **이미 아는 WARN** 을 매일 다시 알릴 뻔했다. 일주일이면 사람이 채널을 끈다 |
@@ -33,7 +33,7 @@ Life Trainer 앱 안의 규칙은 [`Life_Trainer/CLAUDE.md`](Life_Trainer/CLAUDE
 
 ### 안 울려야 하는 예제를 같이 둔다
 
-`bench/check-docs.sh` 는 **자기 시험지를 갖는다** — `bench/fixtures/check-docs/` 에
+`operate/tools/check-docs.sh` 는 **자기 시험지를 갖는다** — `operate/tools/fixtures/check-docs/` 에
 `must-fail.md`(반드시 잡아야 함) 와 `must-pass.md`(반드시 통과시켜야 함) 가 있고
 `--self-test` 가 둘 다 돌린다.
 
@@ -79,7 +79,7 @@ make check-docs   # 문서가 운영 지표를 옮겨 적었는지. CI 와 pre-p
 make status       # 앱 현황          make host-status  # 기기 현황
 ```
 
-경위와 예외 규칙은 [`Life_Trainer/CLAUDE.md`](Life_Trainer/CLAUDE.md) §검증 에 있다.
+경위와 예외 규칙은 [`life-trainer/CLAUDE.md`](life-trainer/CLAUDE.md) §검증 에 있다.
 
 ---
 
@@ -106,16 +106,21 @@ make status       # 앱 현황          make host-status  # 기기 현황
 
 ## 6. 새 스크립트를 어디 두나
 
-**`bench/` 는 이름이 "측정" 인데 지금 27개 중 12개가 측정이 아니다.**
-2026-08-28 하루에 운영·검사 9개가 들어갔다 — **막는 규칙이 없어서** 들어갔다.
+**질문 하나로 갈린다 — 이건 재는 것인가, 돌리는 것인가.**
 
-- [ ] 이건 **재는 것인가, 돌리는 것인가?**
-      · 재는 것 = 가끔 돌리고 결과가 `results/` 로 간다 → `bench/`
-      · 돌리는 것 = 매일·매 push 돌고 결과가 화면·알림으로 간다 → **`bench/` 에 넣지 않는다**
-- [ ] 돌리는 것이면 `Makefile` 진입점을 같이 만든다. 스크립트만 두면 아무도 안 부른다
+|  | 어떤 것 | 어디로 |
+|---|---|---|
+| **재는 것** | 가끔 돌리고 결과가 파일로 남는다. 한 번 재면 불변 기록이다 | `measure/tools/` (결과는 `measure/results/`, 해석은 `measure/findings/`) |
+| **돌리는 것** | 매일·매 push 돌고 결과가 화면·알림으로 간다. 지금 상태를 말한다 | `operate/tools/` (유닛은 `operate/systemd/`) |
 
-목표 구조(`measure/` · `operate/` 분리)와 언제 옮길지는
-[`folder-structure.md`](folder-structure.md) 에 있다. **옮기기 전까지는 이 질문으로 버틴다.**
+- [ ] 돌리는 것이면 **`Makefile` 진입점을 같이 만든다.** 스크립트만 두면 아무도 안 부른다
+- [ ] 유닛이 필요하면 **`operate/systemd/desired-state.txt` 에 한 줄 더한다.**
+      목록을 스크립트 안에 박으면 install·uninstall·검사가 서로 어긋난다
+
+> **왜 폴더를 갈랐나.** 전에는 둘 다 `bench/` 였다. 이름은 "측정" 인데 27개 중 12개가
+> 측정이 아니었고, 2026-08-28 하루에 운영·검사 9개가 들어갔다 — **막는 규칙이 없어서**다.
+> 2026-08-31 에 갈랐다. 이제 잘못 넣으면 폴더 이름이 먼저 어색해진다.
+> 경위는 [`docs/folder-structure.md`](docs/folder-structure.md).
 
 ---
 

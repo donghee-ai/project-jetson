@@ -5,8 +5,8 @@
 # (테스트 수 두 번 · 분류 규칙 수 한 번 · 실데이터 한 번).
 # 원인은 규칙이 아니라 **옮겨 적을 자리가 있다는 것**이었다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
-LT=Life_Trainer
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
+LT=life-trainer
 
 echo "▶ $(date '+%Y-%m-%d %H:%M %Z') · $(uptime -p)"
 echo
@@ -21,7 +21,7 @@ echo
 echo "▶ 실데이터"
 "$LT/.venv/bin/python" - <<'PY'
 import sqlite3, datetime as dt
-c = sqlite3.connect('file:Life_Trainer/data/lifetrainer.db?mode=ro', uri=True)
+c = sqlite3.connect('file:life-trainer/data/lifetrainer.db?mode=ro', uri=True)
 q = lambda s: c.execute(s).fetchone()
 ev, lo, hi = q("select count(*), min(ts), max(ts) from aw_event")
 doc, summ = q("select count(*), sum(summary is not null and summary<>'') from doc")
@@ -45,4 +45,4 @@ import yaml
 print(len(yaml.safe_load(open('$LT/config/rules.yaml'))['rules']))" 2>/dev/null || echo '?')"
 # ★ check-links.sh 는 2026-08-31 부터 **두 줄**을 찍는다 (마크다운 링크 · 코드→문서 참조).
 #   `tail -1` 로 뒀더니 링크 수 자리에 참조 수가 올라왔다 — 둘 다 보여준다.
-bash bench/check-links.sh 2>/dev/null | grep -E '검사' | sed 's/^ */   /' 
+bash operate/tools/check-links.sh 2>/dev/null | grep -E '검사' | sed 's/^ */   /' 

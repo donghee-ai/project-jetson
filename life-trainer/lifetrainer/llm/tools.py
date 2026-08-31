@@ -6,7 +6,7 @@
    (`report/stats.compute_daily`, `plan/achieve.plans_for_day`)를 부르기만 한다.
    여기서 초를 다시 더하지 않는다.
 2. **스키마에 `pattern` 금지.** llama.cpp 의 GBNF 변환기가 정규식을 못 다뤄
-   요청 전체가 400 이 된다(`runtime/agent-gateway.md §4-5`). `client._check_no_pattern`
+   요청 전체가 400 이 된다(`operate/notes/agent-gateway.md §4-5`). `client._check_no_pattern`
    이 발신 직전에 한 번 더 막지만, 애초에 쓰지 않는다. 형식 제약은 설명 문장으로 건다.
 3. **결과는 짧게.** 툴 결과는 다음 턴의 입력이 된다. 깊이가 곧 비용이라
    (32K 에서 생성 속도 -70%) 상위 N 건만 돌려주고 나머지는 건수만 알린다.
@@ -849,7 +849,7 @@ _register(
                         "day": {"type": "string", "description": "YYYY-MM-DD. 생략하면 오늘."},
                         "category": {
                             "type": "string",
-                            "description": "카테고리 (coding/research/writing 등). 모르면 생략.",
+                            "description": "카테고리 (coding/measure/findings/writing 등). 모르면 생략.",
                         },
                     },
                     "required": ["title", "start_min", "end_min"],

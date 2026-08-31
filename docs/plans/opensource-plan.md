@@ -1,13 +1,13 @@
 # 오픈소스 공개 · 기여 계획
 
 > 작성일: 2026-08-15 / 상태: **계획 단계**
-> 관련: [reference-survey.md](../../research/reference-survey.md) · [performance.md](../../research/performance.md)
+> 관련: [reference-survey.md](../../measure/findings/reference-survey.md) · [performance.md](../../measure/findings/performance.md)
 
 ---
 
 ## 1. 왜 이걸 하는가
 
-[레퍼런스 조사](../../research/reference-survey.md)에서 확인된 사실:
+[레퍼런스 조사](../../measure/findings/reference-survey.md)에서 확인된 사실:
 
 ```
 GitHub 전체 704개 중 젯슨 명시 저장소  93개
@@ -26,9 +26,9 @@ GitHub 전체 704개 중 젯슨 명시 저장소  93개
 >
 > | | 상태 |
 > |---|---|
-> | 2-1 EXAONE 툴 콜링 | ✅ **반영** — `research/llm-models.md` 표 3곳을 "미지원(실질 0/4)" 로, 원인을 템플릿으로 확정 |
+> | 2-1 EXAONE 툴 콜링 | ✅ **반영** — `measure/findings/llm-models.md` 표 3곳을 "미지원(실질 0/4)" 로, 원인을 템플릿으로 확정 |
 > | 2-2 측정 공백 | ⏳ **잔여** — 지속 부하 발열(`thermal-test.sh 300`)이 여전히 미실행 |
-> | 2-3 대역폭 60 GB/s 해석 | ✅ **반영** — `README.md`·`research/performance.md`·`hardware.md` 를 맞췄고, 대역폭을 **결정 인자에서 참고로 내렸다** |
+> | 2-3 대역폭 60 GB/s 해석 | ✅ **반영** — `README.md`·`measure/findings/performance.md`·`hardware.md` 를 맞췄고, 대역폭을 **결정 인자에서 참고로 내렸다** |
 >
 > 저장소 서사도 같이 바꿨다 — *"사양서를 안 믿었다"* 가 아니라
 > **"올라가는가 · 어떤 모델인가 · 메모리를 얼마나"** 세 질문에 답한 기록으로.
@@ -93,19 +93,19 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 > 이 상태로 트랙 C 글("사양 102.4, 실측 60 — 대역폭 괴리")을 냈으면 두 번째
 > 오정보가 될 뻔했다. → 해당 소재 철회 (§6).
 
-근거: [benchmarks/benchmark-results.md](../../benchmarks/benchmark-results.md) §5 (2026-08-28 저장소로 흡수)
+근거: [measure/findings/model-suite.md](../../measure/findings/model-suite.md) §5 (2026-08-28 저장소로 흡수)
 
 ## 3. 보유 자산
 
 | 자산 | 위치 | 생태계 내 희소성 |
 |---|---|---|
-| MAXN에서 GPU TPC 절반 게이팅 발견 (4→8 SM) | [hardware.md](../../research/hardware.md) | **매우 높음** |
+| MAXN에서 GPU TPC 절반 게이팅 발견 (4→8 SM) | [hardware.md](../../measure/findings/hardware.md) | **매우 높음** |
 | Super Mode 불가 원인 규명 (`nvpower.sh` 코드 라인) | 동 | **매우 높음** |
-| ~~메모리 대역폭 실측 60 GB/s (사양의 58%)~~ **← 2026-08-18 철회, §2-3 참조** | [performance.md](../../research/performance.md) | — |
+| ~~메모리 대역폭 실측 60 GB/s (사양의 58%)~~ **← 2026-08-18 철회, §2-3 참조** | [performance.md](../../measure/findings/performance.md) | — |
 | 컨텍스트 깊이 10지점 곡선 (32K에서 −70%) | 동 | **매우 높음** |
-| 모델 3종 비교 (깊이별 순위 역전) | [llm-models.md](../../research/llm-models.md) | 높음 |
+| 모델 3종 비교 (깊이별 순위 역전) | [llm-models.md](../../measure/findings/llm-models.md) | 높음 |
 | EXAONE 한국어 토큰 19% 절약 | 동 | 높음 |
-| 재현 가능한 측정 스크립트 7종 | [scripts/](../../bench/) | 중간 |
+| 재현 가능한 측정 스크립트 7종 | [scripts/](../../measure/tools/) | 중간 |
 
 ---
 
@@ -120,7 +120,7 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 
 ### 할 일
 
-- [ ] `research/` 문서에서 개인 환경 정보 제거 또는 일반화
+- [ ] `measure/findings/` 문서에서 개인 환경 정보 제거 또는 일반화
       (Tailscale IP `100.64.0.2`, 홈 LAN `192.168.0.x`, SSID `home`)
 - [ ] §2 정정 사항 반영
 - [ ] 영문 요약 추가 — 젯슨 사용자 대다수가 비한국어권
@@ -237,5 +237,5 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 ### 판단 기준
 
 이 계획은 **이미 만든 것을 정리해 내놓는 일**이라 새로 배우는 것은 적다.
-"만드는 것"이 목적이라면 [레퍼런스 조사 §10](../../research/reference-survey.md)의
+"만드는 것"이 목적이라면 [레퍼런스 조사 §10](../../measure/findings/reference-survey.md)의
 **Frigate + VLM 레이어**가 더 맞다 — 유휴 상태인 NVDEC·DLA·OFA를 실제로 쓰게 된다.

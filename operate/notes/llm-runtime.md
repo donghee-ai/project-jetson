@@ -1,14 +1,14 @@
 # LLM 런타임 구축 기록 — llama.cpp on Jetson Orin NX 16GB
 
 > 구축일: 2026-08-14
-> 관련: [hardware.md](../research/hardware.md)
+> 관련: [hardware.md](../../measure/findings/hardware.md)
 >
 > ★ **이 문서는 2026-08-14 시점의 구축 기록이다.** 그날의 후보는 30B-A3B 였고
 > 그 뒤 8B 로 정해졌다(README ②). **지금 무엇이 어떤 플래그로 도는지는 실물이 정본이다:**
 >
 > ```bash
-> cat runtime/llama-server-qwen3.sh                    # 기동 스크립트
-> cat runtime/systemd/llama-server.service.d/ctx.conf  # ctx 오버라이드 (08-23)
+> cat operate/tools/llama-server-qwen3.sh                    # 기동 스크립트
+> cat operate/systemd/llama-server.service.d/ctx.conf  # ctx 오버라이드 (08-23)
 > tr '\0' ' ' < /proc/$(pgrep -f Qwen3-8B)/cmdline     # 실제로 뜬 인자
 > ```
 
@@ -21,7 +21,7 @@
 | llama.cpp | `b1-a94d563` (2026-08-13 커밋) |
 | 빌드 | CUDA 12.6 / `CMAKE_CUDA_ARCHITECTURES=87` / FA·CUDA Graphs ON |
 | 설치 경로 | `~/llama.cpp/build/bin/` |
-| 모델 저장소 | `~/project/project-jetson/models/` |
+| 모델 저장소 | `~/project/project-jetson/refs/models/` |
 | 전력 모드 | MAXN (CPU 8코어 1984MHz / GPU 8SM 918MHz) |
 | GPU 인식 | `CUDA0: Orin (15642 MiB)` |
 
@@ -36,7 +36,7 @@
 
 ## 2. 벤치마크 요약
 
-> **전체 측정 결과는 [performance.md](../research/performance.md)** 참조.
+> **전체 측정 결과는 [performance.md](../../measure/findings/performance.md)** 참조.
 > 컨텍스트 깊이별 곡선, 품질 검증 7단계, 장거리 검색, 메모리 안정성 포함.
 
 조건: `-ngl 99 -p 512 -n 128 -fa 1 -r 2` / MAXN
@@ -67,7 +67,7 @@
 #### 실무 환산 (입력 3,000 / 출력 300 토큰)
 
 > ⚠️ 아래는 **빈 컨텍스트 속도 기준의 초기 추정**이다.
-> 실제로는 깊이에 따라 생성이 느려지므로 **[benchmark-results.md §7](../research/performance.md#7-실무-기준표)의
+> 실제로는 깊이에 따라 생성이 느려지므로 **[benchmark-results.md §7](../../measure/findings/performance.md#7-실무-기준표)의
 > 실측 기준표(건당 약 40초)를 사용할 것.**
 
 | | 프롬프트 | 생성 | 합계 |
@@ -82,7 +82,7 @@
 
 ## 3. ★ 한국어 토크나이저 효율 (실측)
 
-측정 자체는 [`research/performance.md §6`](../research/performance.md) 에 한 벌만 둔다 —
+측정 자체는 [`measure/findings/performance.md §6`](../../measure/findings/performance.md) 에 한 벌만 둔다 —
 언어별 토큰 표와 32K 에 담기는 분량이 거기 있다. **여기 옮겨 적지 않는다.**
 같은 표를 두 곳에 두면 한쪽만 갱신된다 (이 저장소가 네 번 겪은 부류다).
 
@@ -128,7 +128,7 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 | **`-c 32768 --parallel 1`** | **32,768** | **1배** ← 08-14 당시 선택 |
 
 > **08-23 에 8B / `-c 20480` 으로 내렸다.** KV 2.99GB → 1.50GB.
-> 근거는 `runtime/systemd/llama-server.service.d/ctx.conf` 주석에 있다.
+> 근거는 `operate/systemd/llama-server.service.d/ctx.conf` 주석에 있다.
 
 ### 메모리 여유 확보 수단
 
@@ -147,12 +147,12 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 
 ```bash
 ~/llama.cpp/build/bin/llama-server \
-  -m ~/project/project-jetson/models/Qwen3-30B-A3B-IQ2_M.gguf \
+  -m ~/project/project-jetson/refs/models/Qwen3-30B-A3B-IQ2_M.gguf \
   -ngl 99 -c 32768 --parallel 1 \
   -fa on -ctk q8_0 -ctv q8_0 \
   --chat-template-kwargs '{"enable_thinking":false}' \
   --temp 0.7 --top-p 0.8 --top-k 20 \
-  --host 0.0.0.0 --port 8080   # ★ 지금은 127.0.0.1 이다 (bench/harden-network.sh)
+  --host 0.0.0.0 --port 8080   # ★ 지금은 127.0.0.1 이다 (operate/tools/harden-network.sh)
 ```
 
 접속 경로:
@@ -167,7 +167,7 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 
 ```bash
 ~/llama.cpp/build/bin/llama-cli \
-  -m ~/project/project-jetson/models/Qwen3-30B-A3B-IQ2_M.gguf \
+  -m ~/project/project-jetson/refs/models/Qwen3-30B-A3B-IQ2_M.gguf \
   -ngl 99 -c 32768 -fa on -ctk q8_0 -ctv q8_0 \
   --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0
 ```
@@ -175,7 +175,7 @@ llama-server는 `--parallel N` 슬롯마다 독립된 KV 캐시를 확보한다.
 ### 벤치마크
 
 ```bash
-~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/models/<모델>.gguf \
+~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/refs/models/<모델>.gguf \
   -ngl 99 -p 512 -n 128 -fa 1 -r 2
 ```
 
@@ -256,7 +256,7 @@ grant-radar 등 사업화 대상에는 Qwen3 계열이 안전하다.
 | 정확한 단어 수 준수 | ✅ 정확히 5단어 |
 | 장거리 검색 (최대 31,901 토큰) | ✅ **10/10** |
 
-상세: [benchmark-results.md §5](../research/performance.md#5-품질-검증--실제-대화-7단계)
+상세: [benchmark-results.md §5](../../measure/findings/performance.md#5-품질-검증--실제-대화-7단계)
 
 > 각 항목 1회 측정이므로 통계적 견고성은 없다. 다회 검증 필요.
 
@@ -293,10 +293,10 @@ pkill -f "[l]lama-server"  # 문자클래스로 자기매칭 회피
 ## 9. 다음 작업
 
 - [x] ~~IQ2_M 품질 A/B~~ — **완료.** JSON·조건대조·지시이행 전부 통과
-      ([benchmark-results.md §5](../research/performance.md#5-품질-검증--실제-대화-7단계))
+      ([benchmark-results.md §5](../../measure/findings/performance.md#5-품질-검증--실제-대화-7단계))
 - [x] ~~컨텍스트 깊이별 성능~~ — **완료.** 32K에서 3.96 tok/s (−70%)
-      ([benchmark-results.md §4](../research/performance.md#4--컨텍스트-깊이별-성능-가장-중요한-측정))
-- [ ] 지속 부하 발열 — `bench/thermal-test.sh 300` (MAXN에서 미실행)
+      ([benchmark-results.md §4](../../measure/findings/performance.md#4--컨텍스트-깊이별-성능-가장-중요한-측정))
+- [ ] 지속 부하 발열 — `measure/tools/thermal-test.sh 300` (MAXN에서 미실행)
 - [ ] 8B 모델의 깊이별 곡선 — 깊은 컨텍스트에서 순위 역전 가능성
 - [ ] EXAONE 3.5 7.8B 한국어 품질 비교 (라이선스 확인 선행)
 - [ ] 헤드리스 전환으로 메모리 0.5GB 확보

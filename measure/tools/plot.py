@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""results/ 와 benchmarks/results/ 에서 그림을 재생성한다.
+"""measure/results/ 에서 그림을 재생성한다.
 
 ★ 수동으로 고치지 않는다. `make figures` 가 이 스크립트를 부르고,
   숫자가 바뀌면 그림도 같이 바뀌어야 한다.
@@ -21,8 +21,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ANALYSIS = os.path.join(ROOT, "benchmarks/results/processed/analysis.json")
-RAW = os.path.join(ROOT, "benchmarks/results/raw")
+ANALYSIS = os.path.join(ROOT, "measure/results/processed/analysis.json")
+RAW = os.path.join(ROOT, "measure/results/raw")
 
 INK, GRID = "#0b0b0b", "#e1e0d9"
 BLUE, RED, GREEN, MUTED = "#2a78d6", "#e34948", "#1baf7a", "#898781"
@@ -51,7 +51,7 @@ def _save(fig, out, name):
 
 
 # ── 파서 ────────────────────────────────────────────────────────────────
-# results/*.depth.txt 는 고정폭 한글 ASCII 표다. 기계가 읽을 형식이 따로 없어
+# measure/results/*.depth.txt 는 고정폭 한글 ASCII 표다. 기계가 읽을 형식이 따로 없어
 # 여기서 뜯는다. 행 모양: "  1      463      316.3/s     10.69/s    3.5s  ..."
 _DEPTH_ROW = re.compile(r"^\s*\d+\s+([\d,]+)\s+([\d.]+)/s\s+([\d.]+)/s")
 
@@ -84,9 +84,9 @@ def load_analysis():
 def fig_depth_crossover(out):
     """② 어떤 모델이 적합한가 — 깊이에서 8B 가 30B 를 추월한다."""
     series = [
-        ("Qwen3-8B Q4_K_M", "results/Qwen3-8B-Q4KM.depth.txt", BLUE, "-"),
-        ("Qwen3-30B-A3B IQ2_M", "results/Qwen3-30B-A3B-IQ2M.depth.txt", RED, "-"),
-        ("EXAONE-3.5-7.8B Q4_K_M", "results/EXAONE-3.5-7.8B-Q4KM.depth.txt", GREEN, "--"),
+        ("Qwen3-8B Q4_K_M", "measure/results/Qwen3-8B-Q4KM.depth.txt", BLUE, "-"),
+        ("Qwen3-30B-A3B IQ2_M", "measure/results/Qwen3-30B-A3B-IQ2M.depth.txt", RED, "-"),
+        ("EXAONE-3.5-7.8B Q4_K_M", "measure/results/EXAONE-3.5-7.8B-Q4KM.depth.txt", GREEN, "--"),
     ]
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     data = {}
@@ -209,7 +209,7 @@ def fig_memory_budget(out):
 
 def main():
     ap = argparse.ArgumentParser(description="측정 결과에서 그림을 재생성한다")
-    ap.add_argument("--out", default=os.path.join(ROOT, "figures"))
+    ap.add_argument("--out", default=os.path.join(ROOT, "measure/figures"))
     args = ap.parse_args()
     print(f"→ {os.path.relpath(args.out, ROOT)}/")
     fig_depth_crossover(args.out)

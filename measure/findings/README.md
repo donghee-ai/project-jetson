@@ -1,4 +1,4 @@
-# research/ — 조사와 실측
+# measure/findings/ — 조사와 실측
 
 **이 폴더의 숫자는 전부 이 기기에서 직접 잰 것이다.** 데이터시트 값은 "사양치" 로
 따로 표기하고 실측과 나란히 놓는다 — 이 저장소의 존재 이유가 그 둘이 다르다는 것이다.
@@ -11,7 +11,7 @@
 | [decode-profile.md](decode-profile.md) | 디코드 커널 프로파일 (Nsight Systems) — **95.7% 가 양자화 행렬곱** | 2026-08-28 |
 | [reference-survey.md](reference-survey.md) | GitHub 생태계 전수 스캔 (704개) — 무엇이 이미 있고 무엇이 비었나 | 2026-08-15 |
 
-원본 로그·JSON 은 [`../results/`](../results/), 측정 도구는 [`../scripts/`](../bench/) 에 있다.
+원본 로그·JSON 은 [`../measure/results/`](../results/), 측정 도구는 [`../scripts/`](../tools/) 에 있다.
 
 ---
 
@@ -44,7 +44,7 @@ llm-models.md    그래서 8B 가 30B 를 9,600 토큰에서 추월한다
 
 | 측정 | 어디서 제약이 됐나 |
 |---|---|
-| 가용 메모리 13.4 GB | llama-server 를 두 프로젝트가 **공유**하는 이유 ([agent-gateway.md §5](../runtime/agent-gateway.md)) |
-| 깊이 32K 에서 −70% | Life Trainer 의 "LLM 입력 3~5K 로 끊기" 규칙 ([CLAUDE.md](../Life_Trainer/CLAUDE.md)) |
+| 가용 메모리 13.4 GB | llama-server 를 두 프로젝트가 **공유**하는 이유 ([agent-gateway.md §5](../../operate/notes/agent-gateway.md)) |
+| 깊이 32K 에서 −70% | Life Trainer 의 "LLM 입력 3~5K 로 끊기" 규칙 ([CLAUDE.md](../../life-trainer/CLAUDE.md)) |
 | 툴 콜링 6/6 (Qwen3-8B) | 에이전트 모델 선정 |
 | 프롬프트 처리 295 tok/s | 시스템 프롬프트 3층 분리 — 12,541 토큰이 곧 58초였다 |

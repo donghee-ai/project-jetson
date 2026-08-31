@@ -1,15 +1,15 @@
-# runtime/ — 측정이 정한 값으로 돌리는 법
+# operate/ — 측정이 정한 값으로 돌리는 법
 
 **여기 있는 것은 공유 자산이다.** `:8080` 의 `llama-server` 를 **세 소비자가 쓴다** —
-벤치마크(`bench/*.py` 8개) · [Life Trainer](../Life_Trainer/) · OpenClaw 게이트웨이.
+벤치마크(`measure/tools/*.py`) · [Life Trainer](../life-trainer/) · OpenClaw 게이트웨이.
 
 그래서 프레임워크 이름(`openclaw-setup/`)이 아니라 **소비자 기준**으로 여기에 있다.
 전에는 `llama-server` 가 OpenClaw 의 부속처럼 보였다.
 
 | | |
 |---|---|
-| [llm-runtime.md](llm-runtime.md) | llama.cpp CUDA 빌드 · 서버 운영 |
-| [agent-gateway.md](agent-gateway.md) | OpenClaw 결합 — **함정 14가지** + §7 Life Trainer 결합 |
+| [llm-runtime.md](notes/llm-runtime.md) | llama.cpp CUDA 빌드 · 서버 운영 |
+| [agent-gateway.md](notes/agent-gateway.md) | OpenClaw 결합 — **함정 14가지** + §7 Life Trainer 결합 |
 | `llama-server-qwen3.sh` | 서버 기동 스크립트 (`LLAMA_CTX` · Flash Attention · CUDA Graphs) |
 | `systemd/llama-server.service` | 사용자 유닛 |
 | `systemd/llama-server.service.d/ctx.conf` | **`LLAMA_CTX=20480`** — 아래 참조 |
@@ -59,18 +59,18 @@ Consumed 9.202s CPU time.`)까지 읽힌다 — 아침에 *"밤에 무슨 일이
 없었는데** 이제 기동 로그가 남는다.
 
 ```bash
-bash bench/verify-boot.sh
+bash operate/tools/verify-boot.sh
 ```
 
 ## journal 영속화 — 2026-08-28 적용
 
 전에는 `/var/log/journal` 이 없어 journald 가 **메모리에만** 썼다. 재부팅하면 로그가
-전부 사라져서, [HANDOFF §10](../Life_Trainer/HANDOFF.md) 이 안내하는 `journalctl`
+전부 사라져서, [HANDOFF §10](../life-trainer/HANDOFF.md) 이 안내하는 `journalctl`
 명령이 빈손이었다. **관측 불가와 정상은 다르다** — 이 저장소가 겪은 사고는 전부
 *"언제부터 그랬나"* 를 물어야 풀리는 종류였다.
 
 ```bash
-sudo bash bench/enable-persistent-journal.sh   # 용량 상한(500M)을 먼저 걸고 켠다
+sudo bash operate/tools/enable-persistent-journal.sh   # 용량 상한(500M)을 먼저 걸고 켠다
 ```
 
 `Storage=persistent` · `SystemMaxUse=500M` · `MaxRetentionSec=30day`.
@@ -85,7 +85,7 @@ DB 와 같은 72GB 를 두고 다툰다.
 안 깨진 것처럼 보인다. 유닛 경로를 건드리면 이 스크립트를 다시 돌린다.
 
 ★ **2026-08-28: 이 스크립트가 "떠 있나" 만 보던 것을 고쳤다.** 유닛 목록을
-`Life_Trainer/systemd/desired-state.txt` **하나**에서 읽어 대조한다 —
+`life-trainer/systemd/desired-state.txt` **하나**에서 읽어 대조한다 —
 install·uninstall 과 같은 파일이다. 전에는 셋이 각자 목록을 들고 있어서
 **설치 스크립트로 세운 기기가 지금 도는 기기와 달랐고**, 이 검사는 그 차이를 못 봤다.
 desired 에 없는데 도는 것도 실패로 잡는다.
@@ -93,8 +93,8 @@ desired 에 없는데 도는 것도 실패로 잡는다.
 ## 설치
 
 ```bash
-bash runtime/install.sh                        # 추론 런타임 (공유)
-bash ../Life_Trainer/deploy/install-gateway.sh # 게이트웨이 드롭인 (에이전트 경로에만)
+bash operate/tools/install.sh                        # 추론 런타임 (공유)
+bash ../life-trainer/deploy/install-gateway.sh # 게이트웨이 드롭인 (에이전트 경로에만)
 ```
 
 ## 기기 자체는 누가 보나 — `make host-status` (2026-08-28 신설)
@@ -112,7 +112,7 @@ make host-status
 | OOM kill (유닛별) | `llama-embed` 는 **일부러** 죽는다. 다른 유닛이 죽는 것과 가른다 |
 | 발열·팬·OC 이벤트·전력모드 | 이 저장소의 모든 수치가 MAXN 전제다 |
 | 유닛별 `NRestarts` | *"active"* 하나로는 **당일 반복 장애가 숨는다** |
-| L4T 버전·hold·DKMS | [research/hardware.md §8](../research/hardware.md) |
+| L4T 버전·hold·DKMS | [measure/findings/hardware.md §8](../measure/findings/hardware.md) |
 | journal 영속 여부 | 로그가 재부팅을 넘기나 |
 
 ★ **못 읽는 것은 못 읽는다고 말한다.** NVMe SMART 는 root 가 필요해서 회색으로 뜬다 —
@@ -135,7 +135,7 @@ make host-status
 |---|---|---|
 | **앱** | `lt doctor` — DB·AW·LLM·Slack·큐·임베딩·에이전트 | 일 1회 |
 | **기기** | `make host-status` — 디스크·OOM·발열·BSP·재시작 이력 | 일 1회 |
-| **바깥** | `bench/heartbeat.sh` — dead-man switch | 15분 |
+| **바깥** | `operate/tools/heartbeat.sh` — dead-man switch | 15분 |
 
 ```bash
 systemctl --user list-timers | grep jetson
@@ -166,7 +166,7 @@ WARN 유지  → 안 알린다   ← 이미 아는 것. 알려진 WARN 은 docs/
 나타나고, **안 오는 것은 눈에 안 띈다.** 그래서 판정을 바깥에 둔다.
 
 ```bash
-# ★ 유닛 파일에 넣지 않는다 — runtime/systemd/ 는 git 에 추적되므로
+# ★ 유닛 파일에 넣지 않는다 — operate/systemd/ 는 git 에 추적되므로
 #   URL 이 GitHub 에 공개되고, 그걸 아는 사람은 기기가 죽어도 "살아 있다" 를 위조할 수 있다.
 mkdir -p ~/.config/jetson && umask 077
 echo 'JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>' > ~/.config/jetson/heartbeat.env
@@ -204,7 +204,7 @@ systemctl --user restart jetson-heartbeat.timer
 | 22 | SSH | 필요. 다만 tailnet 제한 여부는 판단 필요 (§아래) |
 
 ```bash
-sudo bash bench/harden-network.sh    # 111·631 을 끈다. rollback 절차 포함
+sudo bash operate/tools/harden-network.sh    # 111·631 을 끈다. rollback 절차 포함
 ```
 
 **2026-08-28 적용 완료.** 끈 뒤 `verify-boot.sh` 로 우리 서비스가 안 다쳤는지 확인했고

@@ -2,7 +2,7 @@
 
 > 대상: `llama-server` (Qwen3-8B Q4_K_M · ctx 20480 · MAXN · Flash Attention · CUDA Graphs)
 > 도구: `nsys 2026.5.4` (JetPack 6.2.3 동봉)
-> 재현: [`../bench/profile-decode.sh`](../bench/profile-decode.sh) · 원본 `results/decode-8b-*.nsys-rep`
+> 재현: [`../measure/tools/profile-decode.sh`](../tools/profile-decode.sh) · 원본 `measure/results/decode-8b-*.nsys-rep`
 
 이 저장소는 그동안 **결과 숫자**(11.14 tok/s, 깊이 9,603 에서 7.80)만 갖고 있었다.
 이 문서는 **그 숫자가 어느 커널에서 나오는지**를 잰 기록이다.
@@ -47,7 +47,7 @@
 
 ## 1-1. 이게 대역폭 해석 정정을 뒷받침한다
 
-[`benchmarks/benchmark-results.md §5`](../benchmarks/benchmark-results.md) 는
+[`measure/findings/model-suite.md §5`](model-suite.md) 는
 *"K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 언패킹 연산 비용**"*
 이라고 결론냈다. 그건 **트래픽 역산으로 얻은 추론**이었다.
 

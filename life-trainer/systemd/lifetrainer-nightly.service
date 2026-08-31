@@ -7,8 +7,8 @@ After=network.target
 # ★ 경로는 %h(사용자 홈)로 쓴다. 절대경로를 박으면 다른 사용자·다른 설치 위치에서
 #   조용히 깨진다 — 유닛 12개가 전부 /home/user 에 묶여 있었다 (2026-08-28).
 Type=oneshot
-WorkingDirectory=%h/project/project-jetson/Life_Trainer
-ExecStart=%h/project/project-jetson/Life_Trainer/.venv/bin/lt nightly
+WorkingDirectory=%h/project/project-jetson/life-trainer
+ExecStart=%h/project/project-jetson/life-trainer/.venv/bin/lt nightly
 
 # 여기서는 큐에 넣기만 한다 — LLM 호출은 상시 워커(lifetrainer-worker.service)가
 # 하므로 이 유닛은 메모리를 거의 안 쓴다.

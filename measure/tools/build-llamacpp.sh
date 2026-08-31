@@ -5,7 +5,7 @@
 # 사전 조건:
 #   sudo apt install -y cmake ninja-build ccache libcurl4-openssl-dev
 #
-# 실행: bash bench/build-llamacpp.sh        (sudo 불필요)
+# 실행: bash measure/tools/build-llamacpp.sh        (sudo 불필요)
 # ─────────────────────────────────────────────────────────────
 set -u
 SRC="${LLAMA_SRC:-$HOME/llama.cpp}"
@@ -96,6 +96,6 @@ cat <<EOF
    $B/llama-cli -hf Qwen/Qwen3-8B-GGUF:Q4_K_M -p "안녕" -n 32
 
  벤치마크
-   $B/llama-bench -m ~/project/project-jetson/models/<모델>.gguf -p 512 -n 128 -ngl 99
+   $B/llama-bench -m ~/project/project-jetson/refs/models/<모델>.gguf -p 512 -n 128 -ngl 99
 ════════════════════════════════════════════════
 EOF

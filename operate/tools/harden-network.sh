@@ -42,7 +42,7 @@ cat <<'NEXT'
 
    ss -tulnp | grep -E ':(111|631)\b'    # 아무것도 안 나와야 한다
    make host-status                       # 나머지는 그대로인지
-   bash bench/verify-boot.sh              # 우리 서비스는 안 다쳤는지
+   bash operate/tools/verify-boot.sh              # 우리 서비스는 안 다쳤는지
 
 ▶ §rollback
 

@@ -1,7 +1,7 @@
 # 레퍼런스 조사 — GitHub 생태계 전수 스캔
 
-> 조사일: 2026-08-15 / 도구: [`bench/gh-api-collect.py`](../bench/gh-api-collect.py) · [`scripts/gh-research*.mjs`](../bench/) · [`bench/gh-analyze.py`](../bench/gh-analyze.py)
-> 원본: [`results/gh-final.json`](../results/gh-final.json)
+> 조사일: 2026-08-15 / 도구: [`measure/tools/gh-api-collect.py`](../tools/gh-api-collect.py) · [`scripts/gh-research*.mjs`](../tools/) · [`measure/tools/gh-analyze.py`](../tools/gh-analyze.py)
+> 원본: [`measure/results/gh-final.json`](../results/gh-final.json)
 > 제외 조건: 자율주행 관련, 아카이브됨, 1년 6개월 이상 방치, 별 3개 미만
 
 ---
@@ -186,7 +186,7 @@ VLM + LLM 레이어  : "택배기사가 상자를 놓고 감 / 모르는 사람�
 
 > ⚠️ **HWP 파서는 조사에서 발견되지 않았다.** `hwp korean document parser` 검색이
 > 유의미한 결과를 내지 못했다. grant-radar의 HWP 파싱은 여전히 직접 해결해야 하는
-> 문제이며, 이것이 해자가 된다는 [기획 문서](../docs/archive/grant-radar-plan.md)의 판단은 유효하다.
+> 문제이며, 이것이 해자가 된다는 [기획 문서](../../docs/archive/grant-radar-plan.md)의 판단은 유효하다.
 
 ---
 
@@ -280,7 +280,7 @@ Super Mode가 디바이스 트리 제약으로 불가하다는 원인 규명, �
 
 ## 11. 추가 클론 권장
 
-현재 [`reference/`](../reference/)에 4개가 있다. 아래를 추가하면 좋다.
+현재 [`refs/reference/`](../../refs/reference/)에 4개가 있다. 아래를 추가하면 좋다.
 
 ```bash
 cd reference

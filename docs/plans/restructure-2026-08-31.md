@@ -41,24 +41,24 @@ git reset --hard pre-restructure-2026-08-31     # git 안의 것
 ## 2. 왜 하는가 — 측정된 근거 셋
 
 **공개는 하지 않는다. LICENSE 도 안 붙인다** (2026-08-31 결정).
-그래서 [`folder-structure.md`](../../folder-structure.md) 가 재구조화의 방아쇠로 삼은
+그래서 [`docs/folder-structure.md`](../folder-structure.md) 가 재구조화의 방아쇠로 삼은
 *"공개 직전"* 은 안 당겨진다. 근거를 다시 세운 것이 아래 셋이다.
 
 1. **구조가 실제로 비용을 냈다.** `bench/` 가 측정·운영·검사·조사를 한 폴더에 담고 있고,
    2026-08-28 하루에 **운영 스크립트 9개가 규칙이 없어서 잘못 들어갔다.**
-   `benchmarks/` 는 `bench/ · results/ · *.md` 라는 **저장소 구조의 복제본**이다.
+   `measure/` 는 `bench/ · measure/results/ · *.md` 라는 **저장소 구조의 복제본**이다.
 2. **문서가 같은 말을 여러 번 한다.** "문서를 어디에 쓰는가" 표가 다섯 곳,
    "반복된 실패" 목록이 세 곳, 한국어 토크나이저 실측이 세 곳에 있다.
 3. **★ 참조가 이미 두 번 끊겼는데 아무도 몰랐다.**
 
    ```
-   05e2d5d (08-28)  openclaw-setup → runtime/agent-gateway.md 로 개명
+   05e2d5d (08-28)  openclaw-setup → operate/notes/agent-gateway.md 로 개명
                     코드 14곳은 그대로 → 지금 없는 파일을 가리킨다
    08-27            known-issues.md → docs/issues/ 로 분할
                     코드 14곳은 그대로 → §7 같은 절이 이제 없다
    ```
 
-   `bench/check-links.sh` 는 `*.md` 만 본다. **코드 주석 안의 문서 참조는 검사 대상이 아니다.**
+   `operate/tools/check-links.sh` 는 `*.md` 만 본다. **코드 주석 안의 문서 참조는 검사 대상이 아니다.**
 
 ---
 
@@ -80,7 +80,7 @@ git reset --hard pre-restructure-2026-08-31     # git 안의 것
 | | 무엇 | 새 버전과 맞아야 하나 |
 |---|---|---|
 | **A 코드** | py · sh · systemd 유닛 | ✅ |
-| **B 기록** | `HISTORY/` · `docs/progress/` · `docs/archive/` · `results/` | ❌ **옛 버전과 맞으면 된다** |
+| **B 기록** | `HISTORY/` · `docs/progress/` · `docs/archive/` · `measure/results/` | ❌ **옛 버전과 맞으면 된다** |
 | **C 현황** | `README` · `HANDOFF` · `handbook` · `architecture` · `docs/issues/` · `desired-state.txt` | ✅ |
 
 **단, 코드가 인용하면 폴더가 어디든 A 에 묶인다** (원칙 1).
@@ -113,17 +113,17 @@ git gc --aggressive --prune=now
 
 | 무엇 | 어디로 |
 |---|---|
-| `openclaw-agent.md §N` (코드 14곳) | [`runtime/agent-gateway.md`](../../runtime/agent-gateway.md) §N — 절 번호는 살아 있다 |
-| `known-issues §N` (코드 14곳) | 해당 [`docs/issues/`](../../Life_Trainer/docs/issues/) 또는 옮겨간 [`HISTORY/`](../../Life_Trainer/HISTORY/) |
+| `openclaw-agent.md §N` (코드 14곳) | [`operate/notes/agent-gateway.md`](../../operate/notes/agent-gateway.md) §N — 절 번호는 살아 있다 |
+| `known-issues §N` (코드 14곳) | 해당 [`docs/issues/`](../../life-trainer/docs/issues/) 또는 옮겨간 [`HISTORY/`](../../life-trainer/HISTORY/) |
 
 **읽을 것**
 
 | 문서 | 왜 |
 |---|---|
-| [`runtime/agent-gateway.md`](../../runtime/agent-gateway.md) | 절 번호가 코드에서 인용된다. **§ 구조를 바꾸지 말 것** |
-| [`Life_Trainer/docs/known-issues.md`](../../Life_Trainer/docs/known-issues.md) | 옛→새 리디렉트 표. `§N` 이 어느 이슈로 갔는지 여기 있다 |
+| [`operate/notes/agent-gateway.md`](../../operate/notes/agent-gateway.md) | 절 번호가 코드에서 인용된다. **§ 구조를 바꾸지 말 것** |
+| [`life-trainer/docs/known-issues.md`](../../life-trainer/docs/known-issues.md) | 옛→새 리디렉트 표. `§N` 이 어느 이슈로 갔는지 여기 있다 |
 | [`docs/README.md`](../README.md) | *"agent-gateway.md §4 는 코드에서 직접 참조된다 — 절을 재배열하지 말 것"* 경고의 출처 |
-| [`bench/check-docs.sh`](../../bench/check-docs.sh) | `--self-test` 로 fixture 를 쓰는 방식. 새 검사도 같은 꼴로 만든다 |
+| [`operate/tools/check-docs.sh`](../../operate/tools/check-docs.sh) | `--self-test` 로 fixture 를 쓰는 방식. 새 검사도 같은 꼴로 만든다 |
 
 **찾는 법**
 
@@ -143,10 +143,10 @@ git grep -ohE '[A-Za-z0-9_./-]+\.md' -- '*.py' '*.sh' '*.service' '*.timer' Make
 
 | 중복 | 남길 곳 |
 |---|---|
-| "문서를 어디에 쓰는가" 표 (다섯 곳) | [`Life_Trainer/CLAUDE.md`](../../Life_Trainer/CLAUDE.md). 나머지는 링크 한 줄 |
-| "반복된 실패" 목록 (세 곳) | `Life_Trainer/CLAUDE.md` (이미 있다) |
-| 롤업 600초 계산 순서 (`handbook §3-2` · `architecture §2-2`) | [`architecture.md`](../../Life_Trainer/docs/architecture.md) — 판정 근거가 그쪽 역할 |
-| 한국어 토크나이저 실측 (세 곳) | [`research/performance.md`](../../research/performance.md) |
+| "문서를 어디에 쓰는가" 표 (다섯 곳) | [`life-trainer/CLAUDE.md`](../../life-trainer/CLAUDE.md). 나머지는 링크 한 줄 |
+| "반복된 실패" 목록 (세 곳) | `life-trainer/CLAUDE.md` (이미 있다) |
+| 롤업 600초 계산 순서 (`handbook §3-2` · `architecture §2-2`) | [`architecture.md`](../../life-trainer/docs/architecture.md) — 판정 근거가 그쪽 역할 |
+| 한국어 토크나이저 실측 (세 곳) | [`measure/findings/performance.md`](../../measure/findings/performance.md) |
 | `HANDOFF` 의 `### B.`·`### C.` 가 각각 두 번 | 한 벌만 |
 
 **정비계획 두 문서** — [`maintenance-plan.md`](../archive/maintenance-plan.md) 는 P0·P1 완료,
@@ -175,25 +175,25 @@ git grep -ohE '[A-Za-z0-9_./-]+\.md' -- '*.py' '*.sh' '*.service' '*.timer' Make
 
 | 문서 | 왜 |
 |---|---|
-| [`Life_Trainer/docs/issues/README.md`](../../Life_Trainer/docs/issues/README.md) | 파일명 접두어가 곧 등급. 번호는 `ls \| grep -oE '[0-9]{4}' \| sort -n \| tail -1` 의 +1 |
-| [`Life_Trainer/HISTORY/README.md`](../../Life_Trainer/HISTORY/README.md) | 색인을 같이 갱신해야 한다 |
-| [`Life_Trainer/CLAUDE.md`](../../Life_Trainer/CLAUDE.md) | 기록 규칙 — 버그는 고친 코드가 아니라 **깨진 가정**을 쓴다 |
+| [`life-trainer/docs/issues/README.md`](../../life-trainer/docs/issues/README.md) | 파일명 접두어가 곧 등급. 번호는 `ls \| grep -oE '[0-9]{4}' \| sort -n \| tail -1` 의 +1 |
+| [`life-trainer/HISTORY/README.md`](../../life-trainer/HISTORY/README.md) | 색인을 같이 갱신해야 한다 |
+| [`life-trainer/CLAUDE.md`](../../life-trainer/CLAUDE.md) | 기록 규칙 — 버그는 고친 코드가 아니라 **깨진 가정**을 쓴다 |
 
 ---
 
 ### 단계 4 — 폴더 재구조화
 
-목표 구조는 [`folder-structure.md`](../../folder-structure.md) 의 §목표 구조 그대로.
+목표 구조는 [`docs/folder-structure.md`](../folder-structure.md) 의 §목표 구조 그대로.
 `measure/`(잰 것) · `operate/`(도는 것) · `life-trainer/`(만든 것) · `docs/` · `refs/`.
 
 **읽을 것 — 이 넷은 반드시**
 
 | 문서 | 무엇을 얻나 |
 |---|---|
-| [`folder-structure.md`](../../folder-structure.md) | 목표 구조 · **안 바꾸는 것**(systemd 3곳은 소유자 기준이라 유지) · `reference` 4곳 통일 |
+| [`docs/folder-structure.md`](../folder-structure.md) | 목표 구조 · **안 바꾸는 것**(systemd 3곳은 소유자 기준이라 유지) · `reference` 4곳 통일 |
 | [`README.md`](../../README.md) `## 디렉토리 구조` | **지금 구조의 정본.** 이걸 새 구조로 바꾸는 게 마지막 작업 |
 | [`CLAUDE.md`](../../CLAUDE.md) `§6` | *"재는 것인가 돌리는 것인가"* — 파일을 어디 둘지 가르는 질문 |
-| [`runtime/README.md`](../../runtime/README.md) | `systemd/` 가 세 곳인 이유(공유·앱·게이트웨이). **합치면 안 된다** |
+| [`operate/README.md`](../../operate/README.md) | `systemd/` 가 세 곳인 이유(공유·앱·게이트웨이). **합치면 안 된다** |
 
 **치환 대상과 잡아주는 것**
 
@@ -210,7 +210,7 @@ git grep -nE '(^|[^a-z/])(bench|benchmarks|research|runtime|results|figures|Life
   -- '*.sh' '*.py' 'Makefile' '*.yml' '*.service' '*.timer'
 ```
 
-**★ [`runtime/agent-gateway.md`](../../runtime/agent-gateway.md) 의 절 번호는 재배열하지 않는다.**
+**★ [`operate/notes/agent-gateway.md`](../../operate/notes/agent-gateway.md) 의 절 번호는 재배열하지 않는다.**
 경로는 바뀌어도 되지만 `§4-6` 형태의 인용이 코드에 널려 있다.
 
 **순서**
@@ -220,8 +220,8 @@ git grep -nE '(^|[^a-z/])(bench|benchmarks|research|runtime|results|figures|Life
 3. 코드→문서 참조 치환 → 단계 2 의 검사
 4. 스크립트·Makefile·CI·유닛 경로 치환 → `make check-fast` · `make check`
 5. `.gitignore` 경로 갱신
-6. 유닛 재설치 → [`runtime/install.sh`](../../runtime/install.sh) · [`Life_Trainer/scripts/install-units.sh`](../../Life_Trainer/scripts/install-units.sh)
-7. `README §디렉토리 구조` · `CLAUDE.md §6` · `folder-structure.md` 를 새 구조로
+6. 유닛 재설치 → [`operate/tools/install.sh`](../../operate/tools/install.sh) · [`life-trainer/scripts/install-units.sh`](../../life-trainer/scripts/install-units.sh)
+7. `README §디렉토리 구조` · `CLAUDE.md §6` · `docs/folder-structure.md` 를 새 구조로
 
 ---
 
@@ -230,12 +230,12 @@ git grep -nE '(^|[^a-z/])(bench|benchmarks|research|runtime|results|figures|Life
 ```bash
 make check-fast                          # 링크 + 문서 지표 + shellcheck (즉시)
 make check                               # + systemd-analyze verify + 테스트
-bash bench/check-docs.sh --self-test     # 검사기 자기시험지
-bash bench/daily-check.sh --self-test    # 알림 전이
+bash operate/tools/check-docs.sh --self-test     # 검사기 자기시험지
+bash operate/tools/daily-check.sh --self-test    # 알림 전이
 ```
 
 **단계 4 의 마지막 관문은 재부팅이다.** `%h/project/project-jetson/...` 이 유닛에
-박혀 있어 **재기동만으로는 부족하다.** [`bench/verify-boot.sh`](../../bench/verify-boot.sh) 가
+박혀 있어 **재기동만으로는 부족하다.** [`operate/tools/verify-boot.sh`](../../operate/tools/verify-boot.sh) 가
 실제로 올라오는지 본다.
 
 ```bash
@@ -254,7 +254,7 @@ curl -s localhost:8080/health && curl -s localhost:8081/health
 | 개인정보 일반화 (`/home/user` · Tailscale IP · 폰 이름) | 같음 |
 | 타사 스크린샷 정리 | 같음. `.git` 이 작아서 급하지도 않다 |
 | `git filter-repo` | 노출된 Serper 키는 **무효 확인됨**. 브랜치 4개 + force-push 대비 얻는 게 없다 |
-| 저장소 분리 (공개/비공개) | 계측 쪽이 `Life_Trainer` 를 **하드 의존**한다 — `Makefile` · CI · `check-docs` · `check-links` · `status` · `daily-check` · `verify-boot` · `make-recovery-bundle` · `runtime/install.sh` · `desired-state.txt` |
+| 저장소 분리 (공개/비공개) | 계측 쪽이 `Life_Trainer` 를 **하드 의존**한다 — `Makefile` · CI · `check-docs` · `check-links` · `status` · `daily-check` · `verify-boot` · `make-recovery-bundle` · `operate/tools/install.sh` · `desired-state.txt` |
 | `docs/archive/` 삭제 | 중복 제거만 하기로 결정. `contracts-v1~v2` 는 현 `contracts.md` 의 유래이고, speech 결론 하나는 `llm/trigger.py` 가 인용 중이다 |
 
 ---
@@ -263,9 +263,9 @@ curl -s localhost:8080/health && curl -s localhost:8081/health
 
 ```
 1. 이 문서 §1     어디까지 왔나
-2. folder-structure.md   목표 구조와 "안 바꾸는 것"
+2. docs/folder-structure.md   목표 구조와 "안 바꾸는 것"
 3. CLAUDE.md §1·§6       검사를 붙이는 규칙 · 파일을 어디 두는 질문
-4. Life_Trainer/CLAUDE.md  기록 규칙 (깨진 가정을 쓴다)
+4. life-trainer/CLAUDE.md  기록 규칙 (깨진 가정을 쓴다)
 ```
 
 현황 수치는 **문서에 없다.** `make status` · `make host-status` · `lt doctor` 로 뽑는다 —

@@ -4,9 +4,9 @@
 # ★ 왜 필요한가: 심링크는 **프로세스가 살아 있는 동안엔 안 깨진 것처럼 보인다.**
 #   `systemctl is-active` 가 active 여도 그건 지금 도는 것이지, 다음 부팅에
 #   뜬다는 뜻이 아니다. 이 저장소가 이미 겪은 부류다 —
-#   "살아 있다 ≠ 서빙 가능하다" (runtime/agent-gateway.md §4-8).
+#   "살아 있다 ≠ 서빙 가능하다" (operate/notes/agent-gateway.md §4-8).
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 fail=0
 ok()   { printf "  \033[32m✅\033[0m %s\n" "$1"; }
@@ -18,15 +18,15 @@ wr()   { printf "  \033[33m⚠️\033[0m  %s\n" "$1"; }
 echo "▶ 부팅 후 경과: $(uptime -p)"
 echo
 
-# ★ 목록을 여기 안 적는다. Life_Trainer/systemd/desired-state.txt 하나가 정본이고
+# ★ 목록을 여기 안 적는다. life-trainer/systemd/desired-state.txt 하나가 정본이고
 #   install-units.sh · uninstall-units.sh 도 같은 파일을 읽는다. 전에는 세 곳이
 #   각자 목록을 들고 있어 서로 달랐다 — 그래서 설치 스크립트로 세운 기기가
 #   지금 도는 기기와 달랐고, 이 스크립트는 그 차이를 못 봤다 (2026-08-28).
-# shellcheck source=../Life_Trainer/scripts/_desired-state.sh
-. Life_Trainer/scripts/_desired-state.sh
+# shellcheck source=../life-trainer/scripts/_desired-state.sh
+. life-trainer/scripts/_desired-state.sh
 
 echo "▶ 1. 서비스 — Life Trainer 소유 (desired-state.txt 와 대조)"
-mapfile -t WANT < <(lt_desired_units Life_Trainer)
+mapfile -t WANT < <(lt_desired_units life-trainer)
 for u in "${WANT[@]}"; do
   case "$u" in *.timer) continue;; esac        # 타이머는 §5 에서 따로 본다
   s=$(systemctl --user is-active "$u" 2>&1)
@@ -39,7 +39,7 @@ done < <(systemctl --user list-units --state=active --no-legend 'lifetrainer-*' 
          2>/dev/null | awk '{print $1}')
 
 echo
-echo "▶ 1b. 서비스 — 공유 자산 (runtime/systemd/desired-state.txt)"
+echo "▶ 1b. 서비스 — 공유 자산 (operate/systemd/desired-state.txt)"
 while read -r u cond; do
   case "$u" in ''|\#*) continue;; esac
   case "$cond" in
@@ -69,7 +69,7 @@ while read -r u cond; do
     *.timer) systemctl --user is-active "$u" >/dev/null 2>&1 && ok "$u" || bad "$u — 안 떠 있다" ;;
     *) st=$(systemctl --user is-active "$u" 2>&1); [ "$st" = active ] && ok "$u" || bad "$u — $st" ;;
   esac
-done < runtime/systemd/desired-state.txt
+done < operate/systemd/desired-state.txt
 
 echo
 echo "▶ 2. ★ ctx.conf 드롭인 (끊기면 조용히 KV 가 두 배가 된다)"
@@ -101,7 +101,7 @@ echo "▶ 6. journal 이 이전 부팅을 갖고 있나"
 #   HANDOFF §10 이 안내하는 journalctl 명령이 빈손이 된다.
 if [ ! -d /var/log/journal ]; then
   bad "/var/log/journal 없음 — journald 가 메모리에만 쓴다. 재부팅하면 전부 사라진다"
-  echo "     고치는 법: sudo bash bench/enable-persistent-journal.sh"
+  echo "     고치는 법: sudo bash operate/tools/enable-persistent-journal.sh"
 elif journalctl --user -b -1 -n1 >/dev/null 2>&1; then
   ok "이전 부팅 로그 있음 ($(journalctl --list-boots --no-pager 2>/dev/null | wc -l) 부팅 보관)"
 else
@@ -112,5 +112,5 @@ else
 fi
 
 echo
-[ "$fail" -eq 0 ] && echo "  ★ 재부팅 검증 통과 — Phase 6 닫힘" || echo "  ★ 실패 있음 — runtime/README.md 의 복구 절차 참조"
+[ "$fail" -eq 0 ] && echo "  ★ 재부팅 검증 통과 — Phase 6 닫힘" || echo "  ★ 실패 있음 — operate/README.md 의 복구 절차 참조"
 exit $fail

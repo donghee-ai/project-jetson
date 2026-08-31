@@ -343,7 +343,7 @@ Write-Step "요약 — 젯슨 쪽에 넣을 값"
 $shownIp = if ($tsIp) { $tsIp } else { '<이 PC 의 Tailscale IP>' }
 
 Write-Host ""
-Write-Host "  Life_Trainer/config/lifetrainer.toml 의 [activitywatch] 절:" -ForegroundColor White
+Write-Host "  life-trainer/config/lifetrainer.toml 의 [activitywatch] 절:" -ForegroundColor White
 Write-Host ""
 Write-Host "    base_url = `"http://${shownIp}:$AW_PORT`"" -ForegroundColor Green
 if ($EnableApiKey) {

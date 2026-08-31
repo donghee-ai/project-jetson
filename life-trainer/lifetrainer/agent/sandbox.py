@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # 읽어서 프롬프트에 싣는 양의 상한. 32K 깊이에서 생성 속도가 70% 떨어지므로
-# (`research/performance.md`) 파일 하나가 컨텍스트를 다 먹게 두면 안 된다.
+# (`measure/findings/performance.md`) 파일 하나가 컨텍스트를 다 먹게 두면 안 된다.
 # 4000자 ≈ 한국어 2,000토큰 정도로, `llm.max_input_tokens`(4000) 의 절반이다.
 MAX_READ_BYTES = 4000
 
@@ -143,7 +143,7 @@ class Sandbox:
         ★ 이 한 줄이 필요한 이유가 실측에 있다. "config 폴더 보여줘" 에 8B 가
         `/…/data/agent/config` 를 만들어 불렀다 — 프롬프트에서 본 허용 폴더
         (`data/agent`)에 `config` 를 **이어 붙인** 것이다. 같은 부류가
-        `runtime/agent-gateway.md §4-4` 에 이미 기록돼 있다 (`workspace/workspace/`).
+        `operate/notes/agent-gateway.md §4-4` 에 이미 기록돼 있다 (`workspace/workspace/`).
         절대 경로를 조립하지 말고 짧은 이름을 쓰라고 결과에서 가르친다 —
         거부만 하면 모델은 다음 턴에 또 조립한다.
         """
@@ -168,7 +168,7 @@ class Sandbox:
         candidates = self._candidates(Path(cleaned), roots)
 
         # ★ 존재하는 것을 먼저 고른다. 상대 경로 하나가 여러 root 아래에서 성립할 수
-        #   있는데, 8B 는 어느 root 인지 말해 주지 않는다 (`runtime/agent-gateway.md §4-4`
+        #   있는데, 8B 는 어느 root 인지 말해 주지 않는다 (`operate/notes/agent-gateway.md §4-4`
         #   의 `workspace/workspace/` 가 같은 부류의 실패다). 존재 여부로 고르면
         #   모델이 root 를 몰라도 맞는 파일에 닿는다. 아무것도 없으면 첫 후보로
         #   간다 — 새 파일 쓰기가 그 경로다.

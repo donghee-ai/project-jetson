@@ -1,8 +1,8 @@
 # 실측 결과 — 모델 13종 × Jetson Orin NX 16GB
 
-> 측정일: 2026-08-18 / 원본: [`results/raw/run-20260818T045209Z/`](results/raw/)
-> 분석: [`results/processed/analysis.json`](results/processed/analysis.json)
-> 재현: [`bench/run-bench.sh`](bench/run-bench.sh) → [`bench/analyze.py`](bench/analyze.py)
+> 측정일: 2026-08-18 / 원본: [`measure/results/raw/run-20260818T045209Z/`](../results/raw/)
+> 분석: [`measure/results/processed/analysis.json`](../results/processed/analysis.json)
+> 재현: [`run-bench.sh`](../tools/run-bench.sh) → [`analyze.py`](../tools/analyze.py)
 
 whichllm 레지스트리에 넣을 대역폭 값 **102.4 GB/s** 를 검증하기 위한 측정.
 분석은 whichllm 의 `estimate_tok_per_sec()` **함수 자체를 호출**해서 대조했다 —
@@ -43,7 +43,7 @@ SWAP 변화      −4 ~ +9 MB      ← 스와핑 없음(12/14 런은 감소). �
 ```
 
 **발열·전력·스와핑 어느 것도 제한 요인이 아니었다.**
-(발열·전력: [`bench/telemetry.py`](bench/telemetry.py) / SWAP 은 tegrastats 원본에서 직접 산출)
+(발열·전력: [`telemetry.py`](../tools/telemetry.py) / SWAP 은 tegrastats 원본에서 직접 산출)
 
 ### 재현성
 
@@ -274,7 +274,7 @@ IQ2_M(33.2)은 코드북 디코딩이 더 무거워 가장 낮다.
 
 ### 5-2. ⚠️ 이전 문서의 "실측 60 GB/s 천장" 서술을 정정한다
 
-`research/performance.md` 는 CUDA 읽기 커널의 **60 GB/s** 를 성능 예측의 출발점으로
+`measure/findings/performance.md` 는 CUDA 읽기 커널의 **60 GB/s** 를 성능 예측의 출발점으로
 삼았다. **Qwen3-8B Q8_0 의 86.4 GB/s 가 이를 반증한다** — 읽기 커널보다 44% 높다.
 
 즉 60 GB/s 는 단일 커널 마이크로벤치가 메모리 컨트롤러를 포화시키지 못한 값이지

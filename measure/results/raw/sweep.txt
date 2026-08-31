@@ -23,5 +23,5 @@
 [bench] ok
 [bench] Qwen3-8B-Q8_0 (8.11 GiB)
 [bench] ok
-[env] sweep complete -> /home/user/project/opensource/results/raw/run-20260818T045209Z
+[env] sweep complete -> /home/user/project/opensource/measure/results/raw/run-20260818T045209Z
 [env] restarting llama-server.service

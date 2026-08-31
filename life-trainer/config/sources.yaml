@@ -74,7 +74,7 @@ sources:
      tags: "ml,research,google", interval_sec: 21600}
   - {kind: rss, name: "BAIR (Berkeley AI Research)", url: "https://bair.berkeley.edu/blog/feed.xml",
      tags: "ml,research,academia", interval_sec: 21600}
-  - {kind: rss, name: "Microsoft Research", url: "https://www.microsoft.com/en-us/research/feed/",
+  - {kind: rss, name: "Microsoft Research", url: "https://www.microsoft.com/en-us/measure/findings/feed/",
      tags: "ml,research,microsoft", interval_sec: 21600}
 
   # ── 논문 (arXiv). 갈래가 겹치지 않게 고른다 ──

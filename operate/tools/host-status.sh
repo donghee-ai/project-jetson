@@ -9,7 +9,7 @@
 #   sudo 없이 읽히는 것만 본다. 못 읽는 것은 **못 읽는다고 말한다** —
 #   조용히 건너뛰면 "확인했다" 로 읽힌다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 warn=0
 ok()  { printf "  \033[32m✅\033[0m %-22s %s\n" "$1" "$2"; }
@@ -112,9 +112,9 @@ echo "▶ BSP — 섞이면 부트로더·커널·유저스페이스가 따로 �
 core=$(dpkg-query -W -f='${Version}' nvidia-l4t-core 2>/dev/null)
 cand=$(apt-cache policy nvidia-l4t-core 2>/dev/null | awk '/Candidate:/{print $2}')
 [ "$core" = "$cand" ] && ok "L4T" "$core" \
-                      || wr "L4T" "설치 $core · 후보 $cand — research/hardware.md §8"
+                      || wr "L4T" "설치 $core · 후보 $cand — measure/findings/hardware.md §8"
 held=$(apt-mark showhold 2>/dev/null | tr '\n' ' ')
-[ -n "$held" ] && wr "패키지 hold" "$held— 이유는 research/hardware.md §8 (DKMS mt7601u)" \
+[ -n "$held" ] && wr "패키지 hold" "$held— 이유는 measure/findings/hardware.md §8 (DKMS mt7601u)" \
                || ok "패키지 hold" "없음"
 if command -v dkms >/dev/null; then
   krel=$(uname -r)
@@ -144,7 +144,7 @@ for p in 111 631; do echo "$open" | grep -qw "$p" && known_unused="$known_unused
 if [ -n "$known_unused" ]; then
   # ★ 백틱을 큰따옴표 안에 두면 **명령 치환으로 실행된다.** 처음에 그렇게 썼다가
   #   메시지 안의 harden-network.sh 가 실제로 돌았다. 안내문에는 백틱을 쓰지 않는다.
-  wr "안 쓰는 포트" "$known_unused (rpcbind·CUPS) — bash bench/harden-network.sh 로 닫는다"
+  wr "안 쓰는 포트" "$known_unused (rpcbind·CUPS) — bash operate/tools/harden-network.sh 로 닫는다"
 else ok "안 쓰는 포트" "없음"; fi
 ok "전체 개방 포트" "$open"
 
@@ -153,7 +153,7 @@ echo "▶ journal — 로그가 재부팅을 넘기나"
 if [ -d /var/log/journal ]; then
   ok "영속 저장" "$(journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[MG]' | head -1) · 부팅 $(journalctl --list-boots --no-pager 2>/dev/null | wc -l)개 보관"
 else
-  bad "영속 저장" "꺼짐 — sudo bash bench/enable-persistent-journal.sh"
+  bad "영속 저장" "꺼짐 — sudo bash operate/tools/enable-persistent-journal.sh"
 fi
 
 echo

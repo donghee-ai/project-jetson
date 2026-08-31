@@ -10,7 +10,7 @@
   ② ASR RTF   — 음성 1초를 알아듣는 데 걸리는 시간
   ③ E2E       — 발화 종료 → ASR → LLM 툴콜까지 총 지연
 
-전제: models/speech/ 에 sherpa-onnx 모델 3종, llama-server 가동 중(툴콜 측정 시)
+전제: refs/models/speech/ 에 sherpa-onnx 모델 3종, llama-server 가동 중(툴콜 측정 시)
 실행: python3 scripts/speech-bench.py [--no-llm]
 """
 import json, os, sys, time, urllib.request, wave

@@ -8,7 +8,7 @@ GitHub 조사 결과 통합·분류 — 젯슨 적합성 기준
   ③ 젯슨 적합   메모리·아키텍처·엣지 언급
   ④ 관련도      검색어 매칭 횟수
 
-실행: python3 bench/gh-analyze.py
+실행: python3 measure/tools/gh-analyze.py
 """
 import json, pathlib, re
 from collections import Counter

@@ -2,7 +2,7 @@
 # 이 기기를 **처음부터 다시 세우는 데 필요한 것 전부**를 하나로 묶는다.
 #
 # ★ 왜 저장소 백업만으로는 부족한가
-#   `Life_Trainer/scripts/backup.sh` 는 DB 와 앱 설정을 담는다. 그런데 이 기기를
+#   `life-trainer/scripts/backup.sh` 는 DB 와 앱 설정을 담는다. 그런데 이 기기를
 #   되살리려면 **저장소 밖에 있는 것들**이 더 필요하다 — 실제로 조사해 보니:
 #
 #     ~/.openclaw/          에이전트 배선. 없으면 증상이 "툴을 안 부른다" 뿐이다
@@ -22,9 +22,9 @@
 # ★★ 산출물에는 **토큰·API 키·터널 자격증명·개인 활동 기록**이 들어간다.
 #    0600 으로 만들고, 옮길 때 암호화한다. 공개 저장소나 채팅에 올리지 말 것.
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 REPO=$PWD
-LT=$REPO/Life_Trainer
+LT=$REPO/life-trainer
 
 STAMP=$(date +%Y%m%d-%H%M)
 OUT="$REPO/recovery-bundle-$STAMP.tar.gz"
@@ -88,14 +88,14 @@ mkdir -p "$B/rebuild"
   echo "# 다시 만들 수 있는 것들. 실물은 안 넣었다 (크기가 아니라 재현 가능성이 기준이다)."
   echo
   echo "## 모델 가중치  (~/models · $(du -sh "$HOME/models" 2>/dev/null | cut -f1))"
-  for f in "$HOME"/models/*.gguf; do
+  for f in "$HOME"/refs/models/*.gguf; do
     [ -e "$f" ] && echo "  $(basename "$f")  $(stat -c%s "$f") bytes  sha256=$(sha256sum "$f" | cut -c1-16)…"
   done
   echo
   echo "## llama.cpp  (~/llama.cpp · $(du -sh "$HOME/llama.cpp" 2>/dev/null | cut -f1))"
   echo "  commit  $(git -C "$HOME/llama.cpp" rev-parse HEAD 2>/dev/null)"
   echo "  빌드    $(grep -hE 'GGML_CUDA:BOOL|CMAKE_CUDA_ARCHITECTURES|CMAKE_BUILD_TYPE:' "$HOME/llama.cpp/build/CMakeCache.txt" 2>/dev/null | tr '\n' ' ')"
-  echo "  절차    runtime/llm-runtime.md · bench/build-llamacpp.sh"
+  echo "  절차    operate/notes/llm-runtime.md · measure/tools/build-llamacpp.sh"
   echo
   echo "## 런타임 버전"
   echo "  node(system)  $(/usr/local/bin/node --version 2>/dev/null)"

@@ -2,7 +2,7 @@
 # OpenClaw 를 **시스템 Node** 아래로 옮긴다.
 #
 # ★ 이 스크립트는 **일반 사용자로** 실행한다. sudo 로 감싸면 안 된다.
-#      bash Life_Trainer/deploy/install-openclaw-system.sh      ← 이렇게
+#      bash life-trainer/deploy/install-openclaw-system.sh      ← 이렇게
 #      sudo bash ...                                            ← 이러면 실패한다
 #   npm 설치만 내부에서 sudo 를 쓴다.
 #
@@ -14,7 +14,7 @@
 # ★ 왜 옮기나
 #   게이트웨이는 시스템 Node 로 **실행**되는데 실행하는 **스크립트**는 nvm 안이다.
 #   `openclaw` CLI 도 같다. nvm 을 갈아엎으면 둘 다 죽고, 증상은 "에이전트가 툴을
-#   안 부른다" 하나뿐이다 (`runtime/agent-gateway.md §10-B`).
+#   안 부른다" 하나뿐이다 (`operate/notes/agent-gateway.md §10-B`).
 set -euo pipefail
 
 [ "$(id -u)" -ne 0 ] || {
@@ -22,7 +22,7 @@ set -euo pipefail
   echo "   그냥: bash $0" >&2; exit 1; }
 
 NODE=/usr/local/bin/node
-[ -x "$NODE" ] || { echo "❌ $NODE 없음. 먼저: sudo bash Life_Trainer/deploy/install-system-node.sh" >&2; exit 1; }
+[ -x "$NODE" ] || { echo "❌ $NODE 없음. 먼저: sudo bash life-trainer/deploy/install-system-node.sh" >&2; exit 1; }
 
 cur_bin=$(command -v openclaw || true)
 cur_ver=$(openclaw --version 2>/dev/null | head -1 || true)
@@ -70,12 +70,12 @@ cat <<'NEXT'
 
   1. 게이트웨이 유닛을 다시 만든다 (이제 시스템 경로를 잡는다):
        openclaw gateway install --force
-       bash Life_Trainer/deploy/use-system-node.sh
+       bash life-trainer/deploy/use-system-node.sh
        systemctl --user restart openclaw-gateway
 
   2. smoke test — 셋 다 돼야 옮긴 것이다:
        systemctl --user show openclaw-gateway -p ExecStart --value | grep -c '/.nvm/'   # 0 이어야 한다
-       Life_Trainer/.venv/bin/lt doctor | grep 에이전트                                  # WARN 없어야 한다
+       life-trainer/.venv/bin/lt doctor | grep 에이전트                                  # WARN 없어야 한다
        openclaw agent --agent lifetrainer --message "오늘 계획이 뭐야?"                   # ★ CLI 경로 (새 Node)
 
   3. Slack DM 으로 자연어 한 번 — 위임이 실제로 도는지

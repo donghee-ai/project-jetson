@@ -9,7 +9,7 @@
 어떻게 돼 있어?" 에 답하려면 `config/rules.yaml` 을 봐야 한다. 쓰기를 한 곳으로
 좁힌 것은 반대 이유다: 규칙 파일이 조용히 바뀌면 **롤업 결과 전체가 바뀌는데
 아무도 모른다.** 소스 코드(`lifetrainer/`)와 테스트는 어느 쪽에도 없다 —
-`runtime/agent-gateway.md §B` 의 결론(코딩은 이 모델에게 맡기지 않는다)이
+`operate/notes/agent-gateway.md §B` 의 결론(코딩은 이 모델에게 맡기지 않는다)이
 그대로 경계가 된다.
 
 ★ `config/` 는 읽기에 있지만 `config/lifetrainer.toml` 은 못 읽는다.

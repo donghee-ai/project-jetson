@@ -3,9 +3,9 @@
 # ══════════════════════════════════════════════════════════════
 # 디렉토리 전체를 막고 문서만 예외 처리.
 # ("models/*.gguf" 식은 하위 디렉토리를 못 막는다 — 실측 확인됨)
-models/*
-!models/README.md
-!models/.gitkeep
+refs/models/*
+!refs/models/README.md
+!refs/models/.gitkeep
 
 # 어디에 있든 모델 파일은 차단 (안전망)
 *.gguf
@@ -20,17 +20,17 @@ models/*
 # ══════════════════════════════════════════════════════════════
 #  레퍼런스 — 남의 저장소 클론 (각자 별도 git)
 # ══════════════════════════════════════════════════════════════
-reference/*
-!reference/README.md
-!reference/.gitkeep
+refs/reference/*
+!refs/reference/README.md
+!refs/reference/.gitkeep
 
 # ══════════════════════════════════════════════════════════════
 #  측정 결과 — 요약(.txt/.json)은 커밋, 원본은 제외
 # ══════════════════════════════════════════════════════════════
-results/*.log
-results/server-*
+measure/results/*.log
+measure/results/server-*
 
-# Nsight 원본 — 바이너리이고 `bench/profile-decode.sh` 로 재생성된다.
+# Nsight 원본 — 바이너리이고 `measure/tools/profile-decode.sh` 로 재생성된다.
 # 읽을 수 있는 요약(*.kernels.csv)만 커밋한다.
 *.nsys-rep
 *.qdstrm
@@ -38,7 +38,7 @@ results/server-*
 
 # 음성 원본. 전부 스크립트로 재생성된다
 # (speech-bench.py / asr-source-test.py 는 TTS 합성, mic-live-bench.py 는 마이크 녹음).
-# ★ results/speech/live/ 는 **사람 목소리 실제 녹음**이다 — 개인 데이터라 절대 커밋 금지.
+# ★ measure/results/speech/live/ 는 **사람 목소리 실제 녹음**이다 — 개인 데이터라 절대 커밋 금지.
 *.wav
 *.flac
 *.mp3
@@ -72,7 +72,7 @@ dist/
 # ══════════════════════════════════════════════════════════════
 #  개인 데이터 · 비밀 — 어디에 있든 차단 (안전망)
 # ══════════════════════════════════════════════════════════════
-# Life_Trainer/.gitignore 가 data/ 와 config/lifetrainer.toml 을 이미 막지만,
+# life-trainer/.gitignore 가 data/ 와 config/lifetrainer.toml 을 이미 막지만,
 # 새 하위 프로젝트가 생겼을 때 여기서 한 번 더 걸리게 둔다.
 # 활동 기록 DB 에는 창 제목이 그대로 들어 있다 (개인 기록).
 *.db

@@ -138,15 +138,15 @@ sudo reboot
 ### 검증 명령
 
 ```bash
-bash bench/verify-jetpack.sh    # 패키지·CUDA·DLA·전력모드 일괄 확인
-bash bench/thermal-test.sh 120  # CPU+GPU 동시 부하 발열 측정
+bash measure/tools/verify-jetpack.sh    # 패키지·CUDA·DLA·전력모드 일괄 확인
+bash measure/tools/thermal-test.sh 120  # CPU+GPU 동시 부하 발열 측정
 nvpmodel -q          # MAXN 확인
 lscpu | grep -i off  # 8코어 전부 온라인인지 확인
 tegrastats           # 부하 시 tj 온도 모니터링
 ```
 
 > ⚠️ MAXN은 하드웨어 전류 보호(25W/30W)와 열 트립(70/99/104°C)으로 제한된다.
-> 부하 테스트로 온도 확인 권장: `bash bench/thermal-test.sh 120`
+> 부하 테스트로 온도 확인 권장: `bash measure/tools/thermal-test.sh 120`
 
 ---
 
@@ -202,9 +202,9 @@ D2D 복사 (읽기+쓰기)         69.5 GB/s
 부하 중 GPU 918 MHz 도달 확인, VDD_IN 11~13W, tj 61°C — **전력·발열 제한 아님.**
 단일 커널로 메모리 컨트롤러를 포화시키지 못하는 것이지, 보드가 60 에서 막히는 게 아니다.
 
-측정 도구: `bench/membw.cu`
+측정 도구: `measure/tools/membw.cu`
 ```bash
-/usr/local/cuda/bin/nvcc -O3 -o /tmp/membw bench/membw.cu && /tmp/membw
+/usr/local/cuda/bin/nvcc -O3 -o /tmp/membw measure/tools/membw.cu && /tmp/membw
 ```
 
 ### 속도 상한 계산
@@ -263,7 +263,7 @@ llama.cpp b1-a94d563 / CUDA / ngl=99 / flash-attn=1 / MAXN
 #### 재현 방법
 
 ```bash
-~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/models/Qwen3-8B-Q4_K_M.gguf \
+~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/refs/models/Qwen3-8B-Q4_K_M.gguf \
   -ngl 99 -p 512 -n 128 -fa 1 -r 2
 ```
 
@@ -366,7 +366,7 @@ MoE는 저비트 양자화에 **상대적으로 취약하다.** 토큰당 활성
 
 1. `sudo apt install nvidia-jetpack` — CUDA 스택 설치
 2. Super Mode 프로파일 활성화 + `nvpmodel -m 0` + 재부팅
-3. `bash bench/thermal-test.sh 120` 으로 MAXN 부하 시 온도/스로틀링 확인
+3. `bash measure/tools/thermal-test.sh 120` 으로 MAXN 부하 시 온도/스로틀링 확인
 4. jetson-containers로 llama.cpp CUDA 컨테이너 구동
 5. **Qwen3-8B Q4_K_M(5GB)으로 기준선 확보** — GUI 켠 채 가능, 즉시 테스트
 6. 헤드리스 전환 (`multi-user.target`)

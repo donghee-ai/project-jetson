@@ -14,8 +14,8 @@ data/
 
 # 레퍼런스 — 남의 저장소 코드와 압축본. 설명 파일만 추적한다.
 # (저장소 루트가 reference/ 를 제외하는 것과 같은 이유)
-REFERENCE/*
-!REFERENCE/README.md
+reference/*
+!reference/README.md
 
 # 파이썬
 __pycache__/

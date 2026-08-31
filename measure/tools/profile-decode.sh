@@ -18,14 +18,14 @@
 # ## 중간에 죽어도 원래대로 돌아온다 (trap)
 
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 ROOT=$(pwd)
 
 # ★ 세션 이름은 매번 다르게. 같은 이름이 살아 있으면
 #   `Process launch is not allowed in this state.` 로 조용히 실패한다 (실측).
 SESSION="llama-profile-$$"
 DROPIN="$HOME/.config/systemd/user/llama-server.service.d/99-nsys.conf"
-OUT="${1:-$ROOT/results/decode-8b}"
+OUT="${1:-$ROOT/measure/results/decode-8b}"
 SECONDS_TO_COLLECT="${2:-90}"
 # ★ 기본을 node 로 둔다.
 #   llama.cpp 는 CUDA Graphs 를 쓴다 — 디코드 한 스텝을 그래프로 묶어 재생한다.
@@ -52,7 +52,7 @@ restore() {
   for _ in $(seq 1 60); do
     curl -sf --max-time 3 127.0.0.1:8080/health >/dev/null 2>&1 && break; sleep 2
   done
-  curl -sf --max-time 5 127.0.0.1:8080/health >/dev/null && ok "llama-server 복구" || bad "llama-server 가 안 돌아왔다 — runtime/install.sh 확인"
+  curl -sf --max-time 5 127.0.0.1:8080/health >/dev/null && ok "llama-server 복구" || bad "llama-server 가 안 돌아왔다 — operate/tools/install.sh 확인"
 }
 trap restore EXIT INT TERM
 
@@ -70,11 +70,11 @@ ok "nsys $(nsys --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
 log "nsys 세션 드롭인 설치"
 mkdir -p "$(dirname "$DROPIN")"
 cat > "$DROPIN" <<CONF
-# 임시 — bench/profile-decode.sh 가 넣고 뺀다. 남아 있으면 지울 것.
+# 임시 — measure/tools/profile-decode.sh 가 넣고 뺀다. 남아 있으면 지울 것.
 [Service]
 ExecStart=
 ExecStart=/usr/local/bin/nsys launch --session-new=$SESSION --trace=cuda,osrt,nvtx \\
-          --cuda-graph-trace=$GRAPH_TRACE --cuda-memory-usage=true $ROOT/runtime/llama-server-qwen3.sh
+          --cuda-graph-trace=$GRAPH_TRACE --cuda-memory-usage=true $ROOT/operate/tools/llama-server-qwen3.sh
 CONF
 systemctl --user daemon-reload
 # ★ --no-block: ExecStartPost 가 :8080 을 무한 폴링하므로 restart 가

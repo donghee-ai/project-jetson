@@ -11,7 +11,7 @@
 #     always        항상 켠다
 #     slack=bolt    config/lifetrainer.toml 의 [slack].mode 가 bolt 일 때만
 #
-#   install-units.sh · uninstall-units.sh · ../bench/verify-boot.sh 가 전부 이 파일을 읽는다.
+#   install-units.sh · uninstall-units.sh · ../operate/tools/verify-boot.sh 가 전부 이 파일을 읽는다.
 
 lifetrainer-sync.timer           always
 lifetrainer-daily.timer          always

@@ -18,15 +18,15 @@
 #     WARN 유지 → **안 알린다** (이미 아는 것. 알려진 WARN 은 issues/ 에 있다)
 #     전부 OK   → 안 알린다
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/project-jetson"
 mkdir -p "$STATE_DIR"
 PREV="$STATE_DIR/daily-check.prev"
-LT=Life_Trainer
+LT=life-trainer
 
 app=$("$LT/.venv/bin/lt" doctor 2>&1 || true)
-host=$(bash bench/host-status.sh 2>&1 || true)
+host=$(bash operate/tools/host-status.sh 2>&1 || true)
 
 # 항목 이름만 뽑는다 — 뒤의 숫자는 매일 바뀌므로 그걸로 비교하면 매일 "변화" 가 된다.
 now_state=$(printf '%s\n%s\n' "$app" "$host" \

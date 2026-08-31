@@ -26,12 +26,12 @@
 
 ```
 설치   sherpa-onnx 1.13.5 (pip, CPU) — ASR·TTS·VAD·KWS 통합
-모델   models/speech/
+모델   refs/models/speech/
        ├─ SenseVoice-Small (zh/en/ja/ko/yue)            1.0 GB   한국어 ASR
        ├─ Supertonic-3 int8 (31개 언어)                  123 MB   한국어 TTS (상용급)
        ├─ vits-mimic3 ko_KO-kss_low                       64 MB   한국어 TTS (경량)
        └─ silero_vad.onnx                                632 KB   발화 구간 검출
-       models/Qwen3-4B-Q4_K_M.gguf                       2.5 GB   ★ 음성용 LLM 후보
+       refs/models/Qwen3-4B-Q4_K_M.gguf                       2.5 GB   ★ 음성용 LLM 후보
 스크립트 scripts/ha-tool-bench.py      한국어 스마트홈 툴콜 정확도
         scripts/speech-bench.py       TTS·ASR RTF + E2E
         scripts/asr-source-test.py    ASR 실패 원인 분리 (TTS 교체 대조)
@@ -71,7 +71,7 @@
 
 **둘 다 정답이다.** ASR의 숫자 정규화(ITN) 결과이며 의미는 정확하다.
 실제 시스템에서 중요한 것은 받아쓴 글자가 아니라 **최종적으로 기기가 어떻게 동작했는가**다.
-그래서 채점 단위를 **툴 호출의 슬롯**으로 바꿨다. — 이 저장소의 [기존 교훈](../../../research/performance.md)과 같다: *측정 기준이 틀리면 결론도 틀린다.*
+그래서 채점 단위를 **툴 호출의 슬롯**으로 바꿨다. — 이 저장소의 [기존 교훈](../../../measure/findings/performance.md)과 같다: *측정 기준이 틀리면 결론도 틀린다.*
 
 ### 2-3. 음성 경로 E2E — 슬롯 정확도
 
@@ -246,15 +246,15 @@ LLM이 처리한 발화 + 슬롯  →  로그  →  반복되는 표현을 규�
 ```bash
 pip3 install --user sherpa-onnx
 
-# 모델 (models/speech/)
+# 모델 (refs/models/speech/)
 B=https://github.com/k2-fsa/sherpa-onnx/releases/download
-curl -L $B/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2 | tar xj
-curl -L $B/tts-models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2 | tar xj
-curl -L $B/tts-models/vits-mimic3-ko_KO-kss_low.tar.bz2 | tar xj
-curl -LO $B/asr-models/silero_vad.onnx
+curl -L $B/asr-refs/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2 | tar xj
+curl -L $B/tts-refs/models/sherpa-onnx-supertonic-3-tts-int8-2026-05-11.tar.bz2 | tar xj
+curl -L $B/tts-refs/models/vits-mimic3-ko_KO-kss_low.tar.bz2 | tar xj
+curl -LO $B/asr-refs/models/silero_vad.onnx
 
 # LLM 서버 (음성용 — 컨텍스트를 작게)
-~/llama.cpp/build/bin/llama-server -m models/Qwen3-4B-Q4_K_M.gguf \
+~/llama.cpp/build/bin/llama-server -m refs/models/Qwen3-4B-Q4_K_M.gguf \
   -ngl 99 -c 8192 --parallel 1 -fa on -ctk q8_0 -ctv q8_0 --jinja \
   --chat-template-kwargs '{"enable_thinking":false}' --host 127.0.0.1 --port 8080
 

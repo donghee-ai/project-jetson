@@ -30,4 +30,4 @@ journalctl --disk-usage
 echo
 echo "★ 재부팅 뒤에 아래가 이전 부팅을 보여주면 끝난 것이다:"
 echo "    journalctl --user -u llama-server -b -1 -n 20"
-echo "    bash bench/verify-boot.sh        # §6 항목이 초록불이 된다"
+echo "    bash operate/tools/verify-boot.sh        # §6 항목이 초록불이 된다"

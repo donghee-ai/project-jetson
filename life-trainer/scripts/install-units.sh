@@ -2,7 +2,7 @@
 # Life Trainer systemd 사용자 유닛을 등록·기동한다. (일반 사용자 권한, sudo 불필요)
 #
 # 무엇을 켜는지는 **여기 안 적는다** — systemd/desired-state.txt 하나가 정본이고
-# uninstall-units.sh · ../bench/verify-boot.sh 도 같은 파일을 읽는다.
+# uninstall-units.sh · ../operate/tools/verify-boot.sh 도 같은 파일을 읽는다.
 # 전에는 세 곳이 각자 목록을 들고 있어 서로 달랐다 (2026-08-28).
 set -euo pipefail
 
@@ -49,5 +49,5 @@ fi
 
 echo
 echo "-- 대조 --"
-bash "$REPO_DIR/../bench/verify-boot.sh" 2>/dev/null | tail -5 || \
+bash "$REPO_DIR/../operate/tools/verify-boot.sh" 2>/dev/null | tail -5 || \
   echo "  (verify-boot.sh 로 desired-state 와 실제를 대조할 것)"

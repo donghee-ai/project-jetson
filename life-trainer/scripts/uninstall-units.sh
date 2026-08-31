@@ -27,4 +27,4 @@ systemctl --user daemon-reload
 echo
 left=$(systemctl --user list-units --all --no-legend 'lifetrainer-*' 'llama-embed*' 2>/dev/null | wc -l)
 echo "  남은 유닛: ${left}개 (0 이어야 한다)"
-echo "  ※ llama-server 는 Life Trainer 소유가 아니다 — runtime/ 에서 따로 관리한다"
+echo "  ※ llama-server 는 Life Trainer 소유가 아니다 — operate/ 에서 따로 관리한다"

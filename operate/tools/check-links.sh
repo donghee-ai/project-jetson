@@ -19,29 +19,29 @@
 # ── 무엇을 "이 저장소의 문서" 로 보나 ───────────────────────────────
 #   헐거우면 못 잡고, 빡빡하면 사람이 꺼 버린다. 경계를 이렇게 그었다.
 #
-#   본다    · 폴더가 붙은 것 — 첫 칸이 이 저장소의 폴더 이름 (`runtime/…` `docs/…`)
-#           · `§` 절 번호가 붙은 것         (`runtime/agent-gateway.md §4-5`)
+#   본다    · 폴더가 붙은 것 — 첫 칸이 이 저장소의 폴더 이름 (`operate/…` `docs/…`)
+#           · `§` 절 번호가 붙은 것         (`operate/notes/agent-gateway.md §4-5`)
 #           · 맨 이름이지만 같은 이름이 이 저장소에 있는 것 (`environment.md`)
 #   안 본다 · 남의 트리의 파일 — OpenClaw 워크스페이스가 갖는 `AGENTS.md`·`SOUL.md`,
 #             복구 묶음 안의 RESTORE 안내문. 이 저장소에 없는 게 정상이다
 #           · 코드 안의 문자열 리터럴 — 테스트가 만드는 `tmp_path/"x.md"`
-#           · 저장소 폴더 이름이 아닌 예시 경로 (`notes/x.md`)
+#           · 저장소 폴더 이름이 아닌 예시 경로 (`memo/x.md`)
 #
 #   ★ 확실히 검사받게 하려면 **폴더를 붙이거나 `§` 를 붙인다.**
 #     맨 이름은 남의 트리와 구분할 수 없어서 있을 때만 확인한다 — 이건 한계이고
 #     제외 목록이 아니다. 제외 목록은 두지 않는다 (CLAUDE.md §1).
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 # ★ 파일시스템이 아니라 **git 기준**으로 본다.
-#   워킹트리에만 있는 것(git mv 뒤 남은 빈 디렉토리 · gitignore 된 results/speech/)을
+#   워킹트리에만 있는 것(git mv 뒤 남은 빈 디렉토리 · gitignore 된 measure/results/speech/)을
 #   실재로 세면 로컬은 통과하고 CI 는 깨진다. 실제로 그렇게 두 번 놓쳤다.
 TRACKED=$(mktemp); git ls-files > "$TRACKED"
 DIRNAMES=$(mktemp); awk -F/ '{for(i=1;i<NF;i++) print $i}' "$TRACKED" | sort -u > "$DIRNAMES"
 trap 'rm -f "$TRACKED" "$DIRNAMES"' EXIT
 
-# bench/fixtures/ 는 검사기의 시험지다. 여기를 본 검사로 세면 자기 시험지에 걸려 넘어진다.
-FIXTURES='bench/fixtures/check-links'
+# operate/tools/fixtures/ 는 검사기의 시험지다. 여기를 본 검사로 세면 자기 시험지에 걸려 넘어진다.
+FIXTURES='operate/tools/fixtures/check-links'
 
 exists() {  # $1 = 저장소 루트 기준 경로
   local t="${1%/}"
@@ -98,8 +98,8 @@ md_links() {
     #   `s/#.*$//` 가 한글 앵커에 조용히 실패한다 (LC_ALL=C 로도 되지만 cut 이 분명하다).
     done < <(grep -oE '\]\([^)]+\)' "$f" | sed -E 's/^\]\(//; s/\)$//' | cut -d'#' -f1)
   done < <(git ls-files '*.md' \
-           | grep -v '^Life_Trainer/docs/progress/' \
-           | grep -v '^Life_Trainer/HISTORY/')
+           | grep -v '^life-trainer/docs/progress/' \
+           | grep -v '^life-trainer/HISTORY/')
   echo "  링크 $checked 개 검사 · 깨진 것 $broken 개"
   return $(( broken > 0 ))
 }
@@ -111,7 +111,7 @@ esc() { LC_ALL=C sed 's/[].[^$*+?(){}|\\]/\\&/g' <<<"$1"; }
 
 # 참조를 실제 파일로 푼다. 성공하면 추적 경로를 찍는다.
 #   ① 참조한 파일 기준 상대  ② 저장소 루트 기준  ③ 경로 접미사 일치
-#   ③이 있어야 `docs/rag-plan.md` 가 `Life_Trainer/docs/rag-plan.md` 로 풀린다 —
+#   ③이 있어야 `docs/rag-plan.md` 가 `life-trainer/docs/rag-plan.md` 로 풀린다 —
 #   코드는 자기 프로젝트 기준으로 짧게 쓴다.
 resolve_doc() {
   local p="$1" d="$2" cand
@@ -131,7 +131,7 @@ is_repo_doc() {
     ../*|./*) return 0;;                         # 상대 경로 — 위치를 명시했다
     */*) first=${p%%/*}
          grep -qxF "$first" "$DIRNAMES" && return 0
-         return 1;;                              # 저장소 폴더 이름이 아니다 (예: `notes/x.md`)
+         return 1;;                              # 저장소 폴더 이름이 아니다 (예: `memo/x.md`)
     *)   grep -qE "(^|/)$(esc "$p")\$" "$TRACKED" && return 0
          return 1;;                              # 맨 이름이고 이 저장소에 없다 (예: `AGENTS.md`)
   esac

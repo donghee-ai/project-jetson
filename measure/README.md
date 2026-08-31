@@ -1,4 +1,4 @@
-# benchmarks/ — 모델 13종 실측 (2026-08-18)
+# measure/ — 모델 13종 실측 (2026-08-18)
 
 **루트 README 의 ①②③ 중 ②(어떤 모델이 적합한가)와, 대역폭 해석 정정의 근거가 여기 있다.**
 
@@ -14,22 +14,22 @@
 | **소형 모델(<3 GiB)** | 대역폭 지배 영역 **밖**. 추정식이 +34~42% 과대예측 |
 | **MoE 읽기비율 0.213** | dense 대조군으로 직접 측정 (가정 0.108 의 2.0배) |
 
-두 번째 줄이 [`../research/performance.md §2`](../research/performance.md) 의
+두 번째 줄이 [`../measure/findings/performance.md §2`](findings/performance.md) 의
 *"60 GB/s = 사양의 58%"* 서술을 무효로 만들었다. 자세한 것은
-[benchmark-results.md §5-2](benchmark-results.md).
+[benchmark-results.md §5-2](findings/model-suite.md).
 
 ## 구성
 
 ```
-benchmark-results.md      전체 분석. §3 대역폭 검증 · §5 달성 대역폭
-bench/
+findings/model-suite.md   전체 분석. §3 대역폭 검증 · §5 달성 대역폭
+tools/
   run-bench.sh              llama-bench 실행 + tegrastats 동시 수집
   telemetry.py              tegrastats 에서 VDD_IN·tj·RAM 요약
   analyze.py                whichllm 의 estimate_tok_per_sec() 를 **직접 호출**해 대조
   moe-control.py            MoE 읽기비율을 dense 대조군으로 역산
   collect-env.sh            측정 환경 스냅숏
   fetch-models*.sh          가중치 내려받기 (모델은 이 저장소에 없다)
-results/
+measure/results/
   raw/run-20260818T*/       모델별 llama-bench 출력 + *.tegrastats.txt (VDD_IN 1Hz)
   raw/sweep*.txt            후보 대역폭 적합 스윕 로그
   processed/analysis.json   집계 결과 — 그림이 이걸 읽는다
@@ -38,10 +38,10 @@ results/
 ## 다시 돌리려면
 
 ```bash
-bash bench/fetch-models.sh            # 가중치를 ~/models/ 로
-bash bench/run-bench.sh               # llama-bench × 모델 + tegrastats
-python3 bench/analyze.py <run_dir>    # → results/processed/analysis.json
-python3 bench/telemetry.py <run_dir>  # 전력·온도 요약
+bash measure/tools/fetch-models.sh            # 가중치를 ~/models/ 로
+bash measure/tools/run-bench.sh       # llama-bench × 모델 + tegrastats
+python3 measure/tools/analyze.py <run_dir>   # → measure/results/processed/analysis.json
+python3 measure/tools/telemetry.py <run_dir> # 전력·온도 요약
 ```
 
 ## 한계 — 그대로 적어 둔다
@@ -49,7 +49,7 @@ python3 bench/telemetry.py <run_dir>  # 전력·온도 요약
 - **측정 1회다.** 반복 측정으로 분산을 잡지 않았다
 - **전력 모드는 MAXN(`pmode:0000`) 하나뿐이다.** 15W·25W 에서는 재지 않았다 —
   그래서 와트당 성능을 전력 모드별로 비교하는 그림은 아직 못 그린다
-- `bench/analyze.py` 는 업스트림 `whichllm` 패키지를 import 한다.
+- `measure/tools/analyze.py` 는 업스트림 `whichllm` 패키지를 import 한다.
   그 저장소가 없으면 안 돈다 (작업 사본은 `~/project/opensource/upstream-whichllm/`)
 
 > whichllm 기여 트랙(패치·PR 본문·이슈 초안)은 **이 저장소에 없다.**

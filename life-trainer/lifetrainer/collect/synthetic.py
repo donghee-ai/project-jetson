@@ -171,7 +171,7 @@ def _pick_window(rng: random.Random, effective_type: str) -> tuple[str, str, str
         if r < 0.55:
             return "Slack.exe", rng.choice(_SLACK_TITLES), None
         return "Zoom.exe", rng.choice(_ZOOM_TITLES), None
-    if effective_type == "reading_research":  # -> research/paper
+    if effective_type == "reading_research":  # -> measure/findings/paper
         title, url = _pick_site(rng, _PAPER_SITES)
         return "chrome.exe", title, url
     if effective_type == "reading_notes":  # -> writing/pdf, writing/notes
@@ -237,7 +237,7 @@ def _segment_piece_count(rng: random.Random, seg_type: str, total: float) -> int
         "reading": (1, 2),
         "leisure": (1, 2),
     }
-    base_type = seg_type.split("_", 1)[0]  # reading_research/reading_notes -> reading
+    base_type = seg_type.split("_", 1)[0]  # reading_measure/findings/reading_notes -> reading
     lo, hi = ranges.get(base_type, (1, 1))
     k = rng.randint(lo, hi)
     # 앱 전환 하나가 최소 3분은 되게 — 너무 잘게 쪼개면 다시 "스트로브"가 된다.

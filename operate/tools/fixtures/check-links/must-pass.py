@@ -4,7 +4,7 @@
 사람이 검사기를 꺼 버린다 — 둘 다 검사가 없는 것과 같다 (CLAUDE.md §1).
 
 살아 있는 참조 세 꼴:
-  · 폴더가 붙은 것          `runtime/agent-gateway.md §4-5`
+  · 폴더가 붙은 것          `operate/notes/agent-gateway.md §4-5`
   · 맨 이름인데 저장소에 있는 것   `environment.md`
   · 닫는 백틱과 절 번호 사이가 벌어진 것  (`docs/contracts.md` §0)
 """
@@ -19,8 +19,8 @@ WORKSPACE_FILE = "AGENTS.md"
 STUBS = ("SOUL.md", "IDENTITY.md", "USER.md", "TOOLS.md", "HEARTBEAT.md")
 
 # ② 저장소 폴더 이름이 아닌 예시 경로 — 모델이 넘기는 값이지 이 저장소의 문서가 아니다.
-#    `notes/x.md` 처럼 쓰면 문서 참조로 읽히지 않는다.
-EXAMPLE_RELATIVE = "notes/x.md"
+#    `memo/x.md` 처럼 쓰면 문서 참조로 읽히지 않는다.
+EXAMPLE_RELATIVE = "memo/x.md"
 
 
 def _test_fixture_paths(tmp_path: Path) -> list[Path]:

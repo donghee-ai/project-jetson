@@ -8,6 +8,6 @@
 [bench] ok
 [bench] Qwen3-4B-Q8_0 (3.98 GiB)
 [bench] ok
-[env] sweep complete -> /home/user/project/opensource/results/raw/run-20260818T072731Z
+[env] sweep complete -> /home/user/project/opensource/measure/results/raw/run-20260818T072731Z
 [env] restarting llama-server.service
 [env] restarting openclaw-gateway.service

@@ -1,6 +1,6 @@
 """로컬 llama-server(OpenAI 호환) 클라이언트.
 
-이 프로젝트가 실제로 밟은 지뢰 세 개를 여기서 막는다(`runtime/agent-gateway.md §4`,
+이 프로젝트가 실제로 밟은 지뢰 세 개를 여기서 막는다(`operate/notes/agent-gateway.md §4`,
 `docs/contracts.md §0/§8`):
 
 1. **JSON 스키마에 `pattern` 이 있으면 요청 전체가 400.** llama.cpp 의 GBNF 변환기가
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # 한글(완성형 + 자모) 문자 판정용. 한국어는 문자당 약 0.6 토큰, 그 외(주로 영문)는
-# 약 0.15 토큰으로 넉넉하게 잡는다 (research/performance.md §6 실측: 한국어 0.600, 영어 0.145).
+# 약 0.15 토큰으로 넉넉하게 잡는다 (measure/findings/performance.md §6 실측: 한국어 0.600, 영어 0.145).
 _HANGUL_RE = re.compile(r"[가-힣ᄀ-ᇿ㄰-㆏]")
 
 _THINK_BLOCK_RE = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -282,7 +282,7 @@ def _check_no_pattern(node: Any, *, _path: str = "$") -> None:
 
     llama.cpp 는 `--jinja` 로 구조화 출력을 만들 때 스키마를 GBNF 문법으로
     변환하는데, 정규식을 다루지 못해 앵커 유무와 무관하게 요청 전체를 400 으로
-    거부한다 (실측: `runtime/agent-gateway.md §4-5`). `properties`/`$defs`/`items`/
+    거부한다 (실측: `operate/notes/agent-gateway.md §4-5`). `properties`/`$defs`/`items`/
     `anyOf` 등 어디에 숨어 있어도 잡아낸다.
     """
     if isinstance(node, dict):
@@ -395,7 +395,7 @@ class LLMClient:
         """`/v1/models` 가 보고하는 실제 모델 id.
 
         포트가 같아도 다른 모델이 떠 있을 수 있다(실제 사고 —
-        `runtime/agent-gateway.md §4-8`). 호출부는 헬스체크 통과만 믿지 말고
+        `operate/notes/agent-gateway.md §4-8`). 호출부는 헬스체크 통과만 믿지 말고
         이 값을 `cfg.llm.model` 과 비교하는 것이 안전하다. 조회 실패 시 None.
         """
         try:

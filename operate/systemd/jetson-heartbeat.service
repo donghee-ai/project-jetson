@@ -1,6 +1,6 @@
 [Unit]
 Description=외부 dead-man heartbeat — 침묵이 곧 경보다
-Documentation=file://%h/project/project-jetson/runtime/README.md
+Documentation=file://%h/project/project-jetson/operate/README.md
 
 [Service]
 Type=oneshot
@@ -12,6 +12,6 @@ WorkingDirectory=%h/project/project-jetson
 #     ~/.config/jetson/heartbeat.env 에  JETSON_HEARTBEAT_URL=https://hc-ping.com/<uuid>
 #   나가는 것은 "이 기기가 방금 정상이었다" 는 사실 하나뿐이다.
 EnvironmentFile=-%h/.config/jetson/heartbeat.env
-ExecStart=%h/project/project-jetson/bench/heartbeat.sh
+ExecStart=%h/project/project-jetson/operate/tools/heartbeat.sh
 # 미설정(78)은 실패로 세지 않는다
 SuccessExitStatus=78

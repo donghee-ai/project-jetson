@@ -13,14 +13,14 @@
 #   측정값은 잰 시점이 있는 사실이라 문서에 적는 게 맞다. 여기서 막는 것은
 #   `make status` 가 뽑아 주는, **오늘과 내일이 다른** 값이다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 TARGET_LIST=${1:-}   # 비우면 git 추적 md 전체. 테스트는 파일 하나를 넘긴다
 
 # ── 자기 검사 ───────────────────────────────────────────────
 #   ★ 검사기를 믿지 말고 재 본다. 규칙만 있고 검사가 없어서 네 번 실패한 저장소다.
 if [ "$TARGET_LIST" = "--self-test" ]; then
-  fx=bench/fixtures/check-docs
+  fx=operate/tools/fixtures/check-docs
   fail=0
   if bash "$0" "$fx/must-fail.md" >/dev/null 2>&1; then
     echo "  ❌ 자기검사: must-fail.md 를 통과시켰다 — 검사기가 헐거워졌다"; fail=1
@@ -36,10 +36,10 @@ fi
 
 # ── 예외 ────────────────────────────────────────────────────
 #   기록 문서는 **그날의 사실**이라 고치면 안 된다. check-links.sh 와 같은 목록이다.
-#   bench/fixtures/ 는 검사기의 시험지다 — 여기를 세면 자기 시험지에 걸려 넘어진다.
+#   operate/tools/fixtures/ 는 검사기의 시험지다 — 여기를 세면 자기 시험지에 걸려 넘어진다.
 #   ★ 2026-08-31: `maintenance-plan` 예외를 지웠다. 그 둘이 docs/archive/ 로 갔으므로
 #     앞의 archive 규칙이 이미 받아준다 — 남겨 두면 아무것도 안 가리키는 줄이 된다.
-EXCLUDE_RE='^(Life_Trainer/docs/progress/|Life_Trainer/HISTORY/|Life_Trainer/docs/issues/|Life_Trainer/docs/archive/|docs/archive/|bench/fixtures/)'
+EXCLUDE_RE='^(life-trainer/docs/progress/|life-trainer/HISTORY/|life-trainer/docs/issues/|life-trainer/docs/archive/|docs/archive/|operate/tools/fixtures/)'
 
 # ── 막는 것 ─────────────────────────────────────────────────
 #   패턴 | 사람이 읽을 이름 | 대신 쓸 명령
@@ -68,7 +68,7 @@ PATTERNS=(
   #   검사기가 전부 통과시키고 있었다. 셋은 서로 다른 값이었다
   #   (`lt doctor` 를 한 곳은 15항목, 네 곳은 17항목이라고 적고 있었다).
   #   원인은 앞의 것들과 같다 — **"무엇이 운영 지표인가" 를 좁게 잡았다.**
-  'HISTORY/[^\n]*[0-9]{2,}\s?(문서|건)|버그 \*{0,2}[0-9]{2,}\*{0,2}건::HISTORY 문서 수::ls Life_Trainer/HISTORY/*.md | wc -l'
+  'HISTORY/[^\n]*[0-9]{2,}\s?(문서|건)|버그 \*{0,2}[0-9]{2,}\*{0,2}건::HISTORY 문서 수::ls life-trainer/HISTORY/*.md | wc -l'
   'doctor[^\n]*[0-9]{1,2}\s?항목|[0-9]{1,2}\s?항목[^\n]*(점검|doctor)::lt doctor 항목 수::lt doctor'
 )
 

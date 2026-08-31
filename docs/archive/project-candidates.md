@@ -1,6 +1,6 @@
 # 프로젝트 후보 전체 비교 — CCTV 외 대안 포함
 
-> 작성일: 2026-08-15 / 근거: [gh-final.json](../../results/gh-final.json) 704개 재질의 + [research/](../../research/) 실측치
+> 작성일: 2026-08-15 / 근거: [gh-final.json](../../measure/results/gh-final.json) 704개 재질의 + [measure/findings/](../../measure/findings/) 실측치
 > 관련: [project-proposal.md](project-proposal.md) (후보 A 상세)
 
 ---

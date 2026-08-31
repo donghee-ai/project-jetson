@@ -1,12 +1,12 @@
 // GitHub 저장소 조사 v2 — 레이트 리밋 대응 + 검색어 대폭 확장
-// 실행: node bench/gh-research2.mjs <출력.json>
+// 실행: node measure/tools/gh-research2.mjs <출력.json>
 //
 // v1에서 24개 중 12개가 레이트 리밋으로 실패 → 간격 8초, 실패 시 2회 재시도.
 
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const OUT = process.argv[2] || '/home/user/project/project-jetson/results/gh-research2.json';
+const OUT = process.argv[2] || '/home/user/project/project-jetson/measure/results/gh-research2.json';
 
 const QUERIES = [
   // ═══ 에이전트 프레임워크 (핵심 관심사)

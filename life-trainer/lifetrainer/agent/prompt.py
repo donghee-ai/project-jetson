@@ -14,7 +14,7 @@
 ## 왜 이렇게 짧은가
 
 OpenClaw 기본 워크스페이스는 `AGENTS.md` 7,196바이트를 포함해 11,649바이트고,
-그것만으로 시스템 프롬프트가 **7,199 토큰**이었다 (`runtime/agent-gateway.md §3`).
+그것만으로 시스템 프롬프트가 **7,199 토큰**이었다 (`operate/notes/agent-gateway.md §3`).
 프롬프트 처리 295 tok/s 이므로 그 파일 하나가 **첫 턴에 24초**다.
 
 기본 워크스페이스가 긴 이유는 범용 비서를 상정하기 때문이다 — 기억 파일 관리,
@@ -85,7 +85,7 @@ def _command_table() -> str:
 # 각 규칙의 출처:
 #
 # "슬래시를 먼저"       `HANDOFF.md §1` — 슬래시는 밀리초, 자연어는 2~9초.
-# "했다고 말하지 마라"   `runtime/agent-gateway.md §4-6` — 8B 가 툴을 안 부르고
+# "했다고 말하지 마라"   `operate/notes/agent-gateway.md §4-6` — 8B 가 툴을 안 부르고
 #                      "I'll create this as a text file" 로 끝냈다. **에러가 안 났다.**
 #                      확인을 요구하면 그 탈출구가 막힌다 (같은 절의 대조 실험).
 # "숫자를 만들지 마라"   `CLAUDE.md` — 8B 가 달성률을 지어냈다.

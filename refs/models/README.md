@@ -1,8 +1,8 @@
-# models/
+# refs/models/
 
 > ★ **2026-08-27: 가중치는 이 폴더에 없다. `~/models/` 로 옮겼다.**
 > 서비스도 그 경로를 본다 (`systemd/llama-embed.service` ·
-> `runtime/llama-server-qwen3.sh`). 이 폴더는 **무엇을 왜 골랐는지**를
+> `operate/tools/llama-server-qwen3.sh`). 이 폴더는 **무엇을 왜 골랐는지**를
 > 남기는 자리다 — 가중치는 git 에 못 올리므로 어차피 문서만 남는다.
 
 ## 지금 디스크에 있는 것 (`~/models/`, 2026-08-28 실측)
@@ -14,7 +14,7 @@
 
 ## 벤치마크에만 쓰고 지운 것
 
-아래 셋은 [llm-models.md](../research/llm-models.md) 의 비교를 위해 받았고
+아래 셋은 [llm-models.md](../../measure/findings/llm-models.md) 의 비교를 위해 받았고
 **지금은 디스크에 없다.** 결론이 나온 뒤로 쓸 일이 없어서다 — 필요하면 아래 명령으로
 다시 받는다.
 
@@ -26,7 +26,7 @@
 
 > **8B 스택과 4B 는 동시에 못 올린다.** 가용 13.4 GB 안에서 공존이 안 되고 포트도
 > 같다(8080). 둘 중 하나만 돌아간다 —
-> [agent-gateway.md §5](../runtime/agent-gateway.md) 참조.
+> [agent-gateway.md §5](../../operate/notes/agent-gateway.md) 참조.
 
 ### 재다운로드
 
@@ -45,7 +45,7 @@ curl -L -o Qwen3-4B-Q4_K_M.gguf \
 > 다운로드 후 `head -c4 <파일>` 이 `GGUF` 인지, 크기가 서버 `x-linked-size` 와
 > 일치하는지 확인할 것. 불완전 파일을 로드하면 원인 파악이 어렵다.
 
-성능 비교는 [llm-models.md](../research/llm-models.md) 참조.
+성능 비교는 [llm-models.md](../../measure/findings/llm-models.md) 참조.
 
 ---
 
@@ -61,21 +61,21 @@ curl -L -o Qwen3-4B-Q4_K_M.gguf \
 | `speech/vits-mimic3-ko_KO-kss_low/` | 79 MB | 한국어 TTS (VITS, 저품질·경량) | 합성음 ASR 대조 실험용 |
 | `speech/silero_vad.onnx` | 629 KB | 음성 구간 검출 (VAD) | 실마이크 측정에 사용 |
 
-측정 방법·결론은 [archive/speech/](../docs/archive/speech/) 로 옮겼다 (ASR 미사용 결정).
+측정 방법·결론은 [archive/speech/](../../docs/archive/speech/) 로 옮겼다 (ASR 미사용 결정).
 원본 wav 은
-`results/speech/` 에 있고 **git 에는 안 올라간다** — `live/` 는 사람 목소리 실녹음이다.
+`measure/results/speech/` 에 있고 **git 에는 안 올라간다** — `live/` 는 사람 목소리 실녹음이다.
 
 ### 재다운로드
 
 sherpa-onnx 계열은 릴리스 tarball 을 풀면 된다.
 
 ```bash
-cd models/speech
+cd refs/models/speech
 # ASR — SenseVoice (int8)
-curl -LO "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2"
+curl -LO "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-refs/models/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2"
 tar xf sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17.tar.bz2
 # 한국어 TTS — mimic3 kss
-curl -LO "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mimic3-ko_KO-kss_low.tar.bz2"
+curl -LO "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-refs/models/vits-mimic3-ko_KO-kss_low.tar.bz2"
 tar xf vits-mimic3-ko_KO-kss_low.tar.bz2
 # VAD
 curl -LO "https://github.com/snakers4/silero-vad/raw/master/src/silero_vad/data/silero_vad.onnx"

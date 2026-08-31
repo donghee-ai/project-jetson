@@ -137,7 +137,7 @@ make test      # 테스트 개수
 ### 5차 — 규칙을 검사로 바꿨다 (2026-08-28)
 
 **네 번째도 부족했다.** 명령으로 대체한 뒤에도 `handbook` · `architecture` ·
-`Life_Trainer/README` · 루트 `README` 네 곳이 여전히 지표를 옮겨 적고 있었다.
+`life-trainer/README` · 루트 `README` 네 곳이 여전히 지표를 옮겨 적고 있었다.
 **규칙은 지키는 사람이 기억해야 하고, 검사는 안 그렇다.**
 
 ```bash
@@ -150,7 +150,7 @@ make hooks         # pre-push 훅 설치 — 기기마다 한 번
 - 예외: `progress/` · `HISTORY/` · `issues/` 는 그날의 기록이라 건드리지 않는다.
   날짜 붙은 스냅숏 블록도 통과한다
 - 정당한 예외는 그 줄 위에 사유와 함께 `<!-- check-docs: ok — 이유 -->`
-- **검사기 자신도 fixture 로 검사한다** (`bench/fixtures/check-docs/`).
+- **검사기 자신도 fixture 로 검사한다** (`operate/tools/fixtures/check-docs/`).
   헐거워지면 못 잡고, 빡빡해지면 사람이 꺼 버린다
 
 다시 뽑는 명령은 [HANDOFF §10](HANDOFF.md#10-빠른-확인) 에 있다.
@@ -162,8 +162,8 @@ make hooks         # pre-push 훅 설치 — 기기마다 한 번
 | 이 프로젝트의 지금 상태 | [HANDOFF.md](HANDOFF.md) — **이어받는 사람이 여기부터 읽는다** |
 | 무엇이 있고 어떻게 흐르는가 | [docs/handbook.md](docs/handbook.md) |
 | **왜 이 모양인가** — ERD·워크플로우·판정 근거 | [docs/architecture.md](docs/architecture.md) |
-| 기기 실측치 (대역폭·속도·메모리) | [`research/`](../research/) — 색인 있음 |
-| 이 기기에서 돌고 있는 것의 구축 기록 | [`runtime/`](../runtime/) |
+| 기기 실측치 (대역폭·속도·메모리) | [`measure/findings/`](../measure/findings/) — 색인 있음 |
+| 이 기기에서 돌고 있는 것의 구축 기록 | [`operate/`](../operate/) |
 | 아직 안 고친 문제 | [docs/issues/](docs/issues/) — 한 건에 한 파일. 파일명 접두어가 등급이다 |
 
 **고칠 때까지 안 고친 것은 `docs/issues/` 에 한 건씩 남긴다.** "나중에 하자"를 문서 밖에

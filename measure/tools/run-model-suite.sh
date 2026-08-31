@@ -5,8 +5,8 @@
 # 여러 모델을 순차로 서버에 올려 동일 조건으로 측정하고 결과를 파일에 남긴다.
 # 사람도 에이전트도 없이 끝까지 돈다.
 #
-# 실행: setsid bash bench/run-model-suite.sh > /dev/null 2>&1 &
-# 결과: results/모델별 로그 + summary.md
+# 실행: setsid bash measure/tools/run-model-suite.sh > /dev/null 2>&1 &
+# 결과: measure/results/모델별 로그 + summary.md
 # ─────────────────────────────────────────────────────────────
 set -u
 BIN=/home/user/llama.cpp/build/bin

@@ -1,7 +1,7 @@
 # environment.md — 측정 환경 (자동 생성)
 
 > `make verify` 로 다시 뽑는다. **이 저장소의 모든 수치는 아래 환경에서 잰 것이다.**
-> 아래 블록은 손으로 고치지 않는다 — 마커 사이를 `bench/gen-environment.sh` 가 덮어쓴다.
+> 아래 블록은 손으로 고치지 않는다 — 마커 사이를 `operate/tools/gen-environment.sh` 가 덮어쓴다.
 
 <!-- verify:begin — 이 블록은 `make verify` 가 생성한다. 손으로 고치지 말 것 -->
 
@@ -46,7 +46,7 @@
 ▶ 6. 전력 모드
      현재 모드 : MAXN
      활성 conf : nvpmodel_p3767_0000.conf
-  ⚠️  Super Mode                 이 보드에서는 불가 — 부팅마다 되돌려진다 (research/hardware.md)
+  ⚠️  Super Mode                 이 보드에서는 불가 — 부팅마다 되돌려진다 (measure/findings/hardware.md)
 
 ▶ 7. 온도 / 전력
      RAM 11115/15643MB
@@ -65,7 +65,7 @@
 
    conf 심링크를 바꿔도 nvpower.sh 가 부팅마다 되돌리고,
    하드웨어 과전류 보호도 25W 로 설정된다.
-   근거와 재현 경위: research/hardware.md
+   근거와 재현 경위: measure/findings/hardware.md
 ════════════════════════════════════════════════
 ```
 
@@ -78,15 +78,15 @@
 | **전력 모드** | 이 저장소의 성능 수치는 **전부 MAXN(`pmode:0000`)** 이다. 15W·25W 에서는 재지 않았다 |
 | **Super Mode 비활성** | conf 파일은 있으나 부팅마다 되돌려지고 하드웨어 과전류 보호가 25W 로 잡힌다. **검증기가 활성화 절차를 더 이상 안내하지 않는다** — 같은 시도를 반복하지 않기 위해서다 |
 | **DLA 노드** | 노드와 `libcudla` 가 **있다**. 다만 노드 존재는 가용성이 아니다 — `trtexec --useDLACore` 로 재 본 적이 없어서 이 저장소는 DLA 를 안 썼다 |
-| **BSP 일관성** | 2026-08-29 에 36.5.2 로 통일했다. 커널 `hold` 의 이유(DKMS WiFi 드라이버)와 경위는 [research/hardware.md §8](research/hardware.md) |
+| **BSP 일관성** | 2026-08-29 에 36.5.2 로 통일했다. 커널 `hold` 의 이유(DKMS WiFi 드라이버)와 경위는 [measure/findings/hardware.md §8](measure/findings/hardware.md) |
 | RAM 사용량 | 측정 시점의 값이다. LLM 가용 예산은 [README ③](README.md) 참조 |
 
 > **2026-08-29.** L4T 를 36.5.2 로 통일하면서 커널이 5.15.199-tegra 가 됐다.
 > WiFi 드라이버(DKMS `mt7601u`)는 새 커널에 자동 재빌드됐다 —
-> 그 걱정이 커널을 `hold` 하고 있던 이유였다 ([research/hardware.md §8](research/hardware.md)).
+> 그 걱정이 커널을 `hold` 하고 있던 이유였다 ([measure/findings/hardware.md §8](measure/findings/hardware.md)).
 
 > **2026-08-28 정정.** 이 문서는 오랫동안 `L4T:` 빈칸 · `libcudart` 외 3종 ❌ ·
-> `DLA 없음` 을 **실측 결과로** 싣고 있었다. 셋 다 [`bench/verify-jetpack.sh`](bench/verify-jetpack.sh)
+> `DLA 없음` 을 **실측 결과로** 싣고 있었다. 셋 다 [`measure/tools/verify-jetpack.sh`](measure/tools/verify-jetpack.sh)
 > 의 버그였다 — 정규식이 실제 형식을 못 읽었고, `find` 가 심링크 `lib64` 를 안 내려갔고,
 > 글롭이 `nvhost-ctrl-nvdla*` 를 못 잡았다. **사양치와 실측이 다르다고 말하는 저장소가
 > 측정 도구의 버그를 실측으로 싣고 있었다.** 같은 일이 다시 나지 않도록 이 블록은

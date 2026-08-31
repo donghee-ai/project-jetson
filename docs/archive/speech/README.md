@@ -21,7 +21,7 @@
 ## ★ 살아남은 결론 하나
 
 **그 3단 게이트 구조가 텍스트 쪽으로 옮겨가 지금도 돌고 있다** —
-`Life_Trainer/lifetrainer/llm/trigger.py` 가 규칙으로 툴을 고르고 LLM 은 폴백만 한다.
+`life-trainer/lifetrainer/llm/trigger.py` 가 규칙으로 툴을 고르고 LLM 은 폴백만 한다.
 그 모듈 docstring 이 [`voice-agent-plan.md`](voice-agent-plan.md) §2-5 를 인용한다.
 
 **음성에서 먼저 재고 텍스트에서 재사용한 셈**이고, 그게 이 트랙이 남긴 값이다.
@@ -37,7 +37,7 @@ ASR 을 쓸 계획이 없어졌을 뿐이다.
 
 ## 지금 이 폴더의 스크립트는 실행되지 않는다
 
-`models/speech/` 가 **없다.** 6개 전부 그 경로의 가중치를 요구한다
+`refs/models/speech/` 가 **없다.** 6개 전부 그 경로의 가중치를 요구한다
 (SenseVoice · vits-mimic3 · Supertonic-3 · silero_vad). 되살리려면 먼저 받아야 한다.
 
 | 스크립트 | 무엇을 쟀나 |
@@ -49,8 +49,8 @@ ASR 을 쓸 계획이 없어졌을 뿐이다.
 | `hotpath-router.py` | 규칙 라우터로 LLM 을 빼면 얼마나 빨라지나 (**약 6,500배**) |
 | `ha-tool-bench.py` | 구어체 스마트홈 툴 콜링 정확도 |
 
-원본 wav 은 `results/speech/` 에 있고 **git 에 안 올라간다** —
-`results/speech/live/` 는 **사람 목소리 실녹음**이라 개인 데이터다.
+원본 wav 은 `measure/results/speech/` 에 있고 **git 에 안 올라간다** —
+`measure/results/speech/live/` 는 **사람 목소리 실녹음**이라 개인 데이터다.
 
 ## 여기서 나온 함정 둘
 

@@ -55,7 +55,7 @@ PY
 #   WAL 모드 DB 는 **읽기 전용으로 열어도** 옆에 `-wal`·`-shm` 이 생긴다. 위 두 검사가
 #   정확히 그걸 한다. 그대로 두면 복원본이 *"안전하게 뜬 백업"* 인지
 #   *"돌아가는 DB 를 그냥 복사한 것"* 인지 구분이 안 된다 — runbook 을 쓰게 만든 그 결함이다.
-#   `bench/make-recovery-bundle.sh` 는 같은 자리에서 이미 지우고 있었다. 여기만 안 했다.
+#   `operate/tools/make-recovery-bundle.sh` 는 같은 자리에서 이미 지우고 있었다. 여기만 안 했다.
 rm -f "$DB_OUT-wal" "$DB_OUT-shm"
 
 # 옛 정리 루틴이 `.db` 와 `.sha256` 만 지워서 **짝 잃은** `-wal`·`-shm` 이 남아 있다.

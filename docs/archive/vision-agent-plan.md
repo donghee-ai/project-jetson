@@ -1,13 +1,13 @@
 # Frigate + VLM 레이어 — 영상 이해 에이전트 계획
 
 > 작성일: 2026-08-15 / 상태: **계획 단계** (하드웨어 미확보)
-> 관련: [reference-survey.md](../../research/reference-survey.md) · [hardware.md](../../research/hardware.md)
+> 관련: [reference-survey.md](../../measure/findings/reference-survey.md) · [hardware.md](../../measure/findings/hardware.md)
 
 ---
 
 > ### ⚠️ 2026-08-15 정정 — §1-3 "위층이 비어 있다"는 전제는 무효
 >
-> 클론된 Frigate 소스(`reference/frigate`, 11f8786)를 직접 확인한 결과,
+> 클론된 Frigate 소스(`refs/reference/frigate`, 11f8786)를 직접 확인한 결과,
 > **VLM 레이어는 이미 Frigate에 구현돼 있다.**
 >
 > | 이 문서가 "만들겠다"고 한 것 | 실제 Frigate 위치 |
@@ -56,7 +56,7 @@
 
 ### 1-3. 빈틈은 "위층"에 있다
 
-[레퍼런스 조사](../../research/reference-survey.md)에서 확인:
+[레퍼런스 조사](../../measure/findings/reference-survey.md)에서 확인:
 
 ```
 Frigate (35,105★ MIT)  →  "사람 감지됨" 바운딩 박스까지  ← 이미 완성형
@@ -165,7 +165,7 @@ Frigate                                               │
 이벤트 시에만   VLM 캡션 (GPU)
 ```
 
-측정된 생성 속도가 [11~14 tok/s](../../research/performance.md)이므로
+측정된 생성 속도가 [11~14 tok/s](../../measure/findings/performance.md)이므로
 **캡션 100토큰 = 약 8~10초**다. 이벤트가 그보다 자주 발생하면 큐가 쌓인다.
 
 | 환경 | 일일 이벤트 | 처리 여유 |
@@ -200,14 +200,14 @@ Frigate                                               │
 
 - [ ] Frigate 이벤트 구독 (MQTT 또는 API 폴링)
 - [ ] 스냅샷 → VLM → 캡션 생성
-- [ ] 구조화 출력 (JSON) — [Qwen3 툴콜링 6/6](../../research/llm-models.md) 검증됨
+- [ ] 구조화 출력 (JSON) — [Qwen3 툴콜링 6/6](../../measure/findings/llm-models.md) 검증됨
 - [ ] SQLite 저장
 - [ ] 실패·큐 적체 모니터링
 
 ### Phase 3 — 검색 · 필터
 
 - [ ] 캡션 임베딩 → 자연어 검색
-  - 메모리 절약 위해 [PageIndex(벡터리스)](../../research/reference-survey.md) 또는 zvec 검토
+  - 메모리 절약 위해 [PageIndex(벡터리스)](../../measure/findings/reference-survey.md) 또는 zvec 검토
 - [ ] 오탐 필터 — "고양이입니다, 무시" 판정
 - [ ] 일일 브리핑 생성
 
@@ -240,7 +240,7 @@ Frigate                                               │
 | VLM 캡션 품질 미달 | 높음 | **Phase 0에서 조기 검증.** 못 쓰면 중단 |
 | 이벤트 큐 적체 | 중간 | 이벤트 필터링 선행. 처리량 상한 측정 |
 | Frigate 젯슨 호환성 | 중간 | TensorRT 검출기 지원 확인됨. DLA 사용 가능 여부는 미검증 |
-| 발열 — 디코딩+검출+VLM 동시 | 중간 | [thermal-test.sh](../../bench/thermal-test.sh) 미실행 상태. **선행 필요** |
+| 발열 — 디코딩+검출+VLM 동시 | 중간 | [thermal-test.sh](../../measure/tools/thermal-test.sh) 미실행 상태. **선행 필요** |
 | 카메라 미보유 | 낮음 | Phase 0는 영상 파일로 가능 |
 
 ### 미검증 항목
@@ -277,7 +277,7 @@ sudo apt install -y docker.io docker-compose-v2
 sudo usermod -aG docker $USER && newgrp docker
 
 # 2. 발열 선행 측정 (미실행 상태)
-bash bench/thermal-test.sh 300
+bash measure/tools/thermal-test.sh 300
 
 # 3. VLM 단독 테스트 — 카메라 불필요
 ~/llama.cpp/build/bin/llama-mtmd-cli \

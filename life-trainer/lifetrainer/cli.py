@@ -709,8 +709,8 @@ def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doc
             warn(
                 "에이전트 Slack 위임",
                 f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다{also}. "
-                "옮기는 법: `bash Life_Trainer/deploy/install-openclaw-system.sh` (sudo 로 감싸지 말 것) "
-                "(`runtime/agent-gateway.md §4-10`)",
+                "옮기는 법: `bash life-trainer/deploy/install-openclaw-system.sh` (sudo 로 감싸지 말 것) "
+                "(`operate/notes/agent-gateway.md §4-10`)",
             )
         else:
             ok("에이전트 Slack 위임", binary)
@@ -1656,7 +1656,7 @@ def cmd_agent_mcp(args: argparse.Namespace, cfg: Config) -> int:
 def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
     """툴 스키마와 워크스페이스 프롬프트가 각각 몇 토큰인지 센다.
 
-    `runtime/agent-gateway.md §3` 의 12,541 토큰과 같은 자리에서 비교할 수 있게
+    `operate/notes/agent-gateway.md §3` 의 12,541 토큰과 같은 자리에서 비교할 수 있게
     **한 화면에** 낸다. 눈대중으로 "이 정도면 되겠지" 하지 않기 위한 명령이다.
     """
     from lifetrainer.agent import catalog as catalog_mod
@@ -1680,7 +1680,7 @@ def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
     ours = report["total"] + prompt_tokens
     total = ours + catalog_mod.FRAMEWORK_TOKENS
     print(f"우리 몫 {ours} 토큰 + OpenClaw 골격 약 {catalog_mod.FRAMEWORK_TOKENS} = 약 {total}")
-    # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`runtime/agent-gateway.md §3`).
+    # 295 tok/s 는 이 기기의 프롬프트 처리 실측이다 (`operate/notes/agent-gateway.md §3`).
     print(f"→ 첫 호출 프롬프트 처리 약 {total / 295:.1f}초 (295 tok/s 실측 기준)")
     print("참고: OpenClaw 기본 구성은 12,541 토큰 = 42.5초, 첫 턴부터 압축이 걸렸다")
 

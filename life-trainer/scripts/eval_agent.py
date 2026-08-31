@@ -4,7 +4,7 @@
 ## 왜 있나
 
 소형 모델의 성공률은 모델 성능이 아니라 **프롬프트 형태**에 좌우된다
-(`runtime/agent-gateway.md §4-6` 의 대조 실험). 그 말은 프롬프트를 고칠
+(`operate/notes/agent-gateway.md §4-6` 의 대조 실험). 그 말은 프롬프트를 고칠
 때마다 재야 한다는 뜻이다. 한 번 돌려서 잘 나온 것을 근거로 삼으면, 이 저장소가
 반복해서 겪은 실패 4번("테스트 통과 ≠ 동작")을 프롬프트에서 다시 하게 된다.
 
@@ -126,7 +126,7 @@ CASES: list[Case] = [
     # ★ `require_slash` 가 필요했던 이유. 처음에는 "slash 를 불렀으면 통과" 였는데,
     #   모델이 `/view` 로 목록만 보고 **완료는 사용자에게 시켰다** — "다음 명령을
     #   실행해보세요" 로 끝냈다. 툴 이름만 채점하면 이게 통과한다.
-    #   `runtime/agent-gateway.md §4-6` 의 "하겠다고 말하고 끝낸다" 가 채점표를 빠져나간
+    #   `operate/notes/agent-gateway.md §4-6` 의 "하겠다고 말하고 끝낸다" 가 채점표를 빠져나간
     #   순간이었다. **바꾸라고 시켰으면 바꾼 흔적이 있어야 한다.**
     Case(
         "plan-done",
@@ -517,7 +517,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\n{passed}/{total} 통과 · 중앙값 {times[len(times) // 2]:.1f}초 · 최대 {times[-1]:.1f}초")
     compacted = sum(1 for r in results if r.compactions)
     if compacted:
-        print(f"★ 압축이 {compacted}턴에서 일어났다 — 컨텍스트가 모자란다 (runtime/agent-gateway.md §4-3)")
+        print(f"★ 압축이 {compacted}턴에서 일어났다 — 컨텍스트가 모자란다 (operate/notes/agent-gateway.md §4-3)")
 
     if args.json_out:
         Path(args.json_out).write_text(

@@ -1,7 +1,7 @@
 # 벤치마크 실측 결과 — Jetson Orin NX 16GB
 
 > 측정일: 2026-08-14 / 측정 조건: MAXN, llama.cpp `b1-a94d563`, CUDA 12.6
-> 관련: [llm-runtime.md](../runtime/llm-runtime.md) · [hardware.md](hardware.md)
+> 관련: [llm-runtime.md](../../operate/notes/llm-runtime.md) · [hardware.md](hardware.md)
 
 ---
 
@@ -34,7 +34,7 @@
 > 지금은 **참고 수치**다. 모델 선택은 툴 콜링과 깊이가, 메모리 예산은 KV 크기가 정했다.
 > 아래 정정 블록을 먼저 읽을 것.
 
-측정 도구: [`bench/membw.cu`](../bench/membw.cu)
+측정 도구: [`measure/tools/membw.cu`](../tools/membw.cu)
 
 ```
 사양치 (LPDDR5 128-bit)      102.4 GB/s
@@ -75,7 +75,7 @@ D2D 복사 (읽기+쓰기)          69.5 GB/s
 > Q4_K_M·Q6_K 가 55~57 GB/s 에서 평평해지는 것은 대역폭이 아니라 **슈퍼블록 언패킹
 > 연산 비용** 때문이다. 즉 K-quant 는 대역폭이 아니라 **연산**에 먼저 막힌다.
 >
-> 근거: [benchmarks/benchmark-results.md](../benchmarks/benchmark-results.md) §5 — **2026-08-28 에 저장소로 들어왔다**
+> 근거: [measure/findings/model-suite.md](model-suite.md) §5 — **2026-08-28 에 저장소로 들어왔다**
 > (whichllm 기여 과정에서 발견)
 
 ---
@@ -113,7 +113,7 @@ llama-bench -m <model> -ngl 99 -p 512 -n 128 -fa 1 -r 2
 
 ## 4. ★ 컨텍스트 깊이별 성능 (가장 중요한 측정)
 
-측정 도구: [`bench/deep-context-bench.py`](../bench/deep-context-bench.py)
+측정 도구: [`measure/tools/deep-context-bench.py`](../tools/deep-context-bench.py)
 모델: Qwen3-30B-A3B IQ2_M
 
 각 깊이마다 컨텍스트 **맨 앞**에 심어둔 고유 사실(공고 제1000호의 마감일·지원한도)을
@@ -163,7 +163,7 @@ llama-bench -m <model> -ngl 99 -p 512 -n 128 -fa 1 -r 2
 
 ## 5. 품질 검증 — 실제 대화 7단계
 
-측정 도구: [`bench/chat-bench.py`](../bench/chat-bench.py)
+측정 도구: [`measure/tools/chat-bench.py`](../tools/chat-bench.py)
 지원사업 공고를 투입한 뒤 실무에서 요구되는 작업을 순차 수행.
 
 | 단계 | 항목 | 깊이 | 생성 | 결과 |
@@ -276,25 +276,25 @@ llama.cpp가 KV 캐시를 기동 시 전량 할당하므로 깊이가 늘어도 
 
 ```bash
 # 메모리 대역폭
-/usr/local/cuda/bin/nvcc -O3 -o /tmp/membw bench/membw.cu && /tmp/membw
+/usr/local/cuda/bin/nvcc -O3 -o /tmp/membw measure/tools/membw.cu && /tmp/membw
 
 # 표준 벤치마크 (빈 컨텍스트)
-~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/models/<모델>.gguf \
+~/llama.cpp/build/bin/llama-bench -m ~/project/project-jetson/refs/models/<모델>.gguf \
   -ngl 99 -p 512 -n 128 -fa 1 -r 2
 
 # 품질 + 얕은 깊이 (서버 실행 중이어야 함)
-python3 bench/chat-bench.py
+python3 measure/tools/chat-bench.py
 
 # 컨텍스트 깊이별 (문서 개수 지정)
-python3 bench/deep-context-bench.py 1,2,4,8,12,16
-python3 bench/deep-context-bench.py 24,40,56,80,104
+python3 measure/tools/deep-context-bench.py 1,2,4,8,12,16
+python3 measure/tools/deep-context-bench.py 24,40,56,80,104
 ```
 
 ---
 
 ## 10. 미검증 항목
 
-- [ ] **지속 부하 발열** — `bench/thermal-test.sh 300` 을 MAXN에서 아직 미실행.
+- [ ] **지속 부하 발열** — `measure/tools/thermal-test.sh 300` 을 MAXN에서 아직 미실행.
       측정된 것은 수 분짜리 짧은 부하뿐 (최대 20.4 W / 67°C)
 - [ ] **품질 반복 측정** — 각 항목 1회뿐. 다회 측정 및 다양한 태스크 필요
 - [ ] **8B 모델의 깊이별 곡선** — 30B-A3B만 측정. 깊은 컨텍스트에서 순위가

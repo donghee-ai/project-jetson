@@ -1,9 +1,9 @@
 # 음성 스택 조사 — ASR · KWS · 실시간 통역 · TTS
 
 > 작성일: 2026-08-15 / 상태: **조사**
-> 근거: [../results/gh-final.json](../../../results/gh-final.json) 재질의 · `reference/jetson-containers/packages/speech` 직접 확인 ·
+> 근거: [../measure/results/gh-final.json](../../../measure/results/gh-final.json) 재질의 · `refs/reference/jetson-containers/packages/speech` 직접 확인 ·
 > **본 기기 실측** (Qwen3-8B Q4_K_M, llama-server 가동 중, 2026-08-15)
-> 관련: [project-candidates.md](../project-candidates.md) · [llm-models.md](../../../research/llm-models.md)
+> 관련: [project-candidates.md](../project-candidates.md) · [llm-models.md](../../../measure/findings/llm-models.md)
 
 ---
 
@@ -88,7 +88,7 @@ LLM 통역 = 문장당 1.2~1.5초  →  실시간 파이프라인에 들어간�
 ### 3-2. 한국어 출력이 29% 더 길다 — 실측 재확인
 
 영→한 16.2 토큰 vs 한→영 12.6 토큰 = **+29%**.
-[llm-models.md](../../../research/llm-models.md)의 한국어 토크나이저 비효율이 **번역 지연에 그대로 전가**된다.
+[llm-models.md](../../../measure/findings/llm-models.md)의 한국어 토크나이저 비효율이 **번역 지연에 그대로 전가**된다.
 한국어를 *만들어내는* 방향이 항상 더 느리다.
 
 ### 3-3. ⚠️ 진짜 문제는 지연이 아니라 품질이었다
@@ -128,7 +128,7 @@ LLM 통역 = 문장당 1.2~1.5초  →  실시간 파이프라인에 들어간�
 ### ⚠️ 단, 세 모델이 GPU와 60 GB/s를 나눠 쓴다
 
 ASR·LLM·TTS는 **순차 실행**이므로 지연이 더해지고, 화자가 둘이면 큐가 생긴다.
-[이 저장소의 핵심 발견](../../../research/performance.md)이 여기서도 그대로 적용된다 —
+[이 저장소의 핵심 발견](../../../measure/findings/performance.md)이 여기서도 그대로 적용된다 —
 **연산이 아니라 대역폭이 천장**이므로, 동시 실행 시 각 단계가 얼마나 느려지는지 측정해야 한다.
 (→ [project-candidates.md](../project-candidates.md) 후보 G와 동일한 미지수)
 
@@ -171,7 +171,7 @@ ASR·LLM·TTS는 **순차 실행**이므로 지연이 더해지고, 화자가 �
 한국어 웨이크워드 → ASR → Qwen3-8B (툴콜링 6/6 ★검증됨) → Home Assistant 제어 → TTS
 ```
 
-[레퍼런스 조사 §7](../../../research/reference-survey.md)에서 "난이도 낮음, 사례 적음"으로 분류된 항목.
+[레퍼런스 조사 §7](../../../measure/findings/reference-survey.md)에서 "난이도 낮음, 사례 적음"으로 분류된 항목.
 `wyoming`·`homeassistant-core` 패키지가 젯슨에 이미 있고, **툴 콜링 6/6은 이미 우리가 측정해 확인했다.**
 약점: 영어권에는 HA Assist 생태계가 이미 크다. **차별점은 한국어뿐.**
 

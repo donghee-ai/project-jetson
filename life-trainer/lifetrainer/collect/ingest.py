@@ -130,7 +130,7 @@ def _parse_events(bucket_id: str, raw_events: object) -> list[AWEvent]:
 def normalize_android_events(events: list[AWEvent]) -> None:
     """안드로이드 이벤트의 `app`/`title` 을 데스크톱 관례에 맞춘다 (제자리 수정).
 
-    aw-android 는 이렇게 넣는다 (master `models/Event.kt` 의 `fromUsageEvent`):
+    aw-android 는 이렇게 넣는다 (master `refs/models/Event.kt` 의 `fromUsageEvent`):
 
         {"app": "카카오톡", "package": "com.kakao.talk", "classname": "..."}
 

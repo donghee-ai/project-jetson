@@ -18,9 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 검사기가 헐거워지지 않았는가 (fixture)
-        run: bash bench/check-links.sh --self-test
+        run: bash operate/tools/check-links.sh --self-test
       - name: 문서 참조가 전부 실재하는가
-        run: bash bench/check-links.sh
+        run: bash operate/tools/check-links.sh
 
   docs:
     name: 문서 지표
@@ -31,9 +31,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 검사기가 헐거워지지 않았는가 (fixture)
-        run: bash bench/check-docs.sh --self-test
+        run: bash operate/tools/check-docs.sh --self-test
       - name: 문서가 운영 지표를 옮겨 적고 있는가
-        run: bash bench/check-docs.sh
+        run: bash operate/tools/check-docs.sh
 
   shell:
     name: 셸 스크립트
@@ -44,8 +44,8 @@ jobs:
         # 이 기기에는 shellcheck 이 없다. CI 에서만 돈다.
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
-          shellcheck -S warning bench/*.sh Life_Trainer/scripts/*.sh \
-                     Life_Trainer/deploy/*.sh runtime/*.sh
+          shellcheck -S warning measure/tools/*.sh operate/tools/*.sh \
+                     life-trainer/scripts/*.sh life-trainer/deploy/*.sh
 
   tests:
     name: Life Trainer 테스트
@@ -56,10 +56,10 @@ jobs:
         with:
           python-version: '3.10'
       - name: 설치
-        working-directory: Life_Trainer
+        working-directory: life-trainer
         run: |
           python -m pip install -q --upgrade pip
           pip install -q -e '.[dev]'
       - name: 테스트
-        working-directory: Life_Trainer
+        working-directory: life-trainer
         run: python -m pytest tests/ -q

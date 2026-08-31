@@ -1,12 +1,12 @@
 [Unit]
 Description=Life Trainer — DB 백업 + 무결성 검사 + 보존 정리
-Documentation=file://%h/project/project-jetson/Life_Trainer/docs/runbook-backup-restore.md
+Documentation=file://%h/project/project-jetson/life-trainer/docs/runbook-backup-restore.md
 After=network.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=%h/project/project-jetson/Life_Trainer
-ExecStart=%h/project/project-jetson/Life_Trainer/scripts/backup.sh
+WorkingDirectory=%h/project/project-jetson/life-trainer
+ExecStart=%h/project/project-jetson/life-trainer/scripts/backup.sh
 
 # 외부 복제 대상. 비어 있으면 스크립트가 경고만 하고 로컬 사본만 남긴다.
 # ★ 값을 넣으려면 age 와 수신자 키가 같이 있어야 한다 — 개인 활동 기록이 평문으로

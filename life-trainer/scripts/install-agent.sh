@@ -20,7 +20,7 @@ AGENT_ID="lifetrainer"
 MCP_NAME="lt"
 
 # 시스템 Node 를 앞에 둔다 — nvm 셸에서 돌려도 게이트웨이와 같은 런타임을 쓴다
-# (`runtime/agent-gateway.md §4-10`).
+# (`operate/notes/agent-gateway.md §4-10`).
 export PATH="/usr/local/bin:$PATH"
 
 command -v openclaw >/dev/null || { echo "openclaw CLI 가 없습니다."; exit 1; }

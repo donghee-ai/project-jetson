@@ -10,7 +10,7 @@
 #
 #   마커 사이만 바꾼다 — "읽는 법" 같은 편집 문단은 사람의 것이라 건드리지 않는다.
 set -euo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 export TARGET=environment.md
 export MARK_BEGIN='<!-- verify:begin — 이 블록은 `make verify` 가 생성한다. 손으로 고치지 말 것 -->'
@@ -21,7 +21,7 @@ export STAMP
 grep -qF "$MARK_BEGIN" "$TARGET" || { echo "❌ $TARGET 에 마커가 없다" >&2; exit 1; }
 
 # ANSI 색은 뗀다 — 파일에 들어가면 diff 가 읽히지 않는다.
-BODY=$(bash bench/verify-jetpack.sh 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g')
+BODY=$(bash measure/tools/verify-jetpack.sh 2>&1 | sed -E 's/\x1b\[[0-9;]*m//g')
 export BODY
 
 python3 <<'PY'

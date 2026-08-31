@@ -39,7 +39,7 @@
 # 게이트웨이가 같이 내려가는데, 의존이 끊겨 내려간 것은 `Restart=always` 가
 # 반드시 되살려 주지 않는다. **명시적으로 올린다.**
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/project-jetson"
 mkdir -p "$STATE_DIR"

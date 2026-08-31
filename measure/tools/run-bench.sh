@@ -11,7 +11,7 @@ set -uo pipefail
 
 ROOT=/home/user/project/opensource
 MODEL_DIR="${MODEL_DIR:-$ROOT/models}"
-OUT="${OUT:-$ROOT/results/raw}"
+OUT="${OUT:-$ROOT/measure/results/raw}"
 LB="${LB:-/home/user/llama.cpp/build/bin/llama-bench}"
 REPS="${REPS:-3}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -54,7 +54,7 @@ if systemctl --user is-active --quiet "$SERVICE"; then
 fi
 
 echo "[env] collecting environment"
-"$ROOT/bench/collect-env.sh" > "$RUN/environment.json"
+"$(dirname "${BASH_SOURCE[0]}")/collect-env.sh" > "$RUN/environment.json"
 
 mapfile -t MODELS < <(find -L "$MODEL_DIR" -maxdepth 1 -name '*.gguf' -printf '%f\n' | sort)
 echo "[env] ${#MODELS[@]} models in $MODEL_DIR"

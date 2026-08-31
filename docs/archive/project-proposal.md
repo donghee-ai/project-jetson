@@ -1,9 +1,9 @@
 # 프로젝트 제안 — Understudy: 현장에서 스스로 배우는 카메라
 
 > 작성일: 2026-08-15 / 상태: **제안**
-> 근거: [hardware.md](../../research/hardware.md) · [performance.md](../../research/performance.md) ·
-> [llm-models.md](../../research/llm-models.md) · [reference-survey.md](../../research/reference-survey.md)
-> 레퍼런스 소스 직접 확인: `reference/frigate` (11f8786, 2026-08-13) · `reference/jetson-containers`
+> 근거: [hardware.md](../../measure/findings/hardware.md) · [performance.md](../../measure/findings/performance.md) ·
+> [llm-models.md](../../measure/findings/llm-models.md) · [reference-survey.md](../../measure/findings/reference-survey.md)
+> 레퍼런스 소스 직접 확인: `refs/reference/frigate` (11f8786, 2026-08-13) · `refs/reference/jetson-containers`
 
 ---
 
@@ -78,7 +78,7 @@ Docker     미설치                                ❌ (Frigate 전제조건)
 [vision-agent-plan.md](vision-agent-plan.md)는 "Frigate는 객체 검출까지만 하고 그 위층(VLM 이해·자연어 검색)이 비어 있다"를 전제로 한다.
 **클론된 Frigate 소스를 직접 열어본 결과, 그 층은 이미 채워져 있다.**
 
-| 기능 | 증거 (`reference/frigate`) |
+| 기능 | 증거 (`refs/reference/frigate`) |
 |---|---|
 | GenAI 이벤트 설명 | `frigate/genai/` — `manager.py`, `prompts.py`, `plugins/` |
 | **llama.cpp 직접 연동** | `frigate/genai/plugins/llama_cpp.py` — 스트리밍·툴콜 파싱까지 구현됨 |
@@ -183,11 +183,11 @@ IP캠 RTSP ─→ Frigate  [NVDEC 디코딩 · 모션 · 이벤트 · 녹화 · 
 | **합계** | **~7.3 GB ✅ 여유** | **~11.3 GB ⚠️ 빠듯** |
 
 **야간 학습 잡은 선생을 언로드하고 실행한다.** 동시 상주는 금지.
-[llm-models.md](../../research/llm-models.md)의 "텍스트 LLM을 따로 띄우지 말 것" 원칙 유지 — 텍스트 작업도 선생 VLM이 겸한다.
+[llm-models.md](../../measure/findings/llm-models.md)의 "텍스트 LLM을 따로 띄우지 말 것" 원칙 유지 — 텍스트 작업도 선생 VLM이 겸한다.
 
 ### 3-6. 시간 예산
 
-측정치로 환산한다 ([performance.md](../../research/performance.md)).
+측정치로 환산한다 ([performance.md](../../measure/findings/performance.md)).
 
 ```
 선생 1회 = 이미지 프리필 + 캡션/라벨 100~150토큰
@@ -213,7 +213,7 @@ IP캠 RTSP ─→ Frigate  [NVDEC 디코딩 · 모션 · 이벤트 · 녹화 · 
       DLA에서 검출을 돌리는 동안 GPU의 tok/s가 몇 % 떨어지는가?
       (연산 자원은 분리돼 있지만 **60 GB/s 메모리는 공유**한다 — 이 설계의 최대 미지수)
 - [ ] `sudo apt install docker.io docker-compose-v2`
-- [ ] `bash bench/thermal-test.sh 300` — 아직 미실행. 24시간 가동 주장의 근거
+- [ ] `bash measure/tools/thermal-test.sh 300` — 아직 미실행. 24시간 가동 주장의 근거
 
 ### Phase 1 — 파이프라인 (영상 파일로)
 
@@ -311,7 +311,7 @@ EXAONE 한국어 토큰 19% 절약 + `sherpa-onnx`/`whisper_trt`.
   -p '이 이미지를 {"objects":[],"activity":"","confidence":0.0} 형식 JSON으로만 답하라'
 
 # ② 발열 — 24시간 가동 주장의 근거 (미실행 상태)
-bash bench/thermal-test.sh 300
+bash measure/tools/thermal-test.sh 300
 
 # ③ Docker (Frigate 전제조건)
 sudo apt install -y docker.io docker-compose-v2 && sudo usermod -aG docker $USER

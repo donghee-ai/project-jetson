@@ -1,6 +1,6 @@
 [Unit]
 Description=llama.cpp 8B 서버 주기 재기동 — 자라는 익명 메모리 회수
-Documentation=file://%h/project/project-jetson/runtime/restart-llama-server.sh
+Documentation=file://%h/project/project-jetson/operate/tools/restart-llama-server.sh
 # 야간 배치가 끝난 뒤에 돈다. 순서를 선언해 두면 배치가 길어진 날에도
 # 겹치지 않는다 (05:50 시작 · 실측 3~6분 · 이 타이머는 06:10).
 After=lifetrainer-nightly-stop.service
@@ -8,7 +8,7 @@ After=lifetrainer-nightly-stop.service
 [Service]
 Type=oneshot
 Environment=HOME=%h
-ExecStart=%h/project/project-jetson/runtime/restart-llama-server.sh
+ExecStart=%h/project/project-jetson/operate/tools/restart-llama-server.sh
 # 재기동이 실패해도 타이머를 죽이지 않는다 — 다음 날 다시 시도한다.
 SuccessExitStatus=0 1
 TimeoutStartSec=300

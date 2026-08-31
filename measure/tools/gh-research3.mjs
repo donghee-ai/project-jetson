@@ -1,5 +1,5 @@
 // GitHub 저장소 조사 v3 — 미탐색 영역 보강
-// 실행: node bench/gh-research3.mjs <출력.json>
+// 실행: node measure/tools/gh-research3.mjs <출력.json>
 //
 // 1·2차에서 다루지 않은 축: 음성, 워크플로우, 관측/평가, 임베딩, OCR,
 // 홈오토메이션, 한국어 도구, 에이전트 벤치마크.
@@ -7,7 +7,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const OUT = process.argv[2] || '/home/user/project/project-jetson/results/gh-research3.json';
+const OUT = process.argv[2] || '/home/user/project/project-jetson/measure/results/gh-research3.json';
 
 const QUERIES = [
   // ═══ 음성 (젯슨 GPU 활용도 높음)

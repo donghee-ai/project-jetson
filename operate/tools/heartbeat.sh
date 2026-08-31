@@ -10,7 +10,7 @@
 #   URL 은 healthchecks.io 같은 무료 서비스의 ping 주소면 된다. 개인 정보는 안 나간다 —
 #   나가는 것은 "이 기기가 방금 정상이었다" 는 사실 하나다.
 set -uo pipefail
-cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 
 URL="${JETSON_HEARTBEAT_URL:-}"
 if [ -z "$URL" ]; then

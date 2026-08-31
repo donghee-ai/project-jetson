@@ -8,7 +8,7 @@ After=network.target
 #   조용히 깨진다 — 유닛 12개가 전부 /home/user 에 묶여 있었다 (2026-08-28).
 Type=exec
 Environment=HOME=%h
-ExecStart=%h/project/project-jetson/runtime/llama-server-qwen3.sh
+ExecStart=%h/project/project-jetson/operate/tools/llama-server-qwen3.sh
 
 # 모델 로드(약 10초, 페이지 캐시가 비면 그 이상)가 끝나 /health 가 200 을 줄 때까지
 # 유닛을 "기동 중"으로 잡아둔다. 이게 있어야 openclaw-gateway 의 After= 가 실제로

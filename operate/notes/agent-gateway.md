@@ -3,9 +3,9 @@
 > 작성일: 2026-08-15 / **갱신: 2026-08-24 — §7 신설 (Life Trainer 를 에이전트로 결합)**
 > 상태: **구축·검증 완료, 게이트웨이 가동 중 (Slack 채널만 꺼짐).
 > 그 위에 `lifetrainer` 에이전트가 올라가 있다 — §7**
-> 관련: [llm-runtime.md](llm-runtime.md) · [llm-models.md](../research/llm-models.md) ·
-> [performance.md](../research/performance.md)
-> 실행 자산: [openclaw-setup/](../Life_Trainer/deploy/)
+> 관련: [llm-runtime.md](llm-runtime.md) · [llm-models.md](../../measure/findings/llm-models.md) ·
+> [performance.md](../../measure/findings/performance.md)
+> 실행 자산: [openclaw-setup/](../../life-trainer/deploy/)
 
 ---
 
@@ -94,7 +94,7 @@ openclaw config set channels.slack.enabled true
 systemctl --user restart openclaw-gateway
 ```
 
-Slack 앱은 [slack-app-manifest.json](../Life_Trainer/deploy/slack-app-manifest.json)
+Slack 앱은 [slack-app-manifest.json](../../life-trainer/deploy/slack-app-manifest.json)
 을 붙여넣어 만든다. 플러그인이 내장한 공식 매니페스트를 추출한 것으로,
 스코프 23개·이벤트 15개·Socket Mode·슬래시 커맨드가 한 번에 설정된다.
 
@@ -114,7 +114,7 @@ Slack 앱은 [slack-app-manifest.json](../Life_Trainer/deploy/slack-app-manifest
 | **에이전트 경유** | **25~40초** |
 | RAM (8B @ 40,960 + 게이트웨이) | 11,123 / 15,643 MB |
 
-생성 속도는 [Qwen3-8B-Q4KM.depth.txt](../results/Qwen3-8B-Q4KM.depth.txt) 의
+생성 속도는 [Qwen3-8B-Q4KM.depth.txt](../../measure/results/Qwen3-8B-Q4KM.depth.txt) 의
 깊이별 곡선(9.6K → 7.80, 16K → 6.58 tok/s)과 일치한다.
 **게이트웨이를 얹어도 추론 성능 자체에는 손해가 없다.**
 
@@ -218,7 +218,7 @@ pattern 제거         → 200 OK
 
 제거해도 안전하다. `minLength: 1` 이 남고, 공백 문자열 거부는 런타임 코드가
 이미 두 군데에서 한다(`"declarationKey must not be blank"`).
-→ [patch-cron-schema.sh](../Life_Trainer/deploy/patch-cron-schema.sh)
+→ [patch-cron-schema.sh](../../life-trainer/deploy/patch-cron-schema.sh)
 
 **CLI 는 왜 멀쩡했나** — `cron` 이 owner 전용 툴이라 CLI 발신자에게는 자동 제외됐다.
 웹 UI(operator.admin)에는 실려서 깨졌다. **증상이 반쪽만 나타나 원인 추적이 어려웠다.**
@@ -236,7 +236,7 @@ pattern 제거         → 200 OK
 | "`/절대/경로`에 써. 쓴 다음 `ls -la` 로 확인해서 보여줘" | **성공** (파일 시스템에서 독립 검증) |
 
 앞의 경우 **에러가 안 난다.** 그럴듯한 문장이 돌아오는데 아무 일도 일어나지 않았다.
-[llm-models.md](../research/llm-models.md) 의 30B 툴 벤치 실패 유형과 같다.
+[llm-models.md](../../measure/findings/llm-models.md) 의 30B 툴 벤치 실패 유형과 같다.
 
 > **성공률이 모델 성능이 아니라 프롬프트 형태에 좌우된다.**
 > 검증을 요구하면 "하겠다"로 빠져나갈 수 없다 — 결과를 보여주려면 실제로 실행해야 하므로.
@@ -311,7 +311,7 @@ ExecStart=/usr/local/bin/node \
 나머지 절반을 옮기는 것 (sudo 필요, **rollback 절차가 스크립트 안에 있다**):
 
 ```bash
-bash Life_Trainer/deploy/install-openclaw-system.sh   # ★ sudo 로 감싸지 않는다
+bash life-trainer/deploy/install-openclaw-system.sh   # ★ sudo 로 감싸지 않는다
 ```
 
 ★ **`sudo bash` 로 돌리면 실패한다.** root 의 PATH 에는 `openclaw` 가 없고
@@ -363,7 +363,7 @@ rm -f  ~/.nvm/versions/node/v22.23.2/bin/openclaw
 rm -rf ~/.nvm/versions/node/v22.23.2/lib/node_modules/openclaw   # 370MB
 ```
 
-**Node 22 자체는 남겼다** — `@playwright` 가 거기 붙어 있고 `bench/gh-research*.mjs`
+**Node 22 자체는 남겼다** — `@playwright` 가 거기 붙어 있고 `measure/tools/gh-research*.mjs`
 와 디자인 캡처가 그걸 쓴다. 지웠으면 그 도구가 조용히 죽었을 것이다.
 
 지운 뒤 확인: 셸의 `openclaw` 가 `/usr/local/bin` 으로 바뀌고, 게이트웨이 재기동 ·
@@ -497,7 +497,7 @@ contextWindow            20480             ← 서버의 -c 와 **반드시** �
 > 값이었지 필요한 값이 아니었다. Life Trainer 한 턴 실측 최악이 2,980 토큰이고
 > OpenClaw 압축 설정(`maxHistoryShare 0.7` + `reserveTokens 6000`)이 재계산 없이
 > 성립하는 하한이 20,480 이다 (14,336 + 6,000 = 20,336 < 20,480).
-> 드롭인 `runtime/systemd/llama-server.service.d/ctx.conf` 로 `LLAMA_CTX` 를 준다.
+> 드롭인 `operate/systemd/llama-server.service.d/ctx.conf` 로 `LLAMA_CTX` 를 준다.
 > **`openclaw.json` 의 `contextWindow` 도 같이 20480 으로 내렸다** — §4-2 그대로,
 > 한쪽만 바꾸면 조용히 잘린다. 되돌리기: `~/.openclaw/openclaw.json.bak-ctx20480`.
 >
@@ -511,10 +511,10 @@ contextWindow            20480             ← 서버의 -c 와 **반드시** �
 > 1,380건 뒤 6.7GB 였고 재시작하니 즉시 1.8GB 로 돌아왔다 — 누수다.
 > `MemoryMax=2500M` + `MemorySwapMax=0` 으로 되돌렸다.
 > **이 서버의 안정성이 그 유닛의 상한에 달려 있다** — 임베딩 쪽을 손볼 때 같이 본다
-> ([HISTORY](../Life_Trainer/HISTORY/2026-08-23-raising-the-memory-cap-made-it-worse.md)).
+> ([HISTORY](../../life-trainer/HISTORY/2026-08-23-raising-the-memory-cap-made-it-worse.md)).
 
 > ★ **Slack 소켓은 워크스페이스 앱당 하나뿐이다.** 둘 다 켜면 서로 뺏는다.
-> 지금은 [Life Trainer](../Life_Trainer/HANDOFF.md) 가 갖고 있고, 게이트웨이는
+> 지금은 [Life Trainer](../../life-trainer/HANDOFF.md) 가 갖고 있고, 게이트웨이는
 > 셸·파일 작업을 `openclaw agent --json` 으로 위임받을 수 있도록 살려만 뒀다.
 
 `llama-server` 는 **두 프로젝트가 공유한다.** Life Trainer 는 전용 모델 서버를 띄우지
@@ -548,7 +548,7 @@ systemctl --user enable --now openclaw-gateway
 
 ## 6. 미완
 
-- **지속 부하 발열 미측정** — [performance.md](../research/performance.md) 의
+- **지속 부하 발열 미측정** — [performance.md](../../measure/findings/performance.md) 의
   빈칸과 동일. 24시간 가동 설계에 필요하다.
 - **에이전트 능동 발송 미검증** — §4-13. `message` 툴의 실제 가용 여부.
 - **cron 실전 미검증** — dist 패치 후 Slack 에서 예약 동작을 확인하지 않았다.
@@ -564,18 +564,18 @@ systemctl --user enable --now openclaw-gateway
 ## 7. Life Trainer 를 에이전트로 붙이기 (2026-08-24)
 
 §5 까지는 "게이트웨이가 살아 있다" 였다. 여기서부터는 **그 위에 우리 능력을 올린
-기록**이다. 코드는 [`Life_Trainer/lifetrainer/agent/`](../Life_Trainer/lifetrainer/agent/),
-설치는 [`scripts/install-agent.sh`](../Life_Trainer/scripts/install-agent.sh).
+기록**이다. 코드는 [`life-trainer/lifetrainer/agent/`](../../life-trainer/lifetrainer/agent/),
+설치는 [`scripts/install-agent.sh`](../../life-trainer/scripts/install-agent.sh).
 
 > **층 구분은 여기 없다.** *"에이전트가 정하는 것 / 앱이 이미 정한 것 / 그 사이 경계"* 는
-> 판정이라 [`Life_Trainer/docs/architecture.md §2-7`](../Life_Trainer/docs/architecture.md) 에 있다.
+> 판정이라 [`life-trainer/docs/architecture.md §2-7`](../../life-trainer/docs/architecture.md) 에 있다.
 > 이 문서는 **어떻게 붙였나**(재현·함정)를 다룬다.
 
 ### 7-1. 구성
 
 ```
 openclaw-gateway :18081
-  └─ agent "lifetrainer"      workspace: Life_Trainer/data/agent/workspace
+  └─ agent "lifetrainer"      workspace: life-trainer/data/agent/workspace
        model  llamacpp/qwen3-8b          (llama-server :8080 공유)
        tools  allow ["lt__*"]            ← 절대 허용목록. exec·write 등 기본 툴이 사라진다
        │

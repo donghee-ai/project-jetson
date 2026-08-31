@@ -1,5 +1,5 @@
 // GitHub 저장소 조사 — Playwright
-// 실행: node bench/gh-research.mjs [출력파일]
+// 실행: node measure/tools/gh-research.mjs [출력파일]
 //
 // 여러 검색어를 순회하며 저장소 메타데이터를 수집한다.
 // GitHub 검색 페이지는 JS 렌더링이라 정적 fetch로는 안 된다.
@@ -7,7 +7,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const OUT = process.argv[2] || '/home/user/project/project-jetson/results/gh-research.json';
+const OUT = process.argv[2] || '/home/user/project/project-jetson/measure/results/gh-research.json';
 
 // 카테고리별 검색어 — 자율주행 제외, 에이전트·엣지LLM·공개데이터 중심
 const QUERIES = [

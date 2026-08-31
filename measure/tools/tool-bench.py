@@ -5,7 +5,7 @@
 에이전트는 (1) 언제 툴을 부를지 (2) 어떤 툴을 (3) 인자를 정확히
 세 가지를 다 맞춰야 한다. 하나라도 틀리면 에이전트 루프가 깨진다.
 
-실행: python3 bench/tool-bench.py
+실행: python3 measure/tools/tool-bench.py
 """
 import json, urllib.request
 
