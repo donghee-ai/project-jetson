@@ -519,3 +519,50 @@ body.page-entering {
     animation: none;
   }
 }
+
+/* ── 보기 전환: 격자 ↔ 막대 ↔ 도넛 (2026-09-01) ──────────────────────
+   색은 격자와 **같은 변수**를 쓴다 (--cat-* · --structural-*). palette.yaml 이
+   단일 원본이라, 테마를 바꾸면 차트도 같이 바뀐다. */
+/* ★ 머리줄에 고르개가 셋이 되면서 자리가 모자라 글자가 세로로 쪼개졌다
+   ("격/자"). 제목은 줄바꿈을 허용하되, 고르개는 절대 안 쪼개지게 못 박는다. */
+.grid-panel .section-header { flex-wrap: wrap; row-gap: 10px; }
+.view-picker { display: inline-flex; gap: 2px; padding: 2px; flex: none; border-radius: var(--radius-md, 8px); background: var(--ui-inset, var(--ink-gridline)); }
+.view-btn {
+  border: 0; cursor: pointer; padding: 4px 11px; font: inherit; font-size: .78rem; white-space: nowrap;
+  border-radius: calc(var(--radius-md, 8px) - 2px); background: transparent; color: var(--ink-muted);
+}
+.view-btn[aria-pressed="true"] { background: var(--surface); color: var(--ink-primary); box-shadow: var(--shadow-card); }
+
+.chart-panel { padding: 4px 2px 2px; }
+.chart-panel[data-mode="bar"] .chart-donut { display: none; }
+.chart-panel[data-mode="donut"] .chart-bar { display: none; }
+.chart-empty { margin: 24px 4px; color: var(--ink-muted); font-size: .9rem; }
+
+/* 막대 — 이름 · 트랙 · 값 세 칸. 트랙만 늘어난다. */
+.chart-bar { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: minmax(74px, 8.5em) 1fr minmax(84px, auto); align-items: center; gap: 10px; }
+.bar-name { display: inline-flex; align-items: center; gap: 6px; font-size: .86rem; color: var(--ink-primary); }
+.bar-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.bar-track { height: 14px; border-radius: 7px; background: var(--ink-gridline); overflow: hidden; }
+.bar-fill { display: block; height: 100%; border-radius: 7px; }
+.bar-value { font-size: .82rem; color: var(--ink-primary); text-align: right; font-variant-numeric: tabular-nums; }
+.bar-value small { margin-left: 6px; color: var(--ink-muted); }
+
+/* 도넛 — SVG 하나 + 범례. 라이브러리 없이 stroke-dasharray 로 그린다. */
+.chart-donut { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: 6px 0; }
+.donut-svg { width: 200px; height: 200px; flex: none; transform: rotate(-90deg); }
+.donut-track { fill: none; stroke: var(--ink-gridline); stroke-width: 22; }
+.donut-arc { fill: none; stroke-width: 22; }
+.donut-svg text { transform: rotate(90deg); transform-origin: 100px 100px; text-anchor: middle; }
+.donut-center-value { font-size: 19px; font-weight: 650; fill: var(--ink-primary); }
+.donut-center-label { font-size: 11px; fill: var(--ink-muted); letter-spacing: .06em; }
+.donut-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; min-width: 150px; }
+.donut-legend li { display: flex; align-items: center; gap: 7px; font-size: .86rem; color: var(--ink-primary); }
+.donut-legend b { margin-left: auto; font-weight: 500; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.donut-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+@media (max-width: 560px) {
+  .bar-row { grid-template-columns: minmax(64px, 7em) 1fr auto; gap: 8px; }
+  .chart-donut { gap: 14px; justify-content: center; }
+}
+.chart-caption { margin: 14px 2px 0; font-size: .76rem; color: var(--ink-muted); }

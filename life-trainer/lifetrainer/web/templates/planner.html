@@ -66,6 +66,11 @@
             <p class="section-kicker">10 MINUTE GRID</p>
             <h2 id="timetable-title">타임테이블</h2>
           </div>
+          <div class="view-picker" role="group" aria-label="보기 방식">
+            <button type="button" data-view-choice="grid" class="view-btn" title="10분 격자">격자</button>
+            <button type="button" data-view-choice="bar" class="view-btn" title="카테고리별 막대">막대</button>
+            <button type="button" data-view-choice="donut" class="view-btn" title="카테고리별 도넛">도넛</button>
+          </div>
           <div class="palette-picker" role="group" aria-label="색 테마">
             <button type="button" data-palette-choice="base" class="pal-btn" title="기본">기본</button>
             <button type="button" data-palette-choice="pastel" class="pal-btn" title="파스텔">파스텔</button>
@@ -88,7 +93,16 @@
         <p class="grid-hint">드래그하거나 모바일에서 시작·끝 칸을 차례로 눌러 활동을 보정할 수 있습니다.</p>
         {% endif %}
         <p class="selection-caption" id="selection-caption" aria-live="polite">&nbsp;</p>
-        <div class="grid-scroll">
+        <!-- ★ 차트는 서버를 다시 안 부른다. 위 격자의 셀에서 직접 센다 —
+             같은 DOM 에서 유도하므로 격자와 합계가 어긋날 수가 없다.
+             (이 저장소의 반복된 실패 2번: 같은 값을 여러 곳에서 각자 계산했다) -->
+        <div class="chart-panel" id="chart-panel" hidden>
+          <div class="chart-bar" id="chart-bar" role="img" aria-label="카테고리별 시간 막대"></div>
+          <div class="chart-donut" id="chart-donut" role="img" aria-label="카테고리별 시간 도넛"></div>
+          <p class="chart-empty" id="chart-empty" hidden>이 날에는 집계할 활동이 없습니다.</p>
+          <p class="chart-caption" id="chart-caption"></p>
+        </div>
+        <div class="grid-scroll" id="grid-scroll">
           <div class="grid" id="grid" style="--grid-cols: {{ grid_rows[0].cells | length if grid_rows else 6 }}">
             <div class="grid-corner" aria-hidden="true">시</div>
             {% for minute in minute_labels %}<div class="grid-minute">{{ minute }}</div>{% endfor %}
@@ -97,7 +111,7 @@
             <div class="grid-row" data-hour="{{ row.hour }}">
               {% for cell in row.cells %}
               <div class="cell{% if cell.overridden %} overridden{% endif %}{% if cell.has_plan %} has-plan{% endif %}{% if cell.plan_start %} plan-start{% endif %}{% if cell.plan_end %} plan-end{% endif %}"
-                   data-slot="{{ cell.slot }}" data-category="{{ cell.category }}"
+                   data-slot="{{ cell.slot }}" data-category="{{ cell.category }}"{% if cell.plan_category %} data-plan-category="{{ cell.plan_category }}"{% endif %}
                    title="{{ cell.tooltip }}"{% if cell.device_kind %} data-device="{{ cell.device_kind }}"{% endif %}
                    style="--cell-color: var({{ cell.css_var }}); --plan-color: var({{ cell.plan_css_var }})">
                 {% if cell.label_text %}<span class="cell-label">{{ cell.label_text }}</span>{% endif %}

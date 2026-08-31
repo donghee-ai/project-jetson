@@ -345,6 +345,15 @@ def _build_day_payload(
             "achieved_count": achieved_n,
             "total_count": total_n,
             "top_apps": [{"app": app, "seconds": sec} for app, sec in stats.top_apps],
+            # ★ 카테고리별 합계는 **slot_breakdown 에서** 온다 (stats.by_category).
+            #   격자의 칸을 세면 안 된다 — 칸은 그 슬롯의 **승자 하나**만 들고 있어서
+            #   "코딩 7분 + 웹 3분" 이 "코딩 10분" 이 된다. CLAUDE.md 의
+            #   "집계 원천은 slot_breakdown, slot 의 winner-takes-all 은 시각화 전용".
+            #   away/off 는 stats 가 이미 뺐다.
+            "by_category": [
+                {"category": c.category, "seconds": c.seconds, "share": c.share}
+                for c in stats.by_category
+            ],
         },
         # 기기별 활동. 폰이 들어오기 전에는 항상 한 줄이었다.
         "devices": [
