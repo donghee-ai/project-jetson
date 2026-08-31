@@ -51,7 +51,11 @@ host-status:  ## 기기 상태 (디스크 · OOM · 발열 · BSP · 서비스 �
 recovery-bundle:  ## 기기 재구축용 묶음 하나 (★ 비밀값 포함 · 0600)
 	@bash bench/make-recovery-bundle.sh
 
-links:  ## 문서의 상대경로 링크가 전부 실재하는지
+# ★ 두 종류를 본다 — 마크다운 링크 + **코드 주석이 가리키는 문서와 그 § 절**.
+#   후자는 2026-08-31 에 붙였다. 문서를 개명·분할했는데 코드가 안 따라간 일이
+#   두 번 있었고 둘 다 몰랐다 (HISTORY/2026-08-31-the-references-did-not-follow-the-file.md).
+links:  ## 문서 참조가 전부 실재하는지 (마크다운 링크 + 코드→문서 · 자기검사 포함)
+	@bash bench/check-links.sh --self-test
 	@bash bench/check-links.sh
 
 check-docs:  ## 문서가 운영 지표를 옮겨 적고 있는지 (검사기 자기검사 포함)
