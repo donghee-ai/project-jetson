@@ -53,7 +53,7 @@ class LLMUnavailable(LLMError):
     낸다 — 잡이 잘못된 게 아니라 **너무 일찍 물어본 것**이다.
 
     ★ **살아 있다 ≠ 서빙 가능하다.** 이걸 `LLMError` 로 분류해 뒀더니 야간 배치가
-    02:00 에 적재한 요약 잡 277건이 재시도 없이 죽었다 (`docs/known-issues.md` §2).
+    02:00 에 적재한 요약 잡 277건이 재시도 없이 죽었다 (`HISTORY/2026-08-21-a-loading-model-burned-the-whole-queue.md`).
     """
 
 

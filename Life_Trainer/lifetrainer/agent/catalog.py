@@ -2,7 +2,7 @@
 
 ## 이 파일의 존재 이유는 예산이다
 
-`openclaw-agent.md §3` 의 실측: 프레임워크 기본 구성의 시스템 프롬프트가
+`runtime/agent-gateway.md §3` 의 실측: 프레임워크 기본 구성의 시스템 프롬프트가
 **12,541 토큰**이고 프롬프트 처리가 **295 tok/s** 라 첫 턴이 41.6초였다.
 그중 툴 스키마가 8,833 토큰이고 `cron` 하나가 3,912 였다.
 
@@ -77,7 +77,7 @@ REUSED_TOOLS: tuple[str, ...] = (
 #
 # ## 왜 3,000 인가 — 두 개의 천장이 있다
 #
-# ① **지연.** 프롬프트 처리 295 tok/s (`openclaw-agent.md §3`). 첫 호출 프롬프트를
+# ① **지연.** 프롬프트 처리 295 tok/s (`runtime/agent-gateway.md §3`). 첫 호출 프롬프트를
 #    6,000 토큰 아래로 묶으면 20.3초다. 툴 3,000 + 프롬프트 1,000 + 골격 2,300 이
 #    그 선에 딱 든다. 참고로 OpenClaw 기본 구성은 12,541 토큰 = 42.5초였다.
 # ② **압축.** ctx 20,480 에 `maxHistoryShare 0.7` 이라 히스토리 몫이 14,336 이다.
@@ -385,7 +385,7 @@ def assert_no_pattern() -> None:
 
     `llm/client._check_no_pattern` 과 **같은 검사기를 쓴다.** 여기서 따로 구현하면
     두 경로의 판정이 갈린다. OpenClaw 의 `cron` 툴이 정확히 이것 하나로 죽어
-    요청 전체가 400 이 됐다 (`openclaw-agent.md §4-5`).
+    요청 전체가 400 이 됐다 (`runtime/agent-gateway.md §4-5`).
     """
     from lifetrainer.llm.client import _check_no_pattern
 

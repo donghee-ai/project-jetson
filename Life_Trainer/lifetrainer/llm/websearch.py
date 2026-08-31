@@ -4,7 +4,7 @@
 
 `fetch_url` 은 **URL 을 알아야** 읽는다. 그래서 모델이 도메인을 지어내는 일이
 있었다 — "롤체가 뭐야" 에 `valorant.com` 을 열고, 그 뒤 세 턴이 전부 같은 틀린
-출처를 인용했다 (`docs/known-issues.md §1`). 검색은 그 구멍을 메운다.
+출처를 인용했다 (`docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md`). 검색은 그 구멍을 메운다.
 
 ## 왜 Serper 하나인가
 
@@ -17,7 +17,7 @@
 로 이관되고 개발자센터 신규 신청이 2026-07-31 에 닫혀 우리는 키를 못 받는다.
 코드에 남아 있던 옛 엔드포인트·헤더는 HUB 키로는 401 이 나므로, 누가 설정에
 `naver_client_id` 를 채우는 순간 **한국어 질의만 조용히 죽는 함정**이었다
-(`docs/known-issues.md §4`).
+(`HISTORY/2026-08-25-it-worked-because-the-key-was-empty.md`).
 
     모든 질의  ->  Serper.dev   구글 결과를 JSON 으로. 2,500건 무료
 
@@ -118,7 +118,7 @@ def _serper(cfg: "Config", query: str, limit: int) -> SearchResults:
 
     # 한국어 질의는 지역·언어를 한국으로 못박는다. Serper 기본값은 구글 미국/영어라
     # "롤체" 같은 국내 용어가 엉뚱한 곳에 안착한다 — 이 툴이 생긴 이유가 그 사고다.
-    # 네이버를 쓸 수 없게 된 뒤(known-issues §4) 한국어 질의는 전부 여기로 온다.
+    # 네이버를 쓸 수 없게 된 뒤(HISTORY/2026-08-25-it-worked-because-the-key-was-empty.md) 한국어 질의는 전부 여기로 온다.
     locale = {"gl": "kr", "hl": "ko"} if is_korean(query) else {}
 
     resp = requests.post(

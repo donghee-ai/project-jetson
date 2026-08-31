@@ -26,7 +26,7 @@
 
 > **8B 스택과 4B 는 동시에 못 올린다.** 가용 13.4 GB 안에서 공존이 안 되고 포트도
 > 같다(8080). 둘 중 하나만 돌아간다 —
-> [openclaw-agent.md §5](../runtime/agent-gateway.md) 참조.
+> [agent-gateway.md §5](../runtime/agent-gateway.md) 참조.
 
 ### 재다운로드
 

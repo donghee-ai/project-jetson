@@ -516,7 +516,7 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         except Exception as exc:  # noqa: BLE001
             warn("큐", f"조회 실패: {exc}")
 
-    # 8-B. 웹 검색 키 (없으면 대화가 URL 을 추측한다 — known-issues §1)
+    # 8-B. 웹 검색 키 (없으면 대화가 URL 을 추측한다 — docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md)
     # ── 임베딩 (RAG) ──
     if cfg.embed.enabled:
         try:
@@ -573,7 +573,7 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
                 "키 없음 — 대화가 주소를 추측한다. "
                 "config/lifetrainer.toml 의 [search] 에 serper_api_key 를 넣는다 "
                 "(serper.dev, 2,500건 무료). 네이버는 API HUB 이관으로 신규 발급 불가 "
-                "— docs/known-issues.md §4",
+                "— HISTORY/2026-08-25-it-worked-because-the-key-was-empty.md",
             )
     except Exception as exc:  # noqa: BLE001
         warn("웹 검색", f"확인 실패: {exc}")
@@ -710,7 +710,7 @@ def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doc
                 "에이전트 Slack 위임",
                 f"{binary} — 버전 매니저 경로다. nvm 을 갈아엎으면 조용히 끊긴다{also}. "
                 "옮기는 법: `bash Life_Trainer/deploy/install-openclaw-system.sh` (sudo 로 감싸지 말 것) "
-                "(`openclaw-agent.md §4-10`)",
+                "(`runtime/agent-gateway.md §4-10`)",
             )
         else:
             ok("에이전트 Slack 위임", binary)
@@ -1656,7 +1656,7 @@ def cmd_agent_mcp(args: argparse.Namespace, cfg: Config) -> int:
 def cmd_agent_budget(args: argparse.Namespace, cfg: Config) -> int:
     """툴 스키마와 워크스페이스 프롬프트가 각각 몇 토큰인지 센다.
 
-    `openclaw-agent.md §3` 의 12,541 토큰과 같은 자리에서 비교할 수 있게
+    `runtime/agent-gateway.md §3` 의 12,541 토큰과 같은 자리에서 비교할 수 있게
     **한 화면에** 낸다. 눈대중으로 "이 정도면 되겠지" 하지 않기 위한 명령이다.
     """
     from lifetrainer.agent import catalog as catalog_mod

@@ -146,7 +146,7 @@ cat > "$B/README.txt" <<TXT
   .venv               pyproject 로 다시 만든다
   저장소 자체         git clone (HEAD 는 versions.txt 에)
 
-되살리는 순서: RESTORE.md §5-2
+되살리는 순서: 이 묶음의 RESTORE.md — 5-2 절
 TXT
 say "안내" "README.txt · RESTORE.md"
 

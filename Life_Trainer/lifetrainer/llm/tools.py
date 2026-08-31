@@ -639,7 +639,7 @@ def _tool_web_search(ctx: ToolContext, args: dict) -> str:
 
     이 툴이 생긴 이유는 `fetch_url` 이 URL 을 알아야만 동작하기 때문이다. 모르면
     모델이 도메인을 지어냈다 — "롤체" 를 묻자 `valorant.com` 을 열고 그 뒤 세 턴이
-    같은 틀린 출처를 인용했다 (`docs/known-issues.md §1`).
+    같은 틀린 출처를 인용했다 (`docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md`).
 
     결과에 **어느 검색엔진인지**를 박는다. 한국어 질의는 네이버, 그 외는 Serper 로
     가는데, 그 사실을 안 밝히면 모델이 "구글에서 찾았다" 같은 말을 지어낸다.

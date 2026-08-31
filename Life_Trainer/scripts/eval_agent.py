@@ -126,7 +126,7 @@ CASES: list[Case] = [
     # ★ `require_slash` 가 필요했던 이유. 처음에는 "slash 를 불렀으면 통과" 였는데,
     #   모델이 `/view` 로 목록만 보고 **완료는 사용자에게 시켰다** — "다음 명령을
     #   실행해보세요" 로 끝냈다. 툴 이름만 채점하면 이게 통과한다.
-    #   `openclaw-agent.md §4-6` 의 "하겠다고 말하고 끝낸다" 가 채점표를 빠져나간
+    #   `runtime/agent-gateway.md §4-6` 의 "하겠다고 말하고 끝낸다" 가 채점표를 빠져나간
     #   순간이었다. **바꾸라고 시켰으면 바꾼 흔적이 있어야 한다.**
     Case(
         "plan-done",
@@ -517,7 +517,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\n{passed}/{total} 통과 · 중앙값 {times[len(times) // 2]:.1f}초 · 최대 {times[-1]:.1f}초")
     compacted = sum(1 for r in results if r.compactions)
     if compacted:
-        print(f"★ 압축이 {compacted}턴에서 일어났다 — 컨텍스트가 모자란다 (openclaw-agent.md §4-3)")
+        print(f"★ 압축이 {compacted}턴에서 일어났다 — 컨텍스트가 모자란다 (runtime/agent-gateway.md §4-3)")
 
     if args.json_out:
         Path(args.json_out).write_text(

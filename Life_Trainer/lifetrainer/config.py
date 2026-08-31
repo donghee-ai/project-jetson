@@ -248,7 +248,7 @@ class SearchConfig:
     """웹 검색 공급자 키. **한국어는 네이버, 그 외는 Serper** 로 나눈다.
 
     구글 Custom Search JSON API 는 신규 가입이 닫혀 있다 (2026-08-19 확인).
-    근거와 대안 비교는 `docs/known-issues.md §1`.
+    근거와 대안 비교는 `docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md`.
     """
 
     serper_api_key: str = ""

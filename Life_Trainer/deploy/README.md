@@ -45,7 +45,7 @@ OpenClaw 게이트웨이 운영에 필요한 systemd 유닛과 설치 스크립�
 ★ **`lifetrainer` 에이전트 배선은 여기 없다.** Life Trainer 쪽에 있다 —
 `Life_Trainer/scripts/install-agent.sh` (에이전트 등록 · MCP 서버 · 툴 정책).
 게이트웨이가 살아 있는 것이 선행 조건이라 이 폴더의 `install.sh` 를 먼저 돌린다.
-자세한 것은 [openclaw-agent.md §7](../../runtime/agent-gateway.md).
+자세한 것은 [agent-gateway.md §7](../../runtime/agent-gateway.md).
 
 ---
 

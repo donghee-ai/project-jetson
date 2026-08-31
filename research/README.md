@@ -44,7 +44,7 @@ llm-models.md    그래서 8B 가 30B 를 9,600 토큰에서 추월한다
 
 | 측정 | 어디서 제약이 됐나 |
 |---|---|
-| 가용 메모리 13.4 GB | llama-server 를 두 프로젝트가 **공유**하는 이유 ([openclaw-agent.md §5](../runtime/agent-gateway.md)) |
+| 가용 메모리 13.4 GB | llama-server 를 두 프로젝트가 **공유**하는 이유 ([agent-gateway.md §5](../runtime/agent-gateway.md)) |
 | 깊이 32K 에서 −70% | Life Trainer 의 "LLM 입력 3~5K 로 끊기" 규칙 ([CLAUDE.md](../Life_Trainer/CLAUDE.md)) |
 | 툴 콜링 6/6 (Qwen3-8B) | 에이전트 모델 선정 |
 | 프롬프트 처리 295 tok/s | 시스템 프롬프트 3층 분리 — 12,541 토큰이 곧 58초였다 |

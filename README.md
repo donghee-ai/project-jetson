@@ -199,7 +199,7 @@ RSS · arXiv ───────────────────┼─→ 
 규칙에서 **모델**로 바뀐 경로가 하나 더 생겼다 — 슬래시 명령 10개·플래너·RAG 를
 MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 프레임워크 기본
 구성이 시스템 프롬프트 12,541 토큰이던 것을 **5,247 토큰**으로 줄인 것이 이 결합의
-대부분이었다 ([openclaw-agent.md §7](runtime/agent-gateway.md)).
+대부분이었다 ([agent-gateway.md §7](runtime/agent-gateway.md)).
 
 → **[Life_Trainer/HANDOFF.md](Life_Trainer/HANDOFF.md)** (지금 상태 · 이어받는다면 여기부터) ·
 [README](Life_Trainer/README.md) · [전체 설명서](Life_Trainer/docs/handbook.md) ·

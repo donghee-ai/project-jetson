@@ -114,7 +114,8 @@ class Sandbox:
         """쓰기용으로 경로를 해석한다. 허용 밖이면 `SandboxError`.
 
         ★ **조용히 다른 곳에 쓰지 않는다.** 상대 경로는 쓰기 폴더 기준으로 풀리므로
-        `docs/x.md` 는 그냥 두면 `data/agent/docs/x.md` 에 **성공적으로** 써진다.
+        읽기 전용인 `docs/` 를 가리켜도 그냥 두면 `data/agent/docs/` 밑에
+        **성공적으로** 써진다.
         모델은 `docs/` 에 썼다고 믿고, 사람은 한참 뒤에야 그림자 사본을 발견한다.
         읽기 전용 폴더를 가리킨 것이 분명하면(그 폴더가 실재하면) 거부한다 —
         이 저장소가 반복해서 배운 것: 조용히 성공하는 것이 실패보다 나쁘다.
@@ -142,7 +143,7 @@ class Sandbox:
         ★ 이 한 줄이 필요한 이유가 실측에 있다. "config 폴더 보여줘" 에 8B 가
         `/…/data/agent/config` 를 만들어 불렀다 — 프롬프트에서 본 허용 폴더
         (`data/agent`)에 `config` 를 **이어 붙인** 것이다. 같은 부류가
-        `openclaw-agent.md §4-4` 에 이미 기록돼 있다 (`workspace/workspace/`).
+        `runtime/agent-gateway.md §4-4` 에 이미 기록돼 있다 (`workspace/workspace/`).
         절대 경로를 조립하지 말고 짧은 이름을 쓰라고 결과에서 가르친다 —
         거부만 하면 모델은 다음 턴에 또 조립한다.
         """
@@ -167,7 +168,7 @@ class Sandbox:
         candidates = self._candidates(Path(cleaned), roots)
 
         # ★ 존재하는 것을 먼저 고른다. 상대 경로 하나가 여러 root 아래에서 성립할 수
-        #   있는데, 8B 는 어느 root 인지 말해 주지 않는다 (`openclaw-agent.md §4-4`
+        #   있는데, 8B 는 어느 root 인지 말해 주지 않는다 (`runtime/agent-gateway.md §4-4`
         #   의 `workspace/workspace/` 가 같은 부류의 실패다). 존재 여부로 고르면
         #   모델이 root 를 몰라도 맞는 파일에 닿는다. 아무것도 없으면 첫 후보로
         #   간다 — 새 파일 쓰기가 그 경로다.
