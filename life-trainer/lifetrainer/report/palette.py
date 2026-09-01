@@ -32,7 +32,11 @@ class Palette:
     ink: dict[str, str]  # primary/secondary/muted/gridline/baseline
     categories: dict[str, str]  # category_id -> hex. slot 오름차순 = 고정 순서
     labels: dict[str, str]  # category_id -> 한글 라벨
-    structural: dict[str, str]  # away/off/unknown -> hex (활동이 아니라 색상 부호화 대상 아님)
+    structural: dict[str, str]  # away/off/unknown/private -> hex (활동이 아니라 색상 부호화 대상 아님)
+    # ★ 라벨도 같이 싣는다. 전에는 색만 실어서 `web/app.py`·`planner.js` 가 각자
+    #   `{away: "자리비움", ...}` 리터럴을 들고 있었다 — 구조 상태를 하나 더할 때
+    #   세 곳을 같이 안 고치면 화면 절반에서만 이름이 나온다.
+    structural_labels: dict[str, str]
     plan: dict[str, object]  # plan_overlay 값들 (stroke/stroke_alpha/wash_alpha/achieved/missed)
     order: list[str]  # 고정 슬롯 순서의 카테고리 id 목록
 
@@ -96,6 +100,9 @@ def load_palette(path: str | Path, theme: str = "light") -> Palette:
     labels = {cat_id: str(categories_raw[cat_id]["label"]) for cat_id in ordered_ids}
 
     structural = {key: _pick(val, theme) for key, val in raw["structural"].items()}
+    structural_labels = {
+        key: str(val.get("label", key)) for key, val in raw["structural"].items()
+    }
 
     plan: dict[str, object] = {}
     for key, val in raw["plan_overlay"].items():
@@ -112,6 +119,7 @@ def load_palette(path: str | Path, theme: str = "light") -> Palette:
         categories=categories,
         labels=labels,
         structural=structural,
+        structural_labels=structural_labels,
         plan=plan,
         order=ordered_ids,
     )

@@ -21,6 +21,7 @@ import json
 import logging
 import re
 import sqlite3
+import time
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -28,7 +29,7 @@ from typing import Any
 from flask import Flask, Response, abort, jsonify, redirect, render_template, request, url_for
 from werkzeug.exceptions import HTTPException
 
-from lifetrainer import db, timeutil
+from lifetrainer import db, privacy, timeutil
 from lifetrainer.collect import ingest
 from lifetrainer.plan.achieve import day_achievement, plans_for_day
 from lifetrainer.plan.models import (
@@ -64,10 +65,13 @@ _AUTH_EXEMPT_PATHS = ("/healthz", "/auth/enter")
 # 폰에는 브라우저 세션이 없다. 면제는 "인증 없음"이 아니라 "다른 인증"이다.
 _AUTH_EXEMPT_PREFIXES = ("/static/", "/ingest/")
 
-# palette.yaml 에는 구조 상태(off/away/unknown)의 한글 라벨이 있지만
-# report/palette.py 의 Palette.structural 은 색상만 뽑아온다(라벨은 활동 카테고리 전용).
-# 이 셋은 스키마/설정에 고정된 어휘(색 선택이 아니다)라 여기서 상수로 둔다.
-_STRUCTURAL_LABELS = {"away": "자리비움", "off": "빈칸", "unknown": "미분류"}
+# 구조 상태 중 **격자에 이름을 다는** 것. 사람이 만든 구간만 여기 들어온다 —
+# 시스템이 추론한 부재(off·away·unknown)는 종이 플래너의 빈 칸처럼 비워 둔다.
+_LABELED_STRUCTURAL = frozenset({"private"})
+
+# ★ 구조 상태(off/away/unknown/private)의 한글 라벨은 **palette.yaml 이 갖는다**
+#   (`Palette.structural_labels`, 2026-09-01). 전에는 여기와 planner.js 두 곳에
+#   리터럴이 있어서, 상태를 하나 더할 때 같이 안 고치면 화면 절반에서만 이름이 나왔다.
 
 # CSS 변수 선언(`--key: value;`) 하나를 뽑아내는 정규식. css_variables() 의
 # 정확한 래핑 문법(`:root { ... }`)에 의존하지 않기 위해 선언 자체만 추출한다.
@@ -370,7 +374,7 @@ _DEVICE_LABELS = {"laptop": "노트북", "phone": "폰", "tablet": "태블릿", 
 
 
 def _label_for(pal: Palette, category: str) -> str:
-    return pal.labels.get(category) or _STRUCTURAL_LABELS.get(category) or category
+    return pal.labels.get(category) or pal.structural_labels.get(category) or category
 
 
 def _fetch_slot_devices(conn: sqlite3.Connection, day: str) -> dict[int, str]:
@@ -446,7 +450,12 @@ def _build_grid_rows(
                 j += 1
             # 구조 상태(off/away/unknown)는 활동이 아니다 — 라벨을 붙이지 않는다
             # (종이 플래너의 빈 칸은 그냥 비어 있다). 활동 카테고리에만 적용한다.
-            if j - i >= 3 and row_cats[i] in pal.categories:
+            #
+            # ★ 예외는 `private` 하나다. off·away·unknown 은 시스템이 **추론한 부재**지만
+            #   프라이빗은 사람이 **명시적으로 만든 구간**이다. 빈 칸이 아니라 "여기는
+            #   일부러 안 쟀다"는 표시라서, 이름이 없으면 수집 실패와 구분이 안 된다.
+            #   빗금만으로는 자리비움(135도 한 방향)과 한눈에 안 갈린다.
+            if j - i >= 3 and (row_cats[i] in pal.categories or row_cats[i] in _LABELED_STRUCTURAL):
                 label_at[i + (j - i) // 2] = True
             i = j
 
@@ -734,10 +743,21 @@ def create_app(cfg: Any) -> Flask:
         if auth.verify_session_cookie(cfg, raw) is None:
             abort(401, description="로그인이 필요합니다 (슬랙에서 서명 링크로 다시 열어 주세요)")
 
+    # ★ 프라이버시 제어는 read_only 를 면제받는다 (2026-09-01).
+    #   `read_only` 는 "이 화면에서 데이터를 고치지 마라"는 **표시용 운영 스위치**다.
+    #   그것 때문에 "지금 나를 기록하지 마라"를 못 누르는 것은 방향이 반대다.
+    _READ_ONLY_EXEMPT = ("/api/private", "/ingest/private")
+
     @app.before_request
     def _enforce_read_only() -> None:
-        if cfg.web.read_only and request.method in ("POST", "PATCH", "DELETE"):
-            abort(405, description="읽기 전용 모드입니다 (cfg.web.read_only=True)")
+        if not cfg.web.read_only or request.method not in ("POST", "PATCH", "DELETE"):
+            return
+        path = request.path
+        if cfg.web.url_prefix and path.startswith(cfg.web.url_prefix):
+            path = path[len(cfg.web.url_prefix) :] or "/"
+        if any(path.startswith(p) for p in _READ_ONLY_EXEMPT):
+            return
+        abort(405, description="읽기 전용 모드입니다 (cfg.web.read_only=True)")
 
     # ── 수신 (폰 → 젯슨) ────────────────────────────────────────────────
 
@@ -893,7 +913,14 @@ def create_app(cfg: Any) -> Flask:
         today = timeutil.day_str(timeutil.now_ts(), cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour)
         present_categories = {slot["category"] for slot in data["slots"]}
         used_categories = [cat for cat in pal_light.order if cat in present_categories]
-        used_structural = [cat for cat in ("away", "unknown", "off") if cat in present_categories]
+        # 범례에 넣을 구조 상태. 목록은 팔레트에서 오고, 여기서는 **순서만** 정한다
+        # (읽는 사람에게 익숙한 순서: 자리비움 → 프라이빗 → 미분류 → 빈칸).
+        _order = ["away", "private", "unknown", "off"]
+        used_structural = [
+            cat
+            for cat in sorted(pal_light.structural, key=lambda c: (_order + [c]).index(c))
+            if cat in present_categories
+        ]
         cols = grid_rows[0]["cells"] if grid_rows else []
         minute_labels = [cfg.rollup.slot_minutes * (idx + 1) for idx in range(len(cols))]
         activity_runs = _build_activity_runs(
@@ -1135,6 +1162,149 @@ def create_app(cfg: Any) -> Flask:
         if not (0 <= start_slot < end_slot <= cfg.slots_per_day):
             abort(400, description=f"잘못된 슬롯 범위입니다: {start_slot}..{end_slot}")
         return day, start_slot, end_slot
+
+    # ── 프라이빗 모드 ───────────────────────────────────────────────────
+    #
+    # 진실의 원천은 **젯슨**이고, PC 헬퍼·폰 타일은 이걸 폴링하는 실행기다.
+    # 웹용(`/api/private`)과 엔드포인트용(`/ingest/private`)을 나눈 이유는 인증이
+    # 다르기 때문이다 — 엔드포인트는 브라우저 세션이 없다.
+
+    def _private_state_dict(conn) -> dict:
+        return privacy.state(conn).as_dict(poll_sec=cfg.private.poll_sec)
+
+    def _parse_minutes(body: dict, limit: int) -> float:
+        raw = body.get("minutes", cfg.private.default_minutes)
+        try:
+            minutes = float(raw)
+        except (TypeError, ValueError):
+            abort(400, description="minutes 는 숫자여야 합니다")
+        if not (0 < minutes <= limit):
+            abort(400, description=f"minutes 는 0 보다 크고 {limit} 이하여야 합니다")
+        return minutes
+
+    @app.get("/api/private")
+    def api_private_get() -> Response:
+        conn = db.open_db(cfg)
+        try:
+            return jsonify({"ok": True, **_private_state_dict(conn)})
+        finally:
+            conn.close()
+
+    @app.post("/api/private")
+    def api_private_begin() -> Response:
+        body = request.get_json(silent=True) or {}
+        minutes = _parse_minutes(body, cfg.private.max_minutes)
+        conn = db.open_db(cfg)
+        try:
+            st = privacy.begin(conn, minutes, source="web")
+            return jsonify({"ok": True, **st.as_dict(poll_sec=cfg.private.poll_sec)})
+        finally:
+            conn.close()
+
+    @app.delete("/api/private")
+    def api_private_end() -> Response:
+        conn = db.open_db(cfg)
+        try:
+            st = privacy.end_now(conn)
+            return jsonify({"ok": True, **st.as_dict(poll_sec=cfg.private.poll_sec)})
+        finally:
+            conn.close()
+
+    @app.post("/api/private/purge")
+    def api_private_purge() -> Response:
+        """"방금 N분 지우기" — 이미 저장된 것까지 걷어낸다.
+
+        ★ 세 갈래다. 요청이 무엇을 하려는지 **몸통이 말하게** 한다:
+          `dry_run: true` → 200, 세기만 함 (미리보기)
+          아무것도 없음   → 400, 같은 보고서를 붙여 confirm 을 요구
+          `confirm: true` → 200, 실제로 지움
+
+        미리보기를 400 으로 돌려주면 "실패했다"로 읽힌다. 확인 없이 지우는 것을
+        막는 것과, 미리 보여주는 것은 서로 다른 일이다.
+        """
+        body = request.get_json(silent=True) or {}
+        minutes = _parse_minutes(body, cfg.private.max_purge_minutes)
+        now_ts = time.time()
+        start_ts, end_ts = now_ts - minutes * 60.0, now_ts
+
+        conn = db.open_db(cfg)
+        try:
+            if not body.get("confirm"):
+                report = privacy.purge(conn, cfg, start_ts, end_ts, dry_run=True, now=now_ts)
+                payload = {"ok": True, **report.as_dict()}
+                if body.get("dry_run"):
+                    return jsonify(payload)
+                return jsonify({**payload, "ok": False,
+                                "message": "confirm: true 가 필요합니다"}), 400
+
+            report = privacy.purge(conn, cfg, start_ts, end_ts, source="web", now=now_ts)
+            _reroll(conn, report.days)
+            return jsonify({"ok": True, **report.as_dict(),
+                            **privacy.state(conn).as_dict(poll_sec=cfg.private.poll_sec)})
+        finally:
+            conn.close()
+
+    def _reroll(conn, days: list[str]) -> None:
+        """지운 뒤 그 날들을 다시 롤업한다. 실패해도 삭제는 이미 성립했다."""
+        if not days:
+            return
+        try:
+            classifier = Classifier.from_yaml(cfg.rollup.rules_path)
+            for day in days:
+                rollup_day(conn, cfg, classifier, day)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("삭제 후 롤업 실패 (days=%s): %s", days, exc)
+
+    @app.get("/ingest/private")
+    def ingest_private_get() -> Response:
+        """PC 헬퍼·폰 타일이 15초마다 물어보는 자리.
+
+        ★ `/ingest/` 아래여야 한다 — Cloudflare 터널이 그 접두어만 공개하고
+          나머지는 404 다. 그리고 `_AUTH_EXEMPT_PREFIXES` 가 이미 세션을 면제한다.
+
+        ★ nonce 를 안 쓴다(`require_nonce=False`). 조회는 재전송해도 같은 답이고,
+          15초 폴링이 `sync_state` 에 하루 5,760행을 쌓는 것을 막는다.
+        """
+        if not cfg.ingest.enabled:
+            abort(404)
+        conn = db.open_db(cfg)
+        try:
+            try:
+                auth.verify_ingest(
+                    conn, cfg, request.headers.get("Authorization"), b"", require_nonce=False
+                )
+            except auth.AuthError as exc:
+                abort(401, description=str(exc))
+            return jsonify({"ok": True, **_private_state_dict(conn)})
+        finally:
+            conn.close()
+
+    @app.post("/ingest/private")
+    def ingest_private_set() -> Response:
+        """폰 타일이 켜고 끄는 자리. 본문은 `{"minutes": N}` 또는 `{"off": true}`."""
+        if not cfg.ingest.enabled:
+            abort(404)
+        raw = request.get_data(cache=False) or b""
+        conn = db.open_db(cfg)
+        try:
+            try:
+                device = auth.verify_ingest(
+                    conn, cfg, request.headers.get("Authorization"), raw
+                )
+            except auth.AuthError as exc:
+                abort(401, description=str(exc))
+            try:
+                body = json.loads(raw.decode("utf-8")) if raw else {}
+            except (ValueError, UnicodeDecodeError):
+                abort(400, description="본문이 JSON 이 아닙니다")
+            if body.get("off"):
+                st = privacy.end_now(conn)
+            else:
+                minutes = _parse_minutes(body, cfg.private.max_minutes)
+                st = privacy.begin(conn, minutes, source="tile", device=device)
+            return jsonify({"ok": True, **st.as_dict(poll_sec=cfg.private.poll_sec)})
+        finally:
+            conn.close()
 
     @app.post("/api/slot")
     def api_slot_set() -> Response:

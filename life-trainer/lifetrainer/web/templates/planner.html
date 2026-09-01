@@ -21,6 +21,12 @@
         <a class="is-active" href="{{ url_for('day_page', day=day) }}">하루</a>
         <a href="{{ url_prefix }}/w/{{ day }}">주간</a>
       </nav>
+      {# ★ read_only 여도 렌더한다. 표시용 운영 스위치 때문에 프라이버시 제어를
+         못 하게 되면 방향이 반대다 — app.py `_READ_ONLY_EXEMPT` 와 짝이다. #}
+      <button id="private-toggle" class="private-toggle" type="button" aria-pressed="false"
+              title="켜면 그 시간은 수집되지 않는다" hidden>
+        <span class="private-dot" aria-hidden="true">🔒</span><span id="private-toggle-text">프라이빗</span>
+      </button>
       <button id="theme-toggle" class="icon-button theme-toggle" type="button" title="다크/라이트 전환" aria-label="다크/라이트 전환">◐</button>
     </div>
   </header>
@@ -79,8 +85,11 @@
             {% for cat_id in used_categories %}
             <span class="legend-item"><span class="legend-swatch" style="background: var(--cat-{{ cat_id }})"></span>{{ palette.labels[cat_id] }}</span>
             {% endfor %}
-            {% if "away" in used_structural %}<span class="legend-item structural"><span class="legend-swatch structural-away-swatch"></span>자리비움</span>{% endif %}
-            {% if "unknown" in used_structural %}<span class="legend-item structural"><span class="legend-swatch" style="background: var(--structural-unknown)"></span>미분류</span>{% endif %}
+            {# 이름도 색도 palette.yaml 에서 온다 — 구조 상태를 더해도 여기는 안 고친다.
+               빗금이 필요한 것(자리비움·프라이빗)은 CSS 가 클래스로 그린다. #}
+            {% for cat_id in used_structural %}{% if cat_id != "off" %}
+            <span class="legend-item structural"><span class="legend-swatch structural-{{ cat_id }}-swatch" style="background: var(--structural-{{ cat_id }})"></span>{{ palette.structural_labels[cat_id] }}</span>
+            {% endif %}{% endfor %}
             
           </div>
         </div>

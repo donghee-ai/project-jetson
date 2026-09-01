@@ -112,6 +112,23 @@ def build_parser() -> argparse.ArgumentParser:
     rollup_group.add_argument("--range", nargs=2, metavar=("START", "END"), help="시작일 종료일 (양 끝 포함)")
     p_rollup.set_defaults(func=cmd_rollup)
 
+    p_priv = sub.add_parser("private", parents=[common], help="프라이빗 모드 — 그 시간을 안 재게 한다")
+    priv_sub = p_priv.add_subparsers(dest="private_cmd", required=True)
+    pv_on = priv_sub.add_parser("on", parents=[common], help="지금부터 N분간 프라이빗 (이미 켜져 있으면 연장)")
+    pv_on.add_argument("--minutes", type=float, default=None, help="기본: config 의 default_minutes")
+    pv_on.set_defaults(func=cmd_private_on)
+    pv_off = priv_sub.add_parser("off", parents=[common], help="지금 끈다 (구간의 끝을 당긴다)")
+    pv_off.set_defaults(func=cmd_private_off)
+    pv_st = priv_sub.add_parser("status", parents=[common], help="지금 상태와 오늘의 구간")
+    pv_st.set_defaults(func=cmd_private_status)
+    pv_pg = priv_sub.add_parser("purge", parents=[common], help="이미 저장된 구간을 지운다")
+    pv_pg.add_argument("--minutes", type=float, default=None, help="지금부터 거슬러 N분")
+    pv_pg.add_argument("--range", nargs=2, metavar=("START", "END"),
+                       help="임의 구간 (ISO8601 또는 'YYYY-MM-DD HH:MM'). --yes 필요")
+    pv_pg.add_argument("--yes", action="store_true", help="확인 없이 실행")
+    pv_pg.add_argument("--aw", action="store_true", help="엔드포인트 AW 로컬 DB 에서도 지운다")
+    pv_pg.set_defaults(func=cmd_private_purge)
+
     p_stats = sub.add_parser("stats", parents=[common], help="콘솔 요약")
     p_stats.add_argument("--day", type=str, default=None, help="'YYYY-MM-DD' (기본: 오늘)")
     p_stats.set_defaults(func=cmd_stats)
@@ -809,6 +826,150 @@ def cmd_init_db(args: argparse.Namespace, cfg: Config) -> int:
     print(f"스키마 적용 완료: {cfg.db_path}")
     print(f"  마이그레이션 {len(applied)}개 적용됨: {', '.join(applied) or '(없음)'}")
     return 0
+
+
+# ── 프라이빗 모드 ────────────────────────────────────────────────────────
+
+
+def _private_line(st, cfg: Config) -> str:
+    if not st.active:
+        return "프라이빗: 꺼짐"
+    left = max(0.0, st.until_ts - st.server_ts)
+    return f"프라이빗: 켜짐 — {left / 60:.0f}분 남음 (만료 {_fmt_local(st.until_ts, cfg)})"
+
+
+def _fmt_local(ts: float, cfg: Config) -> str:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    return datetime.fromtimestamp(ts, ZoneInfo(cfg.timezone)).strftime("%H:%M")
+
+
+def cmd_private_on(args: argparse.Namespace, cfg: Config) -> int:
+    from lifetrainer import privacy
+
+    minutes = args.minutes if args.minutes is not None else cfg.private.default_minutes
+    if not (0 < minutes <= cfg.private.max_minutes):
+        print(f"minutes 는 0 보다 크고 {cfg.private.max_minutes} 이하여야 합니다", file=sys.stderr)
+        return 2
+    conn = db.open_db(cfg)
+    try:
+        st = privacy.begin(conn, minutes, source="cli")
+    finally:
+        conn.close()
+    print(_private_line(st, cfg))
+    print("  이 시간의 창 제목·앱 이름은 저장되지 않습니다.")
+    return 0
+
+
+def cmd_private_off(args: argparse.Namespace, cfg: Config) -> int:
+    from lifetrainer import privacy
+
+    conn = db.open_db(cfg)
+    try:
+        st = privacy.end_now(conn)
+    finally:
+        conn.close()
+    print(_private_line(st, cfg))
+    print("  끈 시각부터 다시 기록됩니다 — 구간 안의 기록은 돌아오지 않습니다.")
+    return 0
+
+
+def cmd_private_status(args: argparse.Namespace, cfg: Config) -> int:
+    from lifetrainer import privacy
+
+    conn = db.open_db(cfg)
+    try:
+        st = privacy.state(conn)
+        rows = conn.execute(
+            "SELECT start_ts, end_ts, kind, source FROM private_span "
+            "WHERE revoked = 0 AND end_ts > ? ORDER BY start_ts",
+            (st.server_ts - 86400,),
+        ).fetchall()
+    finally:
+        conn.close()
+    print(_private_line(st, cfg))
+    if rows:
+        print("  최근 24시간 구간:")
+        for r in rows:
+            print(
+                f"    {_fmt_local(r['start_ts'], cfg)}–{_fmt_local(r['end_ts'], cfg)}"
+                f"  {r['kind']}  ({r['source']})"
+            )
+    return 0
+
+
+def cmd_private_purge(args: argparse.Namespace, cfg: Config) -> int:
+    from lifetrainer import privacy
+    from lifetrainer.rollup.classify import Classifier
+    from lifetrainer.rollup.rollup import rollup_day
+
+    now_ts = time.time()
+    if args.range:
+        if not args.yes:
+            print("--range 는 --yes 가 필요합니다 (임의 구간은 되돌릴 수 없습니다)", file=sys.stderr)
+            return 2
+        start_ts, end_ts = (_parse_local_ts(v, cfg) for v in args.range)
+    else:
+        minutes = args.minutes if args.minutes is not None else cfg.private.default_minutes
+        if not (0 < minutes <= cfg.private.max_purge_minutes):
+            print(f"minutes 는 0 보다 크고 {cfg.private.max_purge_minutes} 이하여야 합니다", file=sys.stderr)
+            return 2
+        start_ts, end_ts = now_ts - minutes * 60.0, now_ts
+
+    conn = db.open_db(cfg)
+    try:
+        preview = privacy.purge(conn, cfg, start_ts, end_ts, dry_run=True, now=now_ts)
+        print(
+            f"{_fmt_local(start_ts, cfg)}–{_fmt_local(end_ts, cfg)} 구간: "
+            f"이벤트 {preview.events}건 · 활동 {preview.seconds / 60:.0f}분 · 날짜 {len(preview.days)}개"
+        )
+        if not args.yes:
+            # ★ 미리보기만 하고 아무것도 안 바꾼 채로 끝난다. 정상 종료다.
+            print("  실제로 지우려면 --yes 를 붙이세요.")
+            return 0
+
+        report = privacy.purge(conn, cfg, start_ts, end_ts, source="cli", now=now_ts)
+        classifier = Classifier.from_yaml(cfg.rollup.rules_path)
+        for day in report.days:
+            rollup_day(conn, cfg, classifier, day)
+        print(f"삭제 완료: 이벤트 {report.events}건, 재롤업 {len(report.days)}일")
+
+        if args.aw or cfg.private.purge_aw:
+            _purge_aw(cfg, start_ts, end_ts)
+    finally:
+        conn.close()
+    return 0
+
+
+def _purge_aw(cfg: Config, start_ts: float, end_ts: float) -> None:
+    """엔드포인트 AW 로컬 DB 정리. **실패해도 전체를 실패시키지 않는다.**
+
+    젯슨 DB 차단은 이미 성립했다. 남의 기기가 꺼져 있다고 이 명령이 실패로
+    끝나면, 사람은 삭제가 안 된 줄 알고 다시 돌린다.
+    """
+    from lifetrainer import privacy
+    from lifetrainer.collect.aw_client import AWClient
+
+    try:
+        client = AWClient(base_url=cfg.aw.base_url, api_key=cfg.aw.api_key)
+        n = privacy.purge_aw_local(client, start_ts, end_ts)
+        print(f"  AW 로컬 DB: {n}건 삭제")
+    except Exception as exc:  # noqa: BLE001
+        print(f"  AW 로컬 DB 정리 실패 (젯슨 DB 는 이미 정리됨): {exc}", file=sys.stderr)
+
+
+def _parse_local_ts(value: str, cfg: Config) -> float:
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    tz = ZoneInfo(cfg.timezone)
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+        try:
+            return datetime.strptime(value, fmt).replace(tzinfo=tz).timestamp()
+        except ValueError:
+            continue
+    raise SystemExit(f"시각을 못 읽었습니다: {value!r} ('YYYY-MM-DD HH:MM')")
 
 
 def cmd_sync(args: argparse.Namespace, cfg: Config) -> int:

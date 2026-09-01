@@ -55,6 +55,7 @@ _CATEGORY_EMOJI: dict[str, str] = {
     "gaming": "🎮",
     "away": "🚶",
     "off": "💤",
+    "private": "🔒",
     "unknown": "❓",
 }
 
@@ -299,6 +300,10 @@ def daily_report_blocks(stats: "DailyStats", classifier: "Classifier") -> list[d
         ("자리비움", _format_duration(stats.afk_sec)),
         ("꺼짐", _format_duration(stats.off_sec)),
     ]
+    # ★ 0 일 때는 아예 안 보인다. 프라이빗을 안 쓴 날 "프라이빗 0분" 이 매일 붙으면
+    #   칸만 차지하고 아무것도 안 말한다 — 리포트는 **달라진 것**을 말해야 한다.
+    if stats.private_sec > 0:
+        summary.append(("프라이빗", _format_duration(stats.private_sec)))
     if stats.longest_focus:
         cat, _start_slot, length_slots = stats.longest_focus
         summary.append(("최장 몰입", f"{_emoji_for(cat)} {classifier.label(cat)} ({length_slots}슬롯)".strip()))

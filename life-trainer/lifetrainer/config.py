@@ -135,6 +135,13 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "max_body_bytes": 4194304,
         "clock_skew_sec": 300,
     },
+    "private": {
+        "default_minutes": 60,
+        "max_minutes": 480,
+        "max_purge_minutes": 240,
+        "poll_sec": 15,
+        "purge_aw": False,
+    },
 }
 
 
@@ -321,6 +328,27 @@ class IngestConfig:
 
 
 @dataclass(frozen=True)
+class PrivateConfig:
+    """프라이빗 모드 — 이 시간은 재지 않기로 한 것.
+
+    ★ **여기 있는 것은 기본값과 상한뿐이다. 켜져 있는지 여부는 DB(`private_span`)가 갖는다.**
+    상시 프로세스(`lt web`)는 기동 시 설정을 클로저에 못박으므로, 런타임에 켜고 끄는
+    상태를 TOML 에 두면 재시작 없이는 못 바꾼다.
+
+    `max_minutes` 에 상한을 두는 이유: 무기한이 없어야 "끄는 걸 깜빡해도 하루가
+    통째로 비지 않는다"가 성립한다. 연장은 다시 누르면 된다.
+
+    `purge_aw` 는 **남의 기기(PC)의 ActivityWatch DB 를 지우는** 동작이라 기본이 꺼짐이다.
+    """
+
+    default_minutes: int = 60
+    max_minutes: int = 480
+    max_purge_minutes: int = 240
+    poll_sec: int = 15
+    purge_aw: bool = False
+
+
+@dataclass(frozen=True)
 class Config:
     root: Path  # 프로젝트 루트 (절대 경로)
     timezone: str
@@ -339,6 +367,7 @@ class Config:
     embed: EmbedConfig = EmbedConfig()
     search: SearchConfig = SearchConfig()
     ingest: IngestConfig = IngestConfig()
+    private: PrivateConfig = PrivateConfig()
 
     @property
     def tz(self) -> ZoneInfo:
@@ -582,6 +611,14 @@ def load_config(path: str | Path | None = None) -> Config:
         clock_skew_sec=int(raw["ingest"]["clock_skew_sec"]),
     )
 
+    private = PrivateConfig(
+        default_minutes=int(raw["private"]["default_minutes"]),
+        max_minutes=int(raw["private"]["max_minutes"]),
+        max_purge_minutes=int(raw["private"]["max_purge_minutes"]),
+        poll_sec=int(raw["private"]["poll_sec"]),
+        purge_aw=bool(raw["private"]["purge_aw"]),
+    )
+
     return Config(
         root=root,
         timezone=str(raw["general"]["timezone"]),
@@ -599,6 +636,7 @@ def load_config(path: str | Path | None = None) -> Config:
         nightly=nightly,
         search=search,
         ingest=ingest,
+        private=private,
     )
 
 

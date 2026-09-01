@@ -119,6 +119,13 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .legend-item.structural { color: var(--ink-muted); }
 .legend-swatch { width: 9px; height: 9px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--ink-gridline); }
 .structural-away-swatch { background-image: repeating-linear-gradient(135deg, transparent 0 3px, var(--structural-away) 3px 4px); }
+/* ★ 프라이빗은 **교차** 빗금이다 (135 + 45). away 가 단방향이라, 흑백·색각이상에서도
+   둘이 갈린다 — 구조 상태는 색만으로 구분하지 않는다는 규칙(palette.yaml)의 실행. */
+.structural-private-swatch {
+  background-image:
+    repeating-linear-gradient(135deg, transparent 0 3px, var(--structural-private) 3px 4px),
+    repeating-linear-gradient(45deg,  transparent 0 3px, var(--structural-private) 3px 4px);
+}
 .structural-off-swatch { background: transparent; }
 .grid-hint { margin: 14px 0 0; color: var(--ink-muted); font-size: 0.72rem; }
 .selection-caption { min-height: 18px; margin: 3px 0 5px; color: var(--ui-accent); font-size: 0.72rem; }
@@ -137,6 +144,12 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .grid-row[data-hour="9"] .cell, .grid-row[data-hour="12"] .cell, .grid-row[data-hour="15"] .cell, .grid-row[data-hour="18"] .cell, .grid-row[data-hour="21"] .cell, .grid-row[data-hour="0"] .cell, .grid-row[data-hour="3"] .cell { border-bottom-color: var(--ink-baseline); border-bottom-width: 2px; }
 .cell[data-category="off"] { background: transparent !important; }
 .cell[data-category="away"] { background-color: transparent !important; background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--structural-away) 62%, transparent) 6px 7px); }
+.cell[data-category="private"] {
+  background-color: transparent !important;
+  background-image:
+    repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--structural-private) 70%, transparent) 6px 7px),
+    repeating-linear-gradient(45deg,  transparent 0 6px, color-mix(in srgb, var(--structural-private) 70%, transparent) 6px 7px);
+}
 .cell.pending-start { outline: 2px solid var(--ui-accent); outline-offset: -2px; z-index: 4; }
 .cell.in-selection { outline: 2px dashed var(--ui-accent); outline-offset: -2px; z-index: 3; }
 .cell.overridden { box-shadow: inset 0 0 0 2px var(--ink-primary); }
@@ -176,6 +189,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
      보인다(실제로 09~21시 계획 안에 빗금이 떴다). 여기서 되돌린다. */
 .grid.show-plan .cell.has-plan,
 .grid.show-plan .cell.has-plan[data-category="off"],
+.grid.show-plan .cell.has-plan[data-category="private"],
 .grid.show-plan .cell.has-plan[data-category="away"] {
   background-color: var(--plan-color) !important;
   background-image: none !important;
@@ -560,3 +574,47 @@ body.page-entering {
   .chart-donut { gap: 14px; justify-content: center; }
 }
 .chart-caption { margin: 14px 2px 0; font-size: .76rem; color: var(--ink-muted); }
+
+/* ── 프라이빗 토글 ────────────────────────────────────────────────────── */
+/* 헤더에 상주한다. 보고 있는 날짜와 무관하게 **지금** 을 조작하기 때문이다. */
+
+.private-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.34rem 0.7rem;
+    border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.35));
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted, inherit);
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.private-toggle:hover {
+    border-color: var(--structural-private);
+}
+
+/* 켜져 있을 때는 **눈에 띄어야 한다.** 이 상태를 모르고 하루를 보내면
+   그날이 통째로 빈다 — 조용한 손실이 이 기능의 유일한 실패 모드다. */
+.private-toggle.is-on {
+    border-color: var(--structural-private);
+    background: color-mix(in srgb, var(--structural-private) 22%, transparent);
+    color: var(--text-strong, inherit);
+    font-variant-numeric: tabular-nums;
+}
+
+.private-toggle.is-on .private-dot {
+    animation: private-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes private-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .private-toggle.is-on .private-dot { animation: none; }
+}

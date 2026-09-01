@@ -111,7 +111,15 @@ def sign_ingest(secret: str, device: str, ts: float, nonce: str, body: bytes) ->
     return _b64e(mac)
 
 
-def verify_ingest(conn: Any, cfg: Any, header: str | None, body: bytes, *, now: float | None = None) -> str:
+def verify_ingest(
+    conn: Any,
+    cfg: Any,
+    header: str | None,
+    body: bytes,
+    *,
+    now: float | None = None,
+    require_nonce: bool = True,
+) -> str:
     """`Authorization` 헤더를 검증하고 기기 이름을 돌려준다. 실패하면 AuthError.
 
     검증 순서가 곧 방어선이다:
@@ -122,6 +130,12 @@ def verify_ingest(conn: Any, cfg: Any, header: str | None, body: bytes, *, now: 
 
     3번 상태는 서명·시각 검증을 통과한 뒤에만 남긴다. 그러지 않으면 아무 문자열이나
     던지는 것만으로 `sync_state` 가 부풀어 오른다 (`consume_link_token` 과 같은 이유).
+
+    ★ `require_nonce=False` 는 **상태 조회(GET)** 전용이다 (2026-09-01).
+    nonce 는 *상태를 바꾸는* 요청의 재전송을 막는 장치인데, 조회는 재전송해도 같은
+    답이 나오므로 막을 것이 없다. 그런데 성공할 때마다 `sync_state` 에 행을 쓰므로,
+    PC·폰이 15초마다 프라이빗 상태를 물어보면 **하루 5,760행**이 정리 없이 쌓이고
+    읽기 한 번이 WAL 쓰기가 된다. 서명과 시계 오차는 그대로 검증한다.
     """
     ts_now = now if now is not None else time.time()
     secret = ensure_ingest_secret(cfg)
@@ -148,10 +162,11 @@ def verify_ingest(conn: Any, cfg: Any, header: str | None, body: bytes, *, now: 
     if abs(ts_now - ts) > skew:
         raise AuthError(f"요청 시각이 허용 오차({skew}초)를 벗어났습니다")
 
-    state_key = f"ingest_nonce:{device}:{nonce}"
-    if db.get_state(conn, state_key) is not None:
-        raise AuthError("이미 처리된 요청입니다 (재전송)")
-    db.set_state(conn, state_key, repr(ts))
+    if require_nonce:
+        state_key = f"ingest_nonce:{device}:{nonce}"
+        if db.get_state(conn, state_key) is not None:
+            raise AuthError("이미 처리된 요청입니다 (재전송)")
+        db.set_state(conn, state_key, repr(ts))
     return device
 
 

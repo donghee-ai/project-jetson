@@ -97,6 +97,25 @@ class AWClient:
         """`GET /api/0/info` — 인증 면제 헬스체크 엔드포인트."""
         return self._get("/api/0/info", auth=False)
 
+    def delete_event(self, bucket_id: str, event_id: int) -> None:
+        """`DELETE /api/0/buckets/<id>/events/<event_id>` — **한 건씩만** 지울 수 있다.
+
+        aw-server 에 기간 단위 일괄 삭제가 없다
+        ([aw-server#55](https://github.com/ActivityWatch/aw-server/issues/55)).
+        그래서 프라이빗 구간 정리는 `events()` 로 받아 하나씩 돈다.
+
+        ★ `event_id` 는 **서버 응답에서 온 것**을 써야 한다. 우리 `aw_event.event_id`
+          는 스키마 주석이 "참고용, 신뢰하지 않는다"라고 적어 둔 값이다.
+        """
+        url = f"{self._base_url}/api/0/buckets/{bucket_id}/events/{event_id}"
+        try:
+            resp = self._session.delete(url, headers=self._headers(auth=True), timeout=self._timeout)
+        except requests.RequestException as exc:
+            raise AWError(f"ActivityWatch 삭제 실패 ({url}): {exc}") from exc
+        # 404 는 이미 없다는 뜻이라 성공으로 친다 — 두 번 돌려도 같은 결과여야 한다.
+        if resp.status_code >= 400 and resp.status_code != 404:
+            raise AWError(f"ActivityWatch 삭제가 {resp.status_code} 를 반환함 ({url}): {resp.text[:200]}")
+
     def buckets(self) -> dict[str, dict]:
         """`GET /api/0/buckets/` — {bucket_id: Bucket 메타} 딕셔너리."""
         return self._get("/api/0/buckets/")
