@@ -110,6 +110,37 @@ CREATE TABLE IF NOT EXISTS manual_entry (
 CREATE INDEX IF NOT EXISTS idx_manual_span ON manual_entry(start_ts, end_ts) WHERE revoked = 0;
 
 -- ─────────────────────────────────────────────────────────────
+-- 2-B. 프라이빗 구간 — 이 시간은 재지 않기로 한 것
+-- ─────────────────────────────────────────────────────────────
+--
+-- `manual_entry` 와 같은 부류다: **사람이 넣은 구간**이고, 롤업은 읽기만 한다.
+-- 그래서 형태를 그대로 베꼈다 (파생물이 아니므로 재롤업이 안 지운다).
+--
+-- ★ 왜 `sync_state` 키-값이 아닌가: 구간은 **겹칠 수 있고**, 이력이 남아야 하며
+--   (구멍의 근거를 설명해야 한다), 이벤트마다 구간 교차 질의를 해야 한다. 셋 다 못 한다.
+--
+-- ★ `end_ts` 는 **미리 박는다. NULL(열린 구간)을 두지 않는다.**
+--   열어 두면 `rollup_day` 가 10분마다 "지금"을 다시 해석해 **멱등성이 깨지고**,
+--   젯슨이 재부팅되면 하루가 통째로 빈다. 끄기는 `end_ts` 를 now 로 **당기는** 것이다.
+CREATE TABLE IF NOT EXISTS private_span (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    start_ts   REAL NOT NULL,
+    end_ts     REAL NOT NULL,
+    -- live  : 앞으로를 막는다 (토글로 켠 것)
+    -- purge : 막고 + 이미 지웠다 (소급 삭제가 만든 것)
+    --         ★ purge 행은 revoke 할 수 없다 — 이미 지운 것을 안 지운 척할 수 없다.
+    kind       TEXT NOT NULL DEFAULT 'live' CHECK (kind IN ('live', 'purge')),
+    source     TEXT NOT NULL DEFAULT 'web',  -- web | tile | pc | cli
+    device     TEXT,                         -- 켠 기기 이름 (있으면)
+    note       TEXT,
+    revoked    INTEGER NOT NULL DEFAULT 0,
+    created_at REAL NOT NULL,
+    updated_at REAL NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_private_span ON private_span(start_ts, end_ts) WHERE revoked = 0;
+
+-- ─────────────────────────────────────────────────────────────
 -- 3. 10분 버킷 롤업 (하루 144 슬롯)
 -- ─────────────────────────────────────────────────────────────
 
@@ -125,6 +156,9 @@ CREATE TABLE IF NOT EXISTS slot (
     active_sec  REAL NOT NULL DEFAULT 0,   -- not-afk 로 관측된 초
     afk_sec     REAL NOT NULL DEFAULT 0,   -- afk 로 관측된 초
     gap_sec     REAL NOT NULL DEFAULT 0,   -- 관측 자체가 없는 초 (PC off)
+    -- 프라이빗으로 재지 않기로 한 초. `gap_sec`(관측 실패)와 **다른 것**이라 따로 센다 —
+    -- 커버리지 분모에서 빼야 "하루 종일 프라이빗"이 "수집 0%"로 안 읽힌다.
+    private_sec REAL NOT NULL DEFAULT 0,
     winner_sec  REAL NOT NULL DEFAULT 0,   -- 승자 카테고리가 점유한 초
     source      TEXT NOT NULL DEFAULT 'rule',  -- rule | llm | manual | mixed | none
     confidence  REAL NOT NULL DEFAULT 1.0,

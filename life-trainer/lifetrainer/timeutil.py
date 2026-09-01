@@ -198,3 +198,63 @@ def parse_duration(s: str) -> float:
         raise ValueError(f"기간 문자열을 해석할 수 없습니다: {s!r}")
 
     return total
+
+
+# ── 구간 대수 ─────────────────────────────────────────────────────────────
+#
+# ★ 원래 `rollup/rollup.py` 안에 있었다(기기 중재용). 프라이빗 모드가 `collect/`
+#   에서도 이걸 써야 하는데 `collect → rollup` 은 층이 뒤집힌다 — 그래서 중립인
+#   여기로 올렸다. `rollup` 쪽 이름(`_union`·`_subtract`)은 별칭으로 남아 있다.
+
+
+def union_spans(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """겹치거나 맞닿은 구간을 합친다."""
+    out: list[tuple[float, float]] = []
+    for s, e in sorted(intervals):
+        if e <= s:
+            continue
+        if out and s <= out[-1][1]:
+            out[-1] = (out[-1][0], max(out[-1][1], e))
+        else:
+            out.append((s, e))
+    return out
+
+
+def subtract_spans(
+    base: list[tuple[float, float]], cut: list[tuple[float, float]]
+) -> list[tuple[float, float]]:
+    """`base` 에서 `cut` 과 겹치는 부분을 뺀다."""
+    cut = union_spans(cut)
+    out: list[tuple[float, float]] = []
+    for s, e in base:
+        pieces = [(s, e)]
+        for cs, ce in cut:
+            nxt: list[tuple[float, float]] = []
+            for ps, pe in pieces:
+                if pe <= cs or ps >= ce:
+                    nxt.append((ps, pe))
+                    continue
+                if ps < cs:
+                    nxt.append((ps, cs))
+                if pe > ce:
+                    nxt.append((ce, pe))
+            pieces = nxt
+        out.extend(p for p in pieces if p[1] > p[0])
+    return out
+
+
+def spans_overlap_sec(span: tuple[float, float], cuts: list[tuple[float, float]]) -> float:
+    """`span` 이 `cuts` **전체**와 겹치는 총 초. 슬롯의 `private_sec` 를 세는 데 쓴다.
+
+    ★ 위의 `overlap_sec(a0, a1, b0, b1)` 는 **구간 둘**을 비교한다. 이름을 겹치게 뒀다가
+      기존 함수를 덮어 테스트 12개가 깨졌다 — 이쪽은 "구간 하나 vs 구간 목록"이다.
+    """
+    s, e = span
+    if e <= s or not cuts:
+        return 0.0
+    total = 0.0
+    for cs, ce in union_spans(cuts):
+        lo, hi = max(s, cs), min(e, ce)
+        if hi > lo:
+            total += hi - lo
+    return total
