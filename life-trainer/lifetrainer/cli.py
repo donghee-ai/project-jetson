@@ -794,9 +794,20 @@ def _check_compaction(cfg: Config, prompt_tokens: int, ok, warn, fail) -> None: 
 
 
 def cmd_init_db(args: argparse.Namespace, cfg: Config) -> int:
+    """스키마 + 마이그레이션 적용. `open_db` 가 둘 다 한다 (2026-09-01 부터).
+
+    ★ 전에는 "schema v5 적용 완료" 라고 찍었는데 그건 **상수를 출력한 것**이지
+      적용한 결과가 아니었다. 실제로는 마이그레이션이 하나도 안 돌고 있었다.
+      이제 적용된 표식을 세서 말한다 — 숫자를 지어내지 않는다.
+    """
     conn = db.open_db(cfg)
+    applied = [
+        r[0].split(":", 1)[1]
+        for r in conn.execute("SELECT key FROM meta WHERE key LIKE 'migration:%' ORDER BY key")
+    ]
     conn.close()
-    print(f"스키마 적용 완료: {cfg.db_path} (schema v{db.SCHEMA_VERSION})")
+    print(f"스키마 적용 완료: {cfg.db_path}")
+    print(f"  마이그레이션 {len(applied)}개 적용됨: {', '.join(applied) or '(없음)'}")
     return 0
 
 
