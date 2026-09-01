@@ -143,12 +143,6 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .cell.has-plan::before { content: ""; position: absolute; inset: 0; background: var(--plan-stroke); opacity: var(--plan-wash_alpha); pointer-events: none; }
 /* ── 색 테마 고르기 (2026-08-25) ───────────────────────────────────────
    카테고리 색만 바꾸는 변주. 표면·글자는 그대로라 라이트/다크와는 다른 축이다. */
-.palette-picker { display: inline-flex; gap: 2px; flex: none; padding: 2px; border-radius: 999px; background: var(--ink-gridline); }
-.pal-btn {
-  border: 0; cursor: pointer; font: inherit; font-size: 0.76rem; font-weight: 600;
-  padding: 4px 10px; border-radius: 999px; background: transparent; color: var(--ink-secondary);
-}
-.pal-btn[aria-pressed="true"] { background: var(--surface); color: var(--ink-primary); }
 
 /* ── 계획 보기 토글 (2026-08-25) ───────────────────────────────────────
    같은 격자가 두 가지를 보여준다.

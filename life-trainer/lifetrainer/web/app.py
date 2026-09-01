@@ -101,39 +101,38 @@ def _inner_decls(css_block: str) -> str:
 
 
 def _palette_css_blocks(palette_path) -> str:
-    """모든 변주 × 명암을 한 번에 `<style>` 로 낸다.
+    """명암에 따라 카테고리 색을 낸다 — **라이트는 기본, 다크는 네온.**
 
-    변주를 고르는 일은 **취향**이라 서버 왕복이 아깝다. 여섯 벌(기본·파스텔·네온
-    × 라이트·다크)을 전부 실어 두고 `<html data-palette=...>` 한 글자로 고른다 —
-    응답이 약 2KB 늘고 전환이 즉시다.
+    ★ 2026-09-01: 변주 고르개(기본·파스텔·네온)를 없앴다.
+      취향을 고르게 두는 대신 **명암 하나에 묶었다.** 고르개가 있던 동안 실제로
+      쓰인 조합은 둘뿐이었고, 셋 중 하나를 고르는 위젯이 격자 머리줄에서
+      자리를 차지하면서 정작 무엇을 보는지(격자·막대·도넛)를 밀어냈다.
+      선택지를 없애면 화면이 한 가지 답만 준다.
 
-    ★ 카테고리 색만 변주가 있다. 표면·글자·구조 상태·계획 오버레이는 기본을
-      그대로 쓴다(`load_palette` 주석) — 읽힘의 뼈대라 취향으로 흔들면 안 된다.
+      `--ui-accent-base` 는 **이미 이 규칙이었다**(아래) — 이제 카테고리 색도 같다.
+      palette.yaml 의 `pastel` 은 남겨 둔다: PNG 리포트·`derive_theme_palette.py` 가
+      쓰는 데이터이고, 웹이 안 쓴다고 데이터를 지울 이유는 없다.
+
+    ★ 카테고리 색만 명암을 탄다. 표면·글자·구조 상태·계획 오버레이는 기본을
+      그대로 쓴다(`load_palette` 주석) — 읽힘의 뼈대라 흔들면 안 된다.
 
     명암은 세 갈래를 다 덮는다: 기본(라이트) · 시스템이 다크일 때 ·
     사용자가 다크로 못박았을 때. 아티팩트 페이지에서와 같은 규칙이다.
     """
-    from lifetrainer.report.palette import variant_names
+    light = _inner_decls(css_variables(load_palette(palette_path, "light")))
+    dark = _inner_decls(css_variables(load_palette(palette_path, "neon-dark")))
+    out = [
+        f":root {{\n{light}\n}}",
+        f'@media (prefers-color-scheme: dark) {{\n:root:not([data-theme="light"]) {{\n{dark}\n}}\n}}',
+        f':root[data-theme="dark"] {{\n{dark}\n}}',
+    ]
 
-    out: list[str] = []
-    for variant in variant_names(palette_path):
-        base = ":root" if variant == "base" else f':root[data-palette="{variant}"]'
-        light = _inner_decls(css_variables(load_palette(palette_path, _theme_of(variant, "light"))))
-        dark = _inner_decls(css_variables(load_palette(palette_path, _theme_of(variant, "dark"))))
-        auto_dark = base.replace(":root", ':root:not([data-theme="light"])', 1)
-        forced_dark = base.replace(":root", ':root[data-theme="dark"]', 1)
-        out.append(f"{base} {{\n{light}\n}}")
-        out.append(f"@media (prefers-color-scheme: dark) {{\n{auto_dark} {{\n{dark}\n}}\n}}")
-        out.append(f"{forced_dark} {{\n{dark}\n}}")
-
-    # ★ UI 강조색(`--ui-accent-base`)은 **변주를 안 따른다.**
+    # ★ UI 강조색(`--ui-accent-base`)은 카테고리 색과 **다른 축**이다.
     #
     # 전에는 `planner.css` 가 `--ui-accent: var(--cat-coding)` 이라 팔레트를 파스텔로
-    # 바꾸면 격자만이 아니라 "실제 활동" 숫자·"오늘의 계획" 강조까지 같이 옅어졌다
-    # (파스텔 coding 은 #a7e2ff 다). **격자의 취향과 UI 의 읽힘은 다른 축이다** —
-    # 격자는 카테고리를 구분하려고 색을 쓰고, UI 는 무엇을 누를지 알려주려고 쓴다.
-    #
-    # 라이트는 기본, 다크는 네온을 쓴다. 두 값 다 palette.yaml 에서 온다 (하드코딩 없음).
+    # 바꾸면 격자만이 아니라 "실제 활동" 숫자·"오늘의 계획" 강조까지 같이 옅어졌다.
+    # **격자의 색과 UI 의 읽힘은 다른 축이다** — 격자는 카테고리를 구분하려고 색을
+    # 쓰고, UI 는 무엇을 누를지 알려주려고 쓴다. 그래서 따로 둔다.
     accent_light = load_palette(palette_path, "light").categories["coding"]
     accent_dark = load_palette(palette_path, "neon-dark").categories["coding"]
     out.append(f":root {{\n  --ui-accent-base: {accent_light};\n}}")
@@ -143,10 +142,6 @@ def _palette_css_blocks(palette_path) -> str:
     )
     out.append(f':root[data-theme="dark"] {{ --ui-accent-base: {accent_dark}; }}')
     return "\n".join(out)
-
-
-def _theme_of(variant: str, mode: str) -> str:
-    return mode if variant == "base" else f"{variant}-{mode}"
 
 
 def _weekdays_kr(iso_weekdays: str) -> str:

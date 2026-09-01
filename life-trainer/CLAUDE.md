@@ -57,9 +57,11 @@
 - 활동 카테고리 **9개** (게임·SNS 포함) + 구조 상태 3개.
   분류 규칙은 앱 · URL · 창 제목 세 갈래이고 **개수는 `make status`** 가 말한다
 - **색은 `config/palette.yaml` 하나에서만 온다.** `rules.yaml` 에는 색이 없다 (2026-08-25)
-- 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지. **변주(파스텔·네온)는
-  같은 파일의 `themes:` 에 있고 `scripts/derive_theme_palette.py` 가 계산한다**
+- 색은 `config/palette.yaml` 단일 원본. 하드코딩 금지. **변주는 같은 파일의
+  `themes:` 에 있고 `scripts/derive_theme_palette.py` 가 계산한다**
   **색을 더할 때는 검증기로 계산한다** — 눈대중 금지. 근거는 palette.yaml 주석에
+- **웹은 변주를 고르게 하지 않는다 — 라이트=기본, 다크=네온으로 고정** (2026-09-01).
+  고르개(기본·파스텔·네온)를 없앴다. `pastel` 은 PNG 리포트가 쓰는 데이터라 남는다
 - **Slack 발송은 `--post` 등 명시적 지시가 있을 때만**
 - **백업은 검증까지가 백업이다** — `scripts/backup.sh` 가 `quick_check` 와 내용 유무를
   보고, 실패하면 그 파일을 지운다. 깨진 파일을 "백업 있음" 으로 세지 않기 위해서다.
