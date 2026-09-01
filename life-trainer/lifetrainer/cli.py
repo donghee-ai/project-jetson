@@ -370,6 +370,30 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     else:
         fail("DB", f"{cfg.db_path} 없음 — `lt init-db` 실행 필요")
 
+    # 1-b. 프라이빗 모드 — ★ **정보로만 낸다. WARN 으로 올리지 않는다.**
+    #
+    #   프라이빗이 켜져 있는 것은 고장이 아니라 사람이 그렇게 정한 상태다.
+    #   여기서 노란불을 켜면 "켤 때마다 doctor 가 운다" 가 되고, 그러면 사람이
+    #   doctor 를 안 본다 (CLAUDE.md §1 — 안 울려야 할 때 우는 검사).
+    #
+    #   그래도 **적기는 한다.** 커버리지가 왜 낮은지 물었을 때 답이 여기 있어야 한다.
+    if conn is not None:
+        try:
+            from lifetrainer import privacy
+
+            st = privacy.state(conn)
+            if st.active:
+                left = max(0.0, st.until_ts - st.server_ts) / 60.0
+                ok("프라이빗", f"켜짐 — {left:.0f}분 남음. 이 시간은 수집되지 않는다")
+            else:
+                today = conn.execute(
+                    "SELECT COUNT(*) AS c FROM private_span WHERE revoked = 0 AND end_ts > ?",
+                    (st.server_ts - 86400,),
+                ).fetchone()["c"]
+                ok("프라이빗", f"꺼짐 (최근 24시간 구간 {today}개)")
+        except Exception as exc:  # noqa: BLE001
+            warn("프라이빗", f"상태 조회 실패: {exc}")
+
     # 2. ActivityWatch 연결 + 버킷 목록
     try:
         from lifetrainer.collect.aw_client import AWClient
