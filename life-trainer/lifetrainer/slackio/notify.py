@@ -5,7 +5,12 @@
   - 파일 업로드는 `files_upload_v2` 만 쓴다 (v1 `files.upload` 는 2025-11-12 완전 폐기).
   - 이미지 블록은 업로드한 파일의 `slack_file: {"id": ...}` 로 참조한다 (공개 URL 불필요).
   - 429 는 `Retry-After` 를 보고 최대 3회 재시도.
-  - 운영 알림(`alert`)은 `alert_state` 로 쿨다운 중복 억제 — "알림 피로"가 사망 원인 1위.
+  - 운영 알림은 여기 없다. **`alert()` 를 2026-09-01 에 지웠다** — 만들어만 두고
+    호출자가 한 번도 없었고, 쿨다운으로 중복을 늦추는 모델이라 "이미 아는 문제를
+    매번 다시" 쪽이었다. 상태 알림은 `operate/tools/daily-check.sh` 가 한다 —
+    **상태가 바뀔 때만** 보내고 전이 7가지 자기시험을 갖는다.
+    `alert_state` 테이블은 스키마에 남겨 뒀다(0행). 지우려면 마이그레이션이 필요한데
+    빈 테이블 하나가 주는 해는 없고, 옛 DB 와 새 DB 가 갈리는 쪽이 더 나쁘다.
 """
 
 from __future__ import annotations
@@ -371,36 +376,3 @@ class SlackNotifier:
                 )
         return ts
 
-    # ── 운영 알림 (쿨다운 억제) ──────────────────────────────────────
-
-    def alert(self, conn, key: str, title: str, detail: str, *, cooldown_sec: float = 3600) -> bool:
-        """`alert_state` 로 같은 key 의 중복 알림을 억제한다.
-
-        쿨다운 안이면 count 만 올리고 발송하지 않는다 (알림 피로 방지가 기본값).
-        실제로 Slack 에 보냈으면 True, 억제됐거나 비활성 상태면 False.
-        """
-        now = timeutil.now_ts()
-        row = conn.execute("SELECT last_sent FROM alert_state WHERE key = ?", (key,)).fetchone()
-        if row is not None and (now - row["last_sent"]) < cooldown_sec:
-            with transaction(conn):
-                conn.execute("UPDATE alert_state SET count = count + 1 WHERE key = ?", (key,))
-            logger.info("알림 쿨다운으로 억제: key=%s", key)
-            return False
-
-        sent = False
-        if self.enabled:
-            try:
-                ts = self.post(f"{title}: {detail}", blocks=error_blocks(title, detail))
-                sent = bool(ts)
-            except SlackError as exc:
-                logger.warning("알림 발송 실패(key=%s): %s", key, exc)
-        else:
-            logger.warning("Slack 비활성화(토큰 없음) — 알림 기록만 하고 발송 생략: %s", title)
-
-        with transaction(conn):
-            conn.execute(
-                "INSERT INTO alert_state(key, last_sent, count) VALUES (?, ?, 1) "
-                "ON CONFLICT(key) DO UPDATE SET last_sent = excluded.last_sent, count = 1",
-                (key, now),
-            )
-        return sent

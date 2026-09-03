@@ -321,6 +321,15 @@ def daily_report_blocks(stats: "DailyStats", classifier: "Classifier") -> list[d
         top = ", ".join(f"{app}({_format_duration(sec)})" for app, sec in stats.top_apps[:5])
         blocks.append(context([f"상위 앱: {top}"]))
 
+    # ★ 비어 있으면 **아무것도 안 붙는다.** "미룬 것 없음" 을 매일 적으면 칸만 차지하고
+    #   아무것도 안 말한다 — 리포트는 달라진 것을 말해야 한다 (CLAUDE.md §1).
+    #
+    #   2026-09-01 까지 이 숫자를 보여주는 곳이 없었다. 슬랙 `/defer` 가 이월을 만들고
+    #   `v_carry_debt` 뷰도 동작하는데 **읽는 쪽만 없었다.**
+    if stats.repeated_defers:
+        items = " · ".join(f"{title} ({depth}번)" for title, depth in stats.repeated_defers)
+        blocks.append(context([f"↩️ 두 번 이상 미룬 것: {items}"]))
+
     blocks.append(_context_generated_at())
     return _enforce_block_limit(blocks)
 

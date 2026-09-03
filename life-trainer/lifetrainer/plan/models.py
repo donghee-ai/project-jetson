@@ -665,6 +665,23 @@ def carry_debt(conn: sqlite3.Connection) -> list[tuple[int, int]]:
     return [(int(r["root"]), int(r["depth"])) for r in rows]
 
 
+def carry_debt_titles(conn: sqlite3.Connection, *, limit: int = 3) -> list[tuple[str, int]]:
+    """미루기 부채를 **사람이 읽을 수 있게**: (제목, 미룬 횟수) 깊은 것부터.
+
+    ★ 2026-09-01 까지 `carry_debt()` 에 호출자가 없었다. 슬랙 `/defer` 가 이월을
+      **실제로 만들고** `v_carry_debt` 뷰도 동작하는데, **보여주는 곳만 없었다.**
+      숫자만으로는 못 고친다 — 무엇을 미루고 있는지가 있어야 손이 간다.
+    """
+    rows = conn.execute(
+        "SELECT pi.title AS title, d.depth AS depth "
+        "FROM v_carry_debt d JOIN plan_instance pi ON pi.id = d.root "
+        "WHERE pi.archived_at IS NULL "
+        "ORDER BY d.depth DESC, pi.title ASC LIMIT ?",
+        (limit,),
+    ).fetchall()
+    return [(str(r["title"]), int(r["depth"])) for r in rows]
+
+
 # ─────────────────────────────────────────────────────────────
 # 파서
 # ─────────────────────────────────────────────────────────────

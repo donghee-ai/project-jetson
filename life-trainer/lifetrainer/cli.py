@@ -434,6 +434,38 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
                 ok("롤업", f"{rollup_row['a']} ~ {rollup_row['b']}")
             else:
                 warn("롤업", "롤업된 날짜가 없음 — `lt rollup --range <시작> <끝>` 실행 필요")
+
+            # ── 롤업이 **지금도 돌고 있나** ─────────────────────────────
+            #
+            # ★ 2026-09-01 에 생겼다. 그날 마이그레이션 하나가 밀려서 롤업이 10분마다
+            #   죽었는데, **아무것도 그걸 안 잡았다.** doctor 는 "롤업 08-12 ~ 09-01"
+            #   이라고 OK 를 찍었다 — 범위는 맞았고, 그 범위가 멈춰 있다는 것만 몰랐다.
+            #
+            # ★ 왜 `aw_cursor` 로 안 재나 (이걸로 쟀으면 매일 아침 헛경보다):
+            #   커서는 **PC 에 새 이벤트가 있을 때만** 전진한다. 노트북을 꺼 두면
+            #   밤새 안 움직이는데 그건 고장이 아니다. AW 에 못 닿는 것은 위의
+            #   ActivityWatch 항목이 이미 따로 말한다 — 한 사건에 경보는 하나다.
+            #
+            # ★ `slot.updated_at` 은 다르다. 롤업은 이벤트가 없어도 오늘 144칸을
+            #   전부 다시 쓴다(빈 칸은 off). **PC 가 꺼져 있어도 전진한다.**
+            #   멈췄다면 멈춘 것은 우리 쪽이다.
+            #
+            # 언제 꺼지나: 롤업이 한 번 성공하면 즉시. 누적이 아니라 마지막 시각이다.
+            STALE_WARN_H = 1.0   # 10분 주기 기준 6회 연속 누락. 재부팅 정도로는 안 운다
+            fresh = conn.execute("SELECT MAX(updated_at) AS m FROM slot").fetchone()
+            if fresh is None or fresh["m"] is None:
+                # ★ 실패가 아니라 **미확인**이다. 갓 만든 DB 는 아직 롤업한 적이 없다.
+                ok("롤업 신선도", "아직 롤업한 적 없음 — `lt rollup --today`")
+            else:
+                age_h = (time.time() - float(fresh["m"])) / 3600.0
+                if age_h > STALE_WARN_H:
+                    warn(
+                        "롤업 신선도",
+                        f"마지막 갱신 {age_h:.1f}시간 전 — 10분마다 돌아야 한다."
+                        " `journalctl --user -u lifetrainer-sync.service -n 30` 로 원인 확인",
+                    )
+                else:
+                    ok("롤업 신선도", f"{age_h * 60:.0f}분 전")
         except Exception as exc:  # noqa: BLE001
             warn("DB 조회", f"이벤트/롤업 조회 실패: {exc}")
 
