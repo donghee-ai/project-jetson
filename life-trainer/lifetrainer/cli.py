@@ -239,6 +239,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_plan_skip = plan_sub.add_parser("skip", parents=[common], help="반복 계획을 그 날짜만 건너뛰기")
     p_plan_skip.add_argument("plan_id", type=int, help="계획 id")
     p_plan_skip.add_argument("--day", type=str, required=True, help="'YYYY-MM-DD'")
+    p_plan_skip.add_argument("--off", action="store_true", help="건너뛰기 해제 (되돌리기)")
     p_plan_skip.set_defaults(func=cmd_plan_skip)
 
     p_slot = sub.add_parser("slot", parents=[common], help="타임테이블 칸 수동 보정")
@@ -1497,6 +1498,25 @@ def cmd_nightly(args: argparse.Namespace, cfg: Config) -> int:
                     print(f"임베딩 {r.embedded}건 생성 (실패 {r.failed}건).")
                 except E.EmbedUnavailable as exc:
                     print(f"임베딩 서버 없음 — 건너뜁니다: {exc}")
+
+            # ★ 종료된 잡 걷어내기. **여기가 `purge_done` 의 첫 호출자다 (2026-09-01).**
+            #
+            #   그전까지 이 함수는 만들어만 두고 아무도 안 불렀다. 그런데 `lt doctor` 의
+            #   큐 판정 주석은 *"purge_done 이 14일 뒤에 걷어가므로 done 은 회전한다"* 를
+            #   전제로 쓰여 있었다 — 실측하니 가장 오래된 done 이 17일 전이었다.
+            #   **주석이 코드보다 낙관적이었다.**
+            #
+            #   왜 여기인가: `--stop` 은 새벽 창이 닫히는 05:50 에 하루 한 번 돈다.
+            #   워커가 잡을 집고 있지 않은 유일하게 조용한 시점이라 지우기 안전하다.
+            #
+            #   지운 건수를 **찍는다.** 조용히 지우면 다음 사람이 또 "도는지 안 도는지"를
+            #   실측해야 한다.
+            days = cfg.nightly.job_retention_days
+            if days > 0:
+                from lifetrainer.llm.queue import purge_done
+
+                purged = purge_done(conn, older_than_days=days)
+                print(f"종료 잡 정리: {purged}건 삭제 ({days}일 이상 지난 done/failed/cancelled).")
             return 0
 
         if args.dry_run:
@@ -1707,15 +1727,30 @@ def cmd_plan_check(args: argparse.Namespace, cfg: Config) -> int:
 
 
 def cmd_plan_skip(args: argparse.Namespace, cfg: Config) -> int:
-    from lifetrainer.plan.models import get_plan, skip_plan
+    """반복 계획을 그 날짜만 건너뛴다. `--off` 로 되돌린다.
+
+    ★ 되돌리기가 **없었다** (2026-09-01 까지). `unskip_plan` 은 만들어져 있었는데
+      부르는 곳이 하나도 없었고, 웹은 건너뛴 계획을 목록에서 아예 빼기 때문에
+      잘못 누르면 DB 를 직접 손대는 것 말고는 길이 없었다.
+      `lt plan check --off` 와 같은 관례를 따른다.
+
+    ★ 한계: `plan_skip` 은 **전개(materialize) 전에만** 효과가 있다. 이미 그날의
+      인스턴스가 만들어진 뒤면 건너뛰기도 되돌리기도 화면을 안 바꾼다 —
+      `docs/issues/0026`. 이 명령은 그 경계를 고치지 않는다.
+    """
+    from lifetrainer.plan.models import get_plan, skip_plan, unskip_plan
 
     conn = db.open_db(cfg)
     try:
         existing = get_plan(conn, args.plan_id)
         if existing is None:
             raise CliError(f"계획을 찾을 수 없습니다: id={args.plan_id}")
-        skip_plan(conn, args.plan_id, args.day)
-        print(f"{args.day} {existing.title!r} 건너뜀")
+        if args.off:
+            unskip_plan(conn, args.plan_id, args.day)
+            print(f"{args.day} {existing.title!r} 건너뛰기 해제")
+        else:
+            skip_plan(conn, args.plan_id, args.day)
+            print(f"{args.day} {existing.title!r} 건너뜀 (되돌리려면 --off)")
         return 0
     finally:
         conn.close()

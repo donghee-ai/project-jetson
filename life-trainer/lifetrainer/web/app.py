@@ -43,6 +43,7 @@ from lifetrainer.plan.models import (
     set_check,
     set_status,
     skip_plan,
+    unskip_plan,
     update_plan,
     sync_instances_from_plan,
 )
@@ -1145,6 +1146,33 @@ def create_app(cfg: Any) -> Flask:
         finally:
             conn.close()
         return jsonify({"ok": True, "id": plan_id, "day": day, "skipped": True})
+
+    @app.delete("/api/plan/<int:plan_id>/skip")
+    def api_plan_unskip(plan_id: int) -> Response:
+        """건너뛰기를 되돌린다.
+
+        ★ 이 길이 **없었다** (2026-09-01 까지). `unskip_plan` 은 있는데 호출자가 없었고,
+          건너뛴 계획은 목록에서 빠지므로 화면에서 되돌릴 방법이 아예 없었다.
+          템플릿이 없는 인스턴스(canceled)는 여기서 안 다룬다 — 그건 취소지 건너뛰기가 아니다.
+
+        ★ 한계: `plan_skip` 은 **전개 전에만** 효과가 있어서, 이미 그날 인스턴스가
+          만들어졌으면 이 해제도 화면을 안 바꾼다 — `docs/issues/0026` 이 그 경계를 다룬다.
+          여기서 고치지 않는 이유는 "건너뛰기가 무엇이어야 하는가"(보관 vs 취소 표시)를
+          먼저 정해야 하기 때문이다.
+        """
+        body = request.get_json(silent=True) or {}
+        day = body.get("day") or request.args.get("day")
+        if not _valid_day(day):
+            abort(400, description="day 가 필요합니다 (YYYY-MM-DD)")
+
+        conn = db.open_db(cfg)
+        try:
+            if get_plan(conn, plan_id) is None:
+                abort(404, description=f"반복 계획을 찾을 수 없습니다: id={plan_id}")
+            unskip_plan(conn, plan_id, day)
+        finally:
+            conn.close()
+        return jsonify({"ok": True, "id": plan_id, "day": day, "skipped": False})
 
     # ── 수동 보정(슬롯 오버라이드) ──────────────────────────────────────
 

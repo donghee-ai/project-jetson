@@ -104,6 +104,7 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "summary_limit": 600,
         "tag_limit": 20,
         "embed_limit": 1000,
+        "job_retention_days": 14,
     },
     "web": {
         "host": "127.0.0.1",
@@ -278,6 +279,16 @@ class NightlyConfig:
     #   운영값 30 이 임베딩 한도 60 을 낳고, **유입이 하루 약 400건이라 구조적으로 밀린다.**
     #   실제로 미임베딩이 1,700건까지 쌓였고 가장 오래된 것이 10일 전이었다.
     embed_limit: int = 1000
+
+    # ★ 종료된 잡을 며칠 뒤에 걷어내나. `purge_done` 이 `--stop` 에서 이 값을 쓴다.
+    #
+    #   2026-09-01 까지 `purge_done` 은 **아무도 안 부르는 함수**였다. `lt doctor` 의
+    #   큐 판정 주석은 *"purge_done 이 14일 뒤에 걷어가므로 done 은 회전한다"* 를
+    #   전제로 쓰여 있었는데, 실측하니 가장 오래된 done 이 17일 전이었다 — 회전한 적이
+    #   없다. 주석이 코드보다 낙관적이었다.
+    #
+    #   0 이면 안 지운다. 그때는 doctor 가 "회전 안 함"을 알고 말해야 한다.
+    job_retention_days: int = 14
 
 
 @dataclass(frozen=True)
@@ -587,6 +598,7 @@ def load_config(path: str | Path | None = None) -> Config:
     nightly = NightlyConfig(
         summary_limit=int(raw["nightly"]["summary_limit"]),
         tag_limit=int(raw["nightly"]["tag_limit"]),
+        job_retention_days=int(raw["nightly"]["job_retention_days"]),
         embed_limit=int(raw["nightly"]["embed_limit"]),
     )
 
