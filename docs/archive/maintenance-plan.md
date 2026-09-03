@@ -8,7 +8,7 @@
 >
 > | 남아 있던 것 | 어디로 |
 > |---|---|
-> | `thermal-test.sh` 의 92°C 라벨 · 없는 40W 모드 (§E-3) | [`issues/0020`](../../life-trainer/docs/issues/0020-the-thermal-script-calls-our-alarm-value-the-chips-limit.md) |
+> | `thermal-test.sh` 의 92°C 라벨 · 없는 40W 모드 (§E-3) | [`issues/0020`](../../life-trainer/HISTORY/2026-09-03-our-alarm-value-was-wearing-the-chips-clothes.md) (해결) |
 > | 열 안정성 · 24시간 soak (§E-3) | [`issues/0021`](../../life-trainer/docs/issues/p-0021-nothing-has-measured-this-machine-under-sustained-load.md) |
 > | 15W 측정 · README "1회 측정" (§E-3) | [`issues/0022`](../../life-trainer/docs/issues/p-0022-only-one-power-mode-was-ever-measured.md) |
 > | 의존성 lock · 버전 matrix (§E-4) | [`issues/0023`](../../life-trainer/docs/issues/p-0023-nothing-pins-what-actually-gets-installed.md) |
