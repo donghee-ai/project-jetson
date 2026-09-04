@@ -466,6 +466,76 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
                     )
                 else:
                     ok("롤업 신선도", f"{age_h * 60:.0f}분 전")
+
+            # ── 워처 하나가 **혼자** 조용한가 ──────────────────────────
+            #
+            # ★ 2026-09-04 에 생겼다. 폰 웹 워처가 닷새(08-29~09-03), 미디어 워처가
+            #   15시간(09-02~03) 멈춰 있었는데 아무것도 안 잡았다. 위의 "롤업 신선도"는
+            #   *우리 쪽 파이프가 도나* 를 보는데, 이번 고장은 **파이프는 도는데 원료
+            #   하나가 끊긴 것**이라 그대로 통과한다.
+            #
+            # ★ 왜 절대 시간으로 안 재나: 밤에는 모든 버킷이 같이 조용하다. "N시간째
+            #   조용" 으로 걸면 매일 아침 운다. 그래서 **같은 기기의 세션 버킷과 비교**
+            #   한다 — 기기가 살아 있는데 이 워처만 조용하면 그건 고장이다.
+            #   기기를 안 쓰면(밤·꺼짐·프라이빗) 세션도 같이 끊겨 조건이 성립하지 않는다.
+            #
+            # ★ 왜 `aw_bucket.last_seen` 을 못 쓰나: `upsert_bucket` 이 **이벤트가 없어도**
+            #   매 sync 마다 now 로 갱신한다. 죽은 워처의 버킷도 계속 신선해 보인다.
+            #   그래서 `MAX(ts_end)` 를 본다 (`idx_aw_event_bkt_end` 가 덮는다).
+            #
+            # 임계값은 실측으로 정했다 (08-22~09-04, 30분 간격 610개 표본):
+            #
+            #     대상    6h    12h                    24h   48h
+            #     media   5일   1일(실제 사고 09-03)   0일   0일   ← 12h 가 딱 그 하루만 잡는다
+            #     web     13일  9일                    8일   6일
+            #
+            # ★ **웹은 아직 안 넣는다.** 48시간에도 6일 발동하는데, 관측 기간 대부분
+            #   웹 워처가 **실제로 죽어 있었다**(08-22~25 권한 꺼짐, 08-29~09-03 크래시).
+            #   저 발동은 오검출이 아니라 진짜다 — 즉 **깨끗한 구간이 없어 임계값을
+            #   정할 근거가 없다.** 09-03 16:00 에 살아났으니 일주일 뒤 다시 재서 넣는다.
+            #   근거 없는 숫자를 지금 박으면 그게 그대로 굳는다.
+            #
+            # 언제 꺼지나: 그 워처가 이벤트를 하나 넣는 즉시.
+            SESSION_FRESH_H = 2.0   # 기기가 "살아 있다"고 볼 기준
+            MEDIA_LAG_WARN_H = 12.0
+            rows = conn.execute(
+                """
+                SELECT d.name AS device,
+                       MAX(CASE WHEN b.type = 'android' AND b.bucket_id NOT LIKE '%-media'
+                                THEN e.ts_end END) AS session_end,
+                       MAX(CASE WHEN b.bucket_id LIKE '%-media' THEN e.ts_end END) AS media_end
+                FROM aw_event e
+                JOIN aw_bucket b ON b.bucket_id = e.bucket_id
+                JOIN device d ON d.id = b.device_id
+                WHERE d.kind = 'phone'
+                GROUP BY d.name
+                """
+            ).fetchall()
+            now = time.time()
+            quiet: list[str] = []
+            for row in rows:
+                session_end = row["session_end"]
+                if session_end is None or (now - float(session_end)) / 3600.0 > SESSION_FRESH_H:
+                    continue  # 기기가 조용하다 — 워처 탓이 아니다
+                media_end = row["media_end"]
+                if media_end is None:
+                    # ★ 옳지만 아직 증명 못 한 상태다. 한 번도 안 튼 기기를 고장으로
+                    #   세지 않는다 (CLAUDE.md §1).
+                    continue
+                lag_h = (float(session_end) - float(media_end)) / 3600.0
+                if lag_h > MEDIA_LAG_WARN_H:
+                    quiet.append(f"{row['device']} media {lag_h:.0f}시간 뒤처짐")
+            if not rows:
+                ok("워처 침묵", "폰 기기가 없다")
+            elif quiet:
+                warn(
+                    "워처 침묵",
+                    ", ".join(quiet)
+                    + " — 폰이 쓰이는 중인데 그 워처만 조용하다."
+                    " 알림 접근/접근성 권한이 앱 업데이트로 풀렸을 수 있다",
+                )
+            else:
+                ok("워처 침묵", "폰 워처가 기기와 같이 살아 있다")
         except Exception as exc:  # noqa: BLE001
             warn("DB 조회", f"이벤트/롤업 조회 실패: {exc}")
 
