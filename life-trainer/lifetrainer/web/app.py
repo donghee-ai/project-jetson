@@ -1309,7 +1309,30 @@ def create_app(cfg: Any) -> Flask:
 
     @app.post("/ingest/private")
     def ingest_private_set() -> Response:
-        """폰 타일이 켜고 끄는 자리. 본문은 `{"minutes": N}` 또는 `{"off": true}`."""
+        """폰 타일이 켜고 끄는 자리. 본문은 `{"minutes": N}` 또는 `{"off": true}`.
+
+        ## 모르는 본문은 400 이다 — 예전엔 **켜기**였다
+
+        `if off: end else: begin` 이었다. `else` 가 나머지 **전부**를 받고
+        `_parse_minutes` 가 `minutes` 없으면 기본값을 쓰므로, `{"end": true}` 도
+        `{"minutse": 5}` 도 `{"off": false}` 도 전부 **기본값으로 켜기**가 됐다.
+        게다가 `privacy.begin` 은 켜져 있으면 `end_ts` 를 `max()` 로 **연장**한다 —
+        **끄려는 요청이 구간을 늘렸다.**
+
+        2026-09-03 에 실제로 그렇게 됐다. 폰 타일이 명세대로 `{"end": true}` 를
+        보냈는데(`android/docs/private-mode.md` 가 그렇게 적어 뒀다) 끌 때마다
+        60분이 새로 켜졌고, 타일로 껐는데 계속 켜져 있었다.
+
+        ★ `/api/private` 은 이 문제가 없다 — 켜기 `POST` · 끄기 `DELETE` 로 **동사**가
+          가른다. 모호함은 둘을 POST 하나에 몰아넣은 이 경로에만 있다. 동사를 나누는
+          쪽이 더 깨끗하지만, 이미 나간 폰이 POST 를 쓰고 있어 본문으로 가른다.
+
+        ★ **`end` 도 받는다.** 문서가 그렇게 적어 둔 채로 나갔으니 그걸 보내는
+          클라이언트가 있다고 봐야 한다. 받아 주는 편이 안전하다.
+
+        빈 본문은 예전 그대로 "기본값으로 켜기"다 — 그건 모호한 것이 아니라
+        생략을 허용한 것이고, 이미 그 계약으로 나가 있다.
+        """
         if not cfg.ingest.enabled:
             abort(404)
         raw = request.get_data(cache=False) or b""
@@ -1325,11 +1348,16 @@ def create_app(cfg: Any) -> Flask:
                 body = json.loads(raw.decode("utf-8")) if raw else {}
             except (ValueError, UnicodeDecodeError):
                 abort(400, description="본문이 JSON 이 아닙니다")
-            if body.get("off"):
+            if not isinstance(body, dict):
+                abort(400, description="본문은 JSON 객체여야 합니다")
+            if body.get("off") or body.get("end"):
                 st = privacy.end_now(conn)
-            else:
+            elif "minutes" in body or not body:
                 minutes = _parse_minutes(body, cfg.private.max_minutes)
                 st = privacy.begin(conn, minutes, source="tile", device=device)
+            else:
+                # ★ 여기로 떨어지는 것을 켜기로 처리하면 **정반대 동작**이 된다.
+                abort(400, description="off 또는 minutes 가 필요합니다")
             return jsonify({"ok": True, **st.as_dict(poll_sec=cfg.private.poll_sec)})
         finally:
             conn.close()
