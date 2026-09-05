@@ -339,6 +339,12 @@ def _build_day_payload(
             "active_hm": format_hm(stats.active_sec),
             "afk_sec": stats.afk_sec,
             "off_sec": stats.off_sec,
+            # ★ 2026-09-04 에 더했다. 없어서 **도넛·막대에서 프라이빗이 통째로 사라졌다** —
+            #   `by_category` 는 정의상 "away/off 제외 = 분류된 시간" 이라 프라이빗이
+            #   들어갈 자리가 없고, 격자는 서버가 렌더한 슬롯에서 직접 그리니 보였다.
+            #   보이는 화면과 안 보이는 화면이 갈려 있었고, 안 보이는 쪽에서는
+            #   **그 시간이 분모에서도 빠져** 나머지 비율이 부풀었다.
+            "private_sec": stats.private_sec,
             "coverage": stats.coverage,
             "total_span_sec": stats.total_span_sec,
             "achievement": overall,
