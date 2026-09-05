@@ -548,13 +548,41 @@ body.page-entering {
 
 /* 막대 — 이름 · 트랙 · 값 세 칸. 트랙만 늘어난다. */
 .chart-bar { display: flex; flex-direction: column; gap: 8px; }
-.bar-row { display: grid; grid-template-columns: minmax(74px, 8.5em) 1fr minmax(84px, auto); align-items: center; gap: 10px; }
-.bar-name { display: inline-flex; align-items: center; gap: 6px; font-size: .86rem; color: var(--ink-primary); }
+/* ★ 양쪽 끝 칸을 **고정폭**으로 잡는다 (2026-09-04).
+   전에는 이름 칸이 `minmax(74px, 8.5em)`, 값 칸이 `minmax(84px, auto)` 라
+   글자 길이에 따라 칸이 늘고 **트랙이 그만큼 밀렸다** — "13시간 42분 38%" 인 줄과
+   "5분 1%" 인 줄의 막대 시작점·끝점이 서로 달라 길이 비교가 안 됐다.
+   숫자는 `tabular-nums` 라 폭이 예측 가능하고, 넘치면 줄이 늘어나는 게 아니라
+   말줄임으로 처리한다. **막대가 밀리는 것보다 이름이 잘리는 게 낫다.** */
+.bar-row { display: grid; grid-template-columns: 8.5em 1fr 7.5em; align-items: center; gap: 10px; }
+.bar-name { display: inline-flex; align-items: center; gap: 6px; font-size: .86rem; color: var(--ink-primary);
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bar-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
 .bar-track { height: 14px; border-radius: 7px; background: var(--ink-gridline); overflow: hidden; }
 .bar-fill { display: block; height: 100%; border-radius: 7px; }
-.bar-value { font-size: .82rem; color: var(--ink-primary); text-align: right; font-variant-numeric: tabular-nums; }
+.bar-value { font-size: .82rem; color: var(--ink-primary); text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
 .bar-value small { margin-left: 6px; color: var(--ink-muted); }
+
+/* ★ 차트의 구조 상태도 **빗금**으로 갈린다 — 격자·범례와 같은 언어다.
+   프라이빗(#b0aea4)과 미분류(#898781)는 회색끼리라 색만으로는 안 갈리고,
+   palette.yaml 이 애초에 "색이 아니라 각도로 구분한다" 고 정해 뒀다.
+   `!important` 인 이유: 막대·점은 `style="background:…"` 를 인라인으로 받는데,
+   인라인 shorthand 가 background-image 를 none 으로 지워 버린다. */
+.bar-dot.is-structural, .donut-dot.is-structural, .bar-fill.is-structural {
+  background-repeat: repeat;
+}
+.bar-dot.structural-away, .donut-dot.structural-away, .bar-fill.structural-away {
+  background-image: repeating-linear-gradient(135deg, transparent 0 3px,
+    color-mix(in srgb, var(--structural-away) 78%, transparent) 3px 5px) !important;
+}
+.bar-dot.structural-private, .donut-dot.structural-private, .bar-fill.structural-private {
+  background-image:
+    repeating-linear-gradient(135deg, transparent 0 3px,
+      color-mix(in srgb, var(--structural-private) 78%, transparent) 3px 5px),
+    repeating-linear-gradient(45deg, transparent 0 3px,
+      color-mix(in srgb, var(--structural-private) 78%, transparent) 3px 5px) !important;
+}
 
 /* 도넛 — SVG 하나 + 범례. 라이브러리 없이 stroke-dasharray 로 그린다. */
 .chart-donut { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: 6px 0; }
@@ -570,7 +598,10 @@ body.page-entering {
 .donut-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 
 @media (max-width: 560px) {
-  .bar-row { grid-template-columns: minmax(64px, 7em) 1fr auto; gap: 8px; }
+  /* 좁은 화면에서도 **고정폭**을 지킨다. `auto` 로 두면 밀림이 그대로 돌아온다. */
+  .bar-row { grid-template-columns: 6.4em 1fr 6.6em; gap: 8px; }
+  .bar-value { font-size: .78rem; }
+  .bar-value small { margin-left: 4px; }
   .chart-donut { gap: 14px; justify-content: center; }
 }
 .chart-caption { margin: 14px 2px 0; font-size: .76rem; color: var(--ink-muted); }

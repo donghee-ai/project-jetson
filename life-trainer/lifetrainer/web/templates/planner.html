@@ -104,9 +104,6 @@
           <div class="chart-bar" id="chart-bar" role="img" aria-label="카테고리별 시간 막대"></div>
           <div class="chart-donut" id="chart-donut" role="img" aria-label="카테고리별 시간 도넛"></div>
           <p class="chart-empty" id="chart-empty" hidden>이 날에는 집계할 활동이 없습니다.</p>
-          {# 위 비율에서 빠진 시간(프라이빗·자리비움·결측). 격자는 이걸 칸으로 그리는데
-             차트는 `by_category`(=분류된 시간)만 보므로, 안 적으면 통째로 사라진다. #}
-          <p class="chart-excluded" id="chart-excluded" hidden></p>
           <p class="chart-caption" id="chart-caption"></p>
         </div>
         <div class="grid-scroll" id="grid-scroll">
