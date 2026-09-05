@@ -39,7 +39,12 @@ fi
 #   operate/tools/fixtures/ 는 검사기의 시험지다 — 여기를 세면 자기 시험지에 걸려 넘어진다.
 #   ★ 2026-08-31: `maintenance-plan` 예외를 지웠다. 그 둘이 docs/archive/ 로 갔으므로
 #     앞의 archive 규칙이 이미 받아준다 — 남겨 두면 아무것도 안 가리키는 줄이 된다.
-EXCLUDE_RE='^(life-trainer/docs/progress/|life-trainer/HISTORY/|life-trainer/docs/issues/|life-trainer/docs/archive/|docs/archive/|operate/tools/fixtures/)'
+#   ★ 2026-09-05: phone/for_jetson/ 를 더했다. 폰 쪽 이슈 폴더라
+#     life-trainer/docs/issues/ 와 같은 종류다 — 그날 재서 결정의 근거로 적은 값이
+#     코드블록 안에 들어 있다. 바꾸면 그날의 사실이 아니게 된다.
+#     phone/ 의 나머지(STATUS·BUILD·NEXT-STEPS·fork-build)는 **계속 검사한다** —
+#     그쪽은 낡는 문서라 이 검사가 필요한 자리다.
+EXCLUDE_RE='^(life-trainer/docs/progress/|life-trainer/HISTORY/|life-trainer/docs/issues/|life-trainer/docs/archive/|docs/archive/|operate/tools/fixtures/|phone/for_jetson/)'
 
 # ── 막는 것 ─────────────────────────────────────────────────
 #   패턴 | 사람이 읽을 이름 | 대신 쓸 명령
