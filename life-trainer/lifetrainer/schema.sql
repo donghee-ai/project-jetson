@@ -83,6 +83,32 @@ CREATE TABLE IF NOT EXISTS aw_event (
     PRIMARY KEY (bucket_id, ts)
 );
 
+-- 지운 이벤트가 옮겨 가는 곳 — **휴지통**이다 (schema v10).
+--
+-- ★ `aw_event` 에 `deleted_at` 플래그를 두는 대신 **테이블을 나눈 이유**가 둘이다:
+--   ① 읽는 쪽 12곳이 전부 `deleted_at IS NULL` 을 달아야 하는데, **하나만 빠뜨려도
+--      지운 것이 그 화면에만 나타난다.** 테이블이 다르면 그 실수가 불가능하다
+--   ② `aw_event` 의 PK 가 `(bucket_id, ts)` 라, 구간에 걸친 이벤트를 잘라 남기면
+--      왼쪽 조각이 원본과 **같은 ts** 라 충돌한다
+--
+-- 완전 삭제는 `lt private forget` 이 사람 손으로 한다. 자동으로 안 지운다.
+CREATE TABLE IF NOT EXISTS purged_event (
+    bucket_id     TEXT NOT NULL,
+    ts            REAL NOT NULL,
+    ts_end        REAL NOT NULL,
+    duration      REAL NOT NULL,
+    event_id      INTEGER,
+    app           TEXT,
+    title         TEXT,
+    url           TEXT,
+    status        TEXT,
+    data_json     TEXT NOT NULL DEFAULT '{}',
+    synced_at     REAL NOT NULL,
+    purge_span_id INTEGER NOT NULL,   -- 되돌리기의 단위
+    purged_at     REAL NOT NULL,
+    PRIMARY KEY (bucket_id, ts)
+);
+
 CREATE INDEX IF NOT EXISTS idx_aw_event_ts      ON aw_event(ts);
 CREATE INDEX IF NOT EXISTS idx_aw_event_end     ON aw_event(ts_end);
 CREATE INDEX IF NOT EXISTS idx_aw_event_bkt_end ON aw_event(bucket_id, ts_end);

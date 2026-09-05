@@ -130,6 +130,14 @@ def build_parser() -> argparse.ArgumentParser:
     pv_pg.add_argument("--yes", action="store_true", help="확인 없이 실행")
     pv_pg.add_argument("--aw", action="store_true", help="엔드포인트 AW 로컬 DB 에서도 지운다")
     pv_pg.set_defaults(func=cmd_private_purge)
+    pv_un = priv_sub.add_parser("undo", parents=[common], help="방금 지운 것을 되돌린다")
+    pv_un.add_argument("--span-id", type=int, default=None,
+                       help="되돌릴 삭제의 번호 (기본: 가장 최근 것)")
+    pv_un.set_defaults(func=cmd_private_undo)
+    pv_fg = priv_sub.add_parser("forget", parents=[common],
+                                help="표시 삭제된 것을 **진짜로** 지운다 (되돌릴 수 없다)")
+    pv_fg.add_argument("--yes", action="store_true", help="확인 없이 실행")
+    pv_fg.set_defaults(func=cmd_private_forget)
 
     p_stats = sub.add_parser("stats", parents=[common], help="콘솔 요약")
     p_stats.add_argument("--day", type=str, default=None, help="'YYYY-MM-DD' (기본: 오늘)")
@@ -1046,9 +1054,15 @@ def cmd_private_status(args: argparse.Namespace, cfg: Config) -> int:
             "WHERE revoked = 0 AND end_ts > ? ORDER BY start_ts",
             (st.server_ts - 86400,),
         ).fetchall()
+        trash, oldest = privacy.trash_count(conn)
     finally:
         conn.close()
     print(_private_line(st, cfg))
+    # ★ **안 보이면 잊힌다.** "지웠다" 고 생각한 것이 디스크에 남아 있는 상태를
+    #   사람이 모르면 안 된다 — `forget` 은 자동으로 안 돈다.
+    if trash:
+        age = f", 가장 오래된 것 {(time.time() - oldest) / 86400:.1f}일 전" if oldest else ""
+        print(f"  휴지통: 표시 삭제된 이벤트 {trash}건{age} — 완전 삭제는 lt private forget")
     if rows:
         print("  최근 24시간 구간:")
         for r in rows:
@@ -1057,6 +1071,66 @@ def cmd_private_status(args: argparse.Namespace, cfg: Config) -> int:
                 f"  {r['kind']}  ({r['source']})"
             )
     return 0
+
+
+def cmd_private_undo(args: argparse.Namespace, cfg: Config) -> int:
+    """표시 삭제를 되돌린다. 기본은 **가장 최근 삭제**다 — 오클릭 직후가 대부분이다."""
+    from lifetrainer import privacy
+    from lifetrainer.rollup.classify import Classifier
+    from lifetrainer.rollup.rollup import rollup_day
+
+    conn = db.open_db(cfg)
+    try:
+        row = conn.execute(
+            "SELECT id, start_ts, end_ts FROM private_span WHERE kind = 'purge' AND revoked = 0 "
+            + ("AND id = ? " if args.span_id else "")
+            + "ORDER BY created_at DESC, id DESC LIMIT 1",
+            (args.span_id,) if args.span_id else (),
+        ).fetchone()
+        if row is None:
+            print("되돌릴 삭제가 없습니다.", file=sys.stderr)
+            return 1
+
+        n = privacy.undo(conn, int(row["id"]))
+        if n == 0:
+            # `forget` 으로 이미 완전 삭제된 구간이다. 구간 취소만 되고 기록은 안 온다.
+            print(
+                f"이벤트가 되살아나지 않았습니다 — 이 구간은 이미 `lt private forget` 으로 "
+                f"완전 삭제됐습니다. 구간 표시만 해제했습니다.",
+                file=sys.stderr,
+            )
+        days = privacy.affected_days(cfg, float(row["start_ts"]), float(row["end_ts"]))
+        classifier = Classifier.from_yaml(cfg.rollup.rules_path)
+        for day in days:
+            rollup_day(conn, cfg, classifier, day)
+        print(
+            f"되돌림: 이벤트 {n}건 · 재롤업 {len(days)}일 "
+            f"({_fmt_local(float(row['start_ts']), cfg)}–{_fmt_local(float(row['end_ts']), cfg)})"
+        )
+        return 0
+    finally:
+        conn.close()
+
+
+def cmd_private_forget(args: argparse.Namespace, cfg: Config) -> int:
+    """표시 삭제된 것을 진짜로 지운다. **여기부터는 되돌릴 수 없다.**"""
+    from lifetrainer import privacy
+
+    conn = db.open_db(cfg)
+    try:
+        n, oldest = privacy.trash_count(conn)
+        if n == 0:
+            print("휴지통이 비어 있습니다.")
+            return 0
+        age = f" (가장 오래된 것 {(time.time() - oldest) / 86400:.1f}일 전)" if oldest else ""
+        print(f"표시 삭제된 이벤트 {n}건{age}")
+        if not args.yes:
+            print("  진짜로 지우려면 --yes 를 붙이세요. 이건 되돌릴 수 없습니다.")
+            return 0
+        print(f"완전 삭제: {privacy.forget(conn)}건")
+        return 0
+    finally:
+        conn.close()
 
 
 def cmd_private_purge(args: argparse.Namespace, cfg: Config) -> int:
@@ -1107,7 +1181,11 @@ def cmd_private_purge(args: argparse.Namespace, cfg: Config) -> int:
         classifier = Classifier.from_yaml(cfg.rollup.rules_path)
         for day in report.days:
             rollup_day(conn, cfg, classifier, day)
-        print(f"삭제 완료: 이벤트 {report.events}건, 재롤업 {len(report.days)}일")
+        print(
+            f"삭제 완료: 이벤트 {report.events}건, 재롤업 {len(report.days)}일\n"
+            f"  되돌리려면: lt private undo   (표시만 지운 상태다 — "
+            f"완전 삭제는 lt private forget)"
+        )
 
         if args.aw or cfg.private.purge_aw:
             _purge_aw(cfg, start_ts, end_ts)
