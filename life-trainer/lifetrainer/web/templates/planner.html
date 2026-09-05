@@ -237,6 +237,13 @@
   </main>
 
   {% if not read_only %}
+  {# 삭제 직후에만 뜬다. 되돌리는 길을 **그 자리에서** 줘야 한다 —
+     나중에 찾아가라고 하면 못 찾고, 못 찾으면 되돌리기가 없는 것과 같다. #}
+  <div class="undo-bar" id="undo-bar" role="status" hidden>
+    <span id="undo-text"></span>
+    <button type="button" id="undo-button" class="btn-secondary">되돌리기</button>
+  </div>
+
   <div class="category-chooser" id="category-chooser" hidden>
     <div class="chooser-panel">
       <span class="sheet-handle" aria-hidden="true"></span>
@@ -244,6 +251,9 @@
       <div class="chooser-options" id="chooser-options"></div>
       <div class="chooser-buttons">
         <button type="button" id="chooser-clear" class="btn-secondary">보정 해제</button>
+        {# ★ 보정(색을 바꾼다)과 삭제(기록을 없앤다)는 다른 일이다. 같은 줄에 두되
+           `btn-danger` 로 갈라 둔다 — 색을 고르러 왔다가 잘못 누르면 안 된다. #}
+        <button type="button" id="chooser-purge" class="btn-danger">기록 지우기</button>
         <button type="button" id="chooser-cancel" class="btn-secondary">취소</button>
       </div>
     </div>

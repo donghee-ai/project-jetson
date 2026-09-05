@@ -303,6 +303,28 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .chooser-option .swatch { width: 12px; height: 12px; border-radius: 4px; }
 .chooser-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 .btn-secondary { min-height: 40px; padding: 0 14px; border: 1px solid var(--ink-gridline); border-radius: 10px; background: var(--surface); color: var(--ink-primary); cursor: pointer; }
+/* ★ 삭제는 보정과 **다른 일**이라 눈에 다르게 보여야 한다. 색을 고르러 왔다가
+   잘못 누르면 안 된다 — 되돌릴 수는 있지만(휴지통) 사람을 놀라게 하면 안 된다. */
+/* 삭제 직후의 되돌리기 바. 화면 아래에 떠 있고 15초 뒤 사라진다.
+   `position: fixed` 라 격자를 가리지 않고, 모바일에서도 엄지 근처에 온다. */
+.undo-bar {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 40; display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px 10px 16px; border-radius: 12px;
+  background: var(--surface); color: var(--ink-primary);
+  border: 1px solid var(--ink-gridline);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+  font-size: .86rem; max-width: calc(100vw - 24px);
+}
+.undo-bar > span { flex: 0 1 auto; white-space: nowrap; }
+/* ★ 버튼 글자를 안 접는다 — '되돌리기' 가 '되돌리/기' 로 깨졌다 (실측). */
+.undo-bar .btn-secondary { flex: 0 0 auto; min-height: 34px; padding: 0 14px; white-space: nowrap; }
+
+.btn-danger { min-height: 40px; padding: 0 14px; border-radius: 10px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--cat-entertainment) 45%, var(--ink-gridline));
+  background: var(--surface); color: var(--cat-entertainment); font-weight: 600; }
+.btn-danger:hover { background: color-mix(in srgb, var(--cat-entertainment) 10%, var(--surface)); }
 
 .topbar { border-bottom: 1px solid var(--ink-gridline); background: var(--ui-card); padding: 12px 16px; }
 .day-nav { width: min(100%, 900px); margin: 0 auto; display: flex; align-items: center; gap: 8px; }

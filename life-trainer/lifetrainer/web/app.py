@@ -1257,9 +1257,20 @@ def create_app(cfg: Any) -> Flask:
         막는 것과, 미리 보여주는 것은 서로 다른 일이다.
         """
         body = request.get_json(silent=True) or {}
-        minutes = _parse_minutes(body, cfg.private.max_purge_minutes)
         now_ts = time.time()
-        start_ts, end_ts = now_ts - minutes * 60.0, now_ts
+        if "start_slot" in body:
+            # ★ **블럭 단위 삭제** (2026-09-05). 격자에서 칸을 골라 지운다.
+            #   전에는 "지금부터 N분" 뿐이라, 어제 오후 그 한 칸을 지울 방법이 없었다.
+            #   좌표를 슬롯으로 받는 이유: 격자가 슬롯으로 말하고, 서버가 슬롯→시각을
+            #   푸는 곳이 이미 하나 있다. 브라우저가 epoch 를 계산해 보내면 그 변환이
+            #   두 곳이 된다 (이 저장소 반복 실패 2번).
+            try:
+                start_ts, end_ts = _slot_range_ts(body)
+            except (KeyError, TypeError, ValueError) as exc:
+                return jsonify({"ok": False, "message": f"구간이 올바르지 않습니다: {exc}"}), 400
+        else:
+            minutes = _parse_minutes(body, cfg.private.max_purge_minutes)
+            start_ts, end_ts = now_ts - minutes * 60.0, now_ts
 
         conn = db.open_db(cfg)
         try:
@@ -1275,6 +1286,49 @@ def create_app(cfg: Any) -> Flask:
             _reroll(conn, report.days)
             return jsonify({"ok": True, **report.as_dict(),
                             **privacy.state(conn).as_dict(poll_sec=cfg.private.poll_sec)})
+        finally:
+            conn.close()
+
+    def _slot_range_ts(body: dict) -> tuple[float, float]:
+        """`{day, start_slot, end_slot}` → `(start_ts, end_ts)`.
+
+        `end_slot` 은 **끝 다음 칸**이다 (`/api/slot` 의 보정과 같은 규칙) — 두 곳이
+        다르면 한 칸씩 어긋나고, 그 어긋남은 지우기에서 **안 지워진 한 칸**으로 나타난다.
+        """
+        day = str(body["day"])
+        start_slot = int(body["start_slot"])
+        end_slot = int(body["end_slot"])
+        if not (0 <= start_slot < end_slot <= cfg.slots_per_day):
+            raise ValueError(f"슬롯 범위 {start_slot}~{end_slot}")
+        day_start, _ = timeutil.day_bounds(
+            day, cfg.tz, boundary_hour=cfg.rollup.day_boundary_hour
+        )
+        slot_sec = cfg.rollup.slot_minutes * 60.0
+        return day_start + start_slot * slot_sec, day_start + end_slot * slot_sec
+
+    @app.post("/api/private/undo")
+    def api_private_undo() -> Response:
+        """방금 지운 것을 되돌린다 — 휴지통에서 꺼낸다.
+
+        ★ 인자가 없으면 **가장 최근 삭제**다. 오클릭 직후가 대부분이라, 번호를 찾아
+          오라고 하면 안 쓴다.
+        """
+        body = request.get_json(silent=True) or {}
+        conn = db.open_db(cfg)
+        try:
+            span = conn.execute(
+                "SELECT id, start_ts, end_ts FROM private_span "
+                "WHERE kind = 'purge' AND revoked = 0 "
+                + ("AND id = ? " if body.get("span_id") else "")
+                + "ORDER BY created_at DESC, id DESC LIMIT 1",
+                (body["span_id"],) if body.get("span_id") else (),
+            ).fetchone()
+            if span is None:
+                return jsonify({"ok": False, "message": "되돌릴 삭제가 없습니다."}), 404
+
+            restored = privacy.undo(conn, int(span["id"]))
+            _reroll(conn, privacy.affected_days(cfg, float(span["start_ts"]), float(span["end_ts"])))
+            return jsonify({"ok": True, "restored": restored})
         finally:
             conn.close()
 
