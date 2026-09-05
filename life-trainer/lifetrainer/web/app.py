@@ -325,6 +325,42 @@ def _build_day_payload(
             }
         )
 
+    # ── 계획 보기의 합계 (2026-09-05) ──────────────────────────────────
+    #
+    # ★ 전에는 **계획만** 셌다. 그래서 계획이 없는 날 계획 보기를 켜면 차트가
+    #   "집계할 활동이 없습니다" 로 비었다 — 격자는 그대로 실제 활동을 보여주는데.
+    #   같은 토글이 두 화면에서 다른 뜻이었다.
+    #
+    # 합쳐서 센다: **계획이 있던 시간은 계획 카테고리로, 나머지는 실제로.**
+    # 격자가 이미 그렇게 겹쳐 그리므로, 차트가 격자와 같은 것을 세게 된다.
+    #
+    # ★ 계획 칸은 **그 칸의 길이 전부**를 계획 카테고리에 싣는다 — "하기로 한 시간"은
+    #   그 시간만큼이다. 계획이 없는 칸만 `slot_breakdown`(실측 원천)을 쓴다.
+    # 슬롯 → 계획 카테고리. 격자를 그리는 쪽(`_build_grid_rows`)과 **같은 규칙**이다 —
+    # 겹치면 나중 것이 이긴다. 두 곳이 갈리면 격자와 차트가 다른 하루를 보여준다.
+    plan_cats: dict[int, str] = {}
+    for pi in instances:
+        cat = getattr(pi.plan, "category", None)
+        if cat:
+            for sl in range(pi.start_slot, pi.end_slot):
+                plan_cats[sl] = cat
+
+    plan_totals: dict[str, float] = {}
+    slot_sec = cfg.rollup.slot_minutes * 60.0
+    for sl, cat in plan_cats.items():
+        plan_totals[cat] = plan_totals.get(cat, 0.0) + slot_sec
+    if plan_cats:
+        for r in conn.execute(
+            "SELECT category, SUM(seconds) AS sec FROM slot_breakdown "
+            "WHERE day = ? AND slot NOT IN (%s) AND category NOT IN (?, ?) GROUP BY category"
+            % ", ".join("?" * len(plan_cats)),
+            (day, *sorted(plan_cats), cfg.rollup.afk_category, cfg.rollup.no_data_category),
+        ):
+            plan_totals[r["category"]] = plan_totals.get(r["category"], 0.0) + float(r["sec"])
+    else:
+        for c in stats.by_category:
+            plan_totals[c.category] = plan_totals.get(c.category, 0.0) + c.seconds
+
     pal = load_palette(palette_path, theme)
     total_device_sec = sum(d.seconds for d in devices)
 
@@ -371,6 +407,11 @@ def _build_day_payload(
             "by_category": [
                 {"category": c.category, "seconds": c.seconds, "share": c.share}
                 for c in stats.by_category
+            ],
+            # 계획 보기용 합계 — 계획 시간은 계획 카테고리로, 나머지는 실제로 (위 주석).
+            "by_category_plan": [
+                {"category": cat, "seconds": sec}
+                for cat, sec in sorted(plan_totals.items(), key=lambda kv: -kv[1])
             ],
         },
         # 기기별 활동. 폰이 들어오기 전에는 항상 한 줄이었다.
