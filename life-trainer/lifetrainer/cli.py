@@ -125,6 +125,8 @@ def build_parser() -> argparse.ArgumentParser:
     pv_pg.add_argument("--minutes", type=float, default=None, help="지금부터 거슬러 N분")
     pv_pg.add_argument("--range", nargs=2, metavar=("START", "END"),
                        help="임의 구간 (ISO8601 또는 'YYYY-MM-DD HH:MM'). --yes 필요")
+    pv_pg.add_argument("--day", type=str, default=None,
+                       help="'YYYY-MM-DD' 하루 통째로 (논리적 하루: 06:00~다음날 06:00). --yes 필요")
     pv_pg.add_argument("--yes", action="store_true", help="확인 없이 실행")
     pv_pg.add_argument("--aw", action="store_true", help="엔드포인트 AW 로컬 DB 에서도 지운다")
     pv_pg.set_defaults(func=cmd_private_purge)
@@ -1063,7 +1065,21 @@ def cmd_private_purge(args: argparse.Namespace, cfg: Config) -> int:
     from lifetrainer.rollup.rollup import rollup_day
 
     now_ts = time.time()
-    if args.range:
+    if args.day:
+        # ★ 하루를 통째로 지운다. **논리적 하루**(06:00~다음날 06:00)를 쓴다 —
+        #   자정 기준으로 지우면 새벽 활동이 어제 격자에 남아 "지웠는데 아직 있다" 가 된다.
+        if not args.yes:
+            print("--day 는 --yes 가 필요합니다 (하루치는 되돌릴 수 없습니다)", file=sys.stderr)
+            return 2
+        if args.range or args.minutes is not None:
+            print("--day 는 --range·--minutes 와 같이 못 씁니다", file=sys.stderr)
+            return 2
+        from zoneinfo import ZoneInfo
+
+        start_ts, end_ts = timeutil.day_bounds(
+            args.day, ZoneInfo(cfg.timezone), boundary_hour=cfg.rollup.day_boundary_hour
+        )
+    elif args.range:
         if not args.yes:
             print("--range 는 --yes 가 필요합니다 (임의 구간은 되돌릴 수 없습니다)", file=sys.stderr)
             return 2
