@@ -57,11 +57,12 @@
       <article class="metric-card metric-primary">
         <span>실제 활동</span><strong>{{ data.stats.active_hm }}</strong><small>자동으로 기록된 시간</small>
       </article>
+      {# ★ 2026-09-05 에 둘을 뺐다.
+         · 계획 달성 — 옆의 "오늘의 계획" 카드가 같은 것을 더 자세히 말한다
+         · 수집 커버리지 — 하루는 어차피 24시간이고, 안 잡힌 시간은 자거나 쉰 것이다.
+           "덜 재어졌다" 로 읽히던 숫자를 **무엇을 했는지**로 바꾼다 #}
       <article class="metric-card">
-        <span>계획 달성</span><strong>{{ (data.stats.achievement * 100) | round | int }}%</strong><small>{{ data.stats.achieved_count }}/{{ data.stats.total_count }} 완료</small>
-      </article>
-      <article class="metric-card">
-        <span>수집 커버리지</span><strong>{{ (data.stats.coverage * 100) | round | int }}%</strong><small>측정 가능한 시간 기준</small>
+        <span>오늘의 수면</span><strong>{{ data.stats.sleep_hm }}</strong><small>{{ data.stats.sleep_note }}</small>
       </article>
     </section>
 

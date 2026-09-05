@@ -337,6 +337,16 @@ def _build_day_payload(
         "stats": {
             "active_sec": stats.active_sec,
             "active_hm": format_hm(stats.active_sec),
+            # 수면 — 추정(자리비움·결측 3시간 이상)과 사람이 표에서 고친 것의 합.
+            # ★ 0 일 때 "0분" 이라고 적으면 **안 잔 것처럼** 읽힌다. 실제로는 아직
+            #   그만큼 이어진 조용한 구간이 없다는 뜻이다 (오늘은 대개 그렇다).
+            "sleep_sec": stats.sleep_sec,
+            "sleep_hm": format_hm(stats.sleep_sec) if stats.sleep_sec else "—",
+            "sleep_note": (
+                "자리비움·결측 3시간 이상을 잠으로 봅니다"
+                if stats.sleep_sec
+                else "아직 3시간 이상 이어진 구간이 없습니다"
+            ),
             "afk_sec": stats.afk_sec,
             "off_sec": stats.off_sec,
             # ★ 2026-09-04 에 더했다. 없어서 **도넛·막대에서 프라이빗이 통째로 사라졌다** —
