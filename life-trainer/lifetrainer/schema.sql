@@ -459,12 +459,14 @@ CREATE TABLE IF NOT EXISTS doc (
     fetched_at   REAL NOT NULL,
     lang         TEXT,
     abstract     TEXT,                    -- 수집 시점 원문 발췌 / 초록
-    body_path    TEXT,                    -- 전문 텍스트 파일 경로 (NVMe)
+    body_path    TEXT,                    -- 전문 텍스트 파일 경로 (NVMe). 짧은 초록만 받는다
+    body_fetch_failed_at REAL,            -- 본문 수집 실패 시각. 있으면 다시 안 두드린다
     content_hash TEXT NOT NULL,           -- SHA-256, 완전 중복
     simhash      INTEGER,                 -- 근사 중복 (뉴스 신디케이션)
     dup_of       INTEGER REFERENCES doc(id) ON DELETE SET NULL,
-    score        REAL,                    -- 관심사 스코어
+    score        REAL,                    -- 관심사 스코어 (**시간 없는 기준점수** — 최신성은 읽을 때 곱한다)
     scored_at    REAL,
+    digested_at  REAL,                    -- 아침 다이제스트로 나간 시각. NULL = 아직 안 나갔다
     summary      TEXT,                    -- LLM 요약 (Phase 3)
     summary_at   REAL,
     state        TEXT NOT NULL DEFAULT 'new'  -- new | scored | summarized | archived

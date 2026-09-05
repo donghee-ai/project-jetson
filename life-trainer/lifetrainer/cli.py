@@ -161,7 +161,18 @@ def build_parser() -> argparse.ArgumentParser:
     p_collect = sub.add_parser("collect", parents=[common], help="피드 수집 1회")
     p_collect.set_defaults(func=cmd_collect)
 
+    p_bodies = sub.add_parser(
+        "bodies", parents=[common], help="초록이 짧은 문서의 전문 수집 (RAG 재료)"
+    )
+    p_bodies.add_argument("--limit", type=int, default=50, help="이번에 받을 문서 수 (기본 50)")
+    p_bodies.set_defaults(func=cmd_bodies)
+
     p_score = sub.add_parser("score", parents=[common], help="미채점 문서 스코어링")
+    p_score.add_argument(
+        "--rescore",
+        action="store_true",
+        help="이미 채점된 문서까지 기준점수로 다시 계산 (관심사 가중치를 고친 뒤)",
+    )
     p_score.set_defaults(func=cmd_score)
 
     p_digest = sub.add_parser("digest", parents=[common], help="아침 다이제스트 (키워드 랭킹, LLM 없음)")
@@ -483,10 +494,12 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             #   매 sync 마다 now 로 갱신한다. 죽은 워처의 버킷도 계속 신선해 보인다.
             #   그래서 `MAX(ts_end)` 를 본다 (`idx_aw_event_bkt_end` 가 덮는다).
             #
-            # 임계값은 실측으로 정했다 (08-22~09-04, 30분 간격 610개 표본):
+            # 임계값은 실측으로 정했다. 같은 방법을 두 번 돌렸다 —
+            # 30분 간격 표본 중 **기기가 살아 있던 시점**만 세고, 발동한 *날* 수를 본다:
             #
             #     대상    6h    12h                    24h   48h
             #     media   5일   1일(실제 사고 09-03)   0일   0일   ← 12h 가 딱 그 하루만 잡는다
+            #     unlock  3일   1일(실제 사고 09-04)   0일   0일   ← 〃 (09-04 재측정, 표본 547)
             #     web     13일  9일                    8일   6일
             #
             # ★ **웹은 아직 안 넣는다.** 48시간에도 6일 발동하는데, 관측 기간 대부분
@@ -495,36 +508,54 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             #   정할 근거가 없다.** 09-03 16:00 에 살아났으니 일주일 뒤 다시 재서 넣는다.
             #   근거 없는 숫자를 지금 박으면 그게 그대로 굳는다.
             #
+            # ★ unlock 은 09-04 에 더했다. **media 를 넣은 그날 unlock 이 죽어 있었다** —
+            #   09-03 15:12 이후 조용한데 폰은 계속 쓰이고 있었고, 23일간 최장 간격은
+            #   10.2시간(밤)이었다. 하나를 붙이면서 옆의 것을 안 본 것이라,
+            #   목록을 아래 표로 뺐다. 다음에 웹을 넣을 때는 한 줄이다.
+            #
             # 언제 꺼지나: 그 워처가 이벤트를 하나 넣는 즉시.
             SESSION_FRESH_H = 2.0   # 기기가 "살아 있다"고 볼 기준
-            MEDIA_LAG_WARN_H = 12.0
+            # (버킷 접미사, 화면에 쓸 이름, 뒤처짐 경보 기준 시간)
+            WATCHED_PHONE_BUCKETS = (
+                ("-media", "media", 12.0),
+                ("-unlock", "unlock", 12.0),
+            )
             rows = conn.execute(
                 """
-                SELECT d.name AS device,
-                       MAX(CASE WHEN b.type = 'android' AND b.bucket_id NOT LIKE '%-media'
-                                THEN e.ts_end END) AS session_end,
-                       MAX(CASE WHEN b.bucket_id LIKE '%-media' THEN e.ts_end END) AS media_end
+                SELECT d.name AS device, b.bucket_id, MAX(e.ts_end) AS last_end
                 FROM aw_event e
                 JOIN aw_bucket b ON b.bucket_id = e.bucket_id
                 JOIN device d ON d.id = b.device_id
                 WHERE d.kind = 'phone'
-                GROUP BY d.name
+                GROUP BY d.name, b.bucket_id
                 """
             ).fetchall()
             now = time.time()
-            quiet: list[str] = []
+            by_device: dict[str, dict[str, float]] = {}
             for row in rows:
-                session_end = row["session_end"]
-                if session_end is None or (now - float(session_end)) / 3600.0 > SESSION_FRESH_H:
-                    continue  # 기기가 조용하다 — 워처 탓이 아니다
-                media_end = row["media_end"]
-                if media_end is None:
-                    # ★ 옳지만 아직 증명 못 한 상태다. 한 번도 안 튼 기기를 고장으로
-                    #   세지 않는다 (CLAUDE.md §1).
+                by_device.setdefault(row["device"], {})[row["bucket_id"]] = float(row["last_end"])
+
+            quiet: list[str] = []
+            for device, ends in by_device.items():
+                # 세션 = 앱 사용 버킷. 미디어·unlock·web 은 세션이 아니다.
+                session_ends = [
+                    v for k, v in ends.items()
+                    if not any(k.endswith(sfx) for sfx in ("-media", "-unlock", "-web"))
+                ]
+                if not session_ends:
                     continue
-                lag_h = (float(session_end) - float(media_end)) / 3600.0
-                if lag_h > MEDIA_LAG_WARN_H:
-                    quiet.append(f"{row['device']} media {lag_h:.0f}시간 뒤처짐")
+                session_end = max(session_ends)
+                if (now - session_end) / 3600.0 > SESSION_FRESH_H:
+                    continue  # 기기가 조용하다 — 워처 탓이 아니다
+                for suffix, label, warn_h in WATCHED_PHONE_BUCKETS:
+                    last = next((v for k, v in ends.items() if k.endswith(suffix)), None)
+                    if last is None:
+                        # ★ 옳지만 아직 증명 못 한 상태다. 한 번도 안 튼 기기를 고장으로
+                        #   세지 않는다 (CLAUDE.md §1).
+                        continue
+                    lag_h = (session_end - last) / 3600.0
+                    if lag_h > warn_h:
+                        quiet.append(f"{device} {label} {lag_h:.0f}시간 뒤처짐")
             if not rows:
                 ok("워처 침묵", "폰 기기가 없다")
             elif quiet:
@@ -1463,11 +1494,40 @@ def cmd_collect(args: argparse.Namespace, cfg: Config) -> int:
         conn.close()
 
 
-def cmd_score(args: argparse.Namespace, cfg: Config) -> int:
-    from lifetrainer.collect.score import score_pending
+def cmd_bodies(args: argparse.Namespace, cfg: Config) -> int:
+    """초록이 짧은 문서의 전문을 받는다.
+
+    ★ **타이머가 없다. 손으로 부른다.** 받은 본문이 실제로 답을 낫게 하는지 보기 전에
+      자동으로 돌리면 *만들었다 ≠ 그게 값을 한다* 를 확인할 기회가 사라진다
+      (`collect/bodies.py` 머리말).
+    """
+    from lifetrainer.collect.bodies import collect_bodies
 
     conn = db.open_db(cfg)
     try:
+        with db.transaction(conn):
+            r = collect_bodies(conn, cfg, limit=args.limit)
+        print(
+            f"본문 수집: 저장 {r.fetched}건 · 내용 부족 {r.too_thin}건 · "
+            f"robots 차단 {r.skipped_robots}건 · 실패 {r.failed}건"
+        )
+        return 0
+    finally:
+        conn.close()
+
+
+def cmd_score(args: argparse.Namespace, cfg: Config) -> int:
+    from lifetrainer.collect.score import rescore_all, score_pending
+
+    conn = db.open_db(cfg)
+    try:
+        if getattr(args, "rescore", False):
+            # 2026-09-04 이전에 매겨진 점수에는 최신성 보정이 곱해져 굳어 있다.
+            # 씻어내는 일회성 작업이지만, 관심사 가중치를 고친 뒤에도 쓸 수 있다.
+            with db.transaction(conn):
+                n = rescore_all(conn, cfg)
+            print(f"재채점 완료: {n}건 (기준점수 — 최신성은 읽을 때 곱한다)")
+            return 0
         n = score_pending(conn, cfg)
         print(f"스코어링 완료: {n}건")
         return 0
@@ -1497,7 +1557,7 @@ def _plain_text(text: str) -> str:
 
 def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
     """아침 다이제스트 — 키워드 랭킹 상위 문서만 나열한다 (LLM 없음)."""
-    from lifetrainer.collect.score import top_docs
+    from lifetrainer.collect.score import mark_digested, top_docs
     from lifetrainer.slackio import blocks as blocks_mod
 
     conn = db.open_db(cfg)
@@ -1506,10 +1566,13 @@ def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
         docs = top_docs(conn, limit=5)
 
         if not docs:
-            text = f"{today} 아침 다이제스트: 새로 수집된 관심 문서가 없습니다."
+            # ★ 문구를 "새로 수집된" 에서 "아직 안 보낸" 으로 바꿨다 (2026-09-04).
+            #   전에는 전체 코퍼스를 훑으면서 **"새로 수집된"** 이라고 말했다 —
+            #   말과 코드가 달랐다. 지금은 실제로 "안 보낸 것" 을 고른다.
+            text = f"{today} 아침 다이제스트: 아직 안 보낸 관심 문서가 없습니다."
             digest_blocks = [
                 blocks_mod.header(f"아침 다이제스트 — {today}"),
-                blocks_mod.section("오늘은 새로 수집된 관심 문서가 없습니다."),
+                blocks_mod.section("아직 안 보낸 관심 문서가 없습니다."),
             ]
         else:
             # ★ 한 덩어리 문단이 아니라 **문서당 한 블록**으로 나눈다.
@@ -1527,7 +1590,9 @@ def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
                 title = f"*{i}. <{d['url']}|{blocks_mod._truncate(d['title'] or '제목 없음', 110)}>*"
                 body = title + (f"\n{blocks_mod._truncate(gist, 220)}" if gist else "")
                 digest_blocks.append(blocks_mod.section(body))
-                meta = [f"점수 {float(d['score'] or 0):.1f}"]
+                # ★ 보정 **후** 점수를 보여준다. 저장된 `score` 는 시간이 안 들어간
+                #   기준점수라 화면에 쓰면 순위와 숫자가 어긋난다.
+                meta = [f"점수 {float(d['ranked_score'] or 0):.1f}"]
                 src = conn.execute("SELECT name FROM source WHERE id = ?", (d["source_id"],)).fetchone()
                 if src:
                     meta.append(src["name"])
@@ -1564,7 +1629,10 @@ def cmd_digest(args: argparse.Namespace, cfg: Config) -> int:
                             "UPDATE report SET posted_at = ?, slack_ts = ? WHERE id = ?",
                             (timeutil.now_ts(), ts, report_id),
                         )
-                    print(f"Slack 발송 완료 (ts={ts})")
+                        # ★ **발송에 성공한 뒤에만** 표식을 단다. 만들기만 한 것까지
+                        #   표시하면 미리보기 한 번에 그 문서가 영영 안 나간다.
+                        n = mark_digested(conn, [d["id"] for d in docs])
+                    print(f"Slack 발송 완료 (ts={ts}) · 문서 {n}건을 발송 완료로 표시")
                 else:
                     print("Slack 발송 실패 또는 채널 미지정", file=sys.stderr)
         return 0
