@@ -171,7 +171,10 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 
    ★ 두 값이 **한 응답에 같이** 실려 온다. 토글은 어느 변수를 칠할지만 바꾸므로
      서버를 다시 부르지 않고, 서로 다른 시점의 데이터가 섞일 수 없다. */
+/* ★ 보기 고르개(격자·막대·도넛)와 **다른 것**이라 사이를 벌린다. 붙여 두면
+   네 번째 보기처럼 읽힌다 — 이건 보기 전환이 아니라 겹쳐 그릴 층의 스위치다. */
 .plan-toggle {
+  margin-left: auto;
   display: inline-flex; align-items: center; gap: 7px; flex: none;
   padding: 6px 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--ink-gridline); background: var(--surface);

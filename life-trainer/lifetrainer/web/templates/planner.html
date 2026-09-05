@@ -80,7 +80,7 @@
           </div>
           <button type="button" class="plan-toggle" id="plan-toggle" aria-pressed="false"
                   title="켜면 하기로 한 것, 끄면 실제로 한 것">
-            <span class="plan-toggle-dot" aria-hidden="true"></span><span id="plan-toggle-text">계획 OFF</span>
+            <span class="plan-toggle-dot" aria-hidden="true"></span><span id="plan-toggle-text">계획 보기</span>
           </button>
           <div class="legend" id="legend" aria-label="범례">
             {% for cat_id in used_categories %}
@@ -95,7 +95,7 @@
           </div>
         </div>
         {% if not read_only %}
-        <p class="grid-hint">드래그하거나 모바일에서 시작·끝 칸을 차례로 눌러 활동을 보정할 수 있습니다.</p>
+        <p class="grid-hint" id="grid-hint">드래그하거나 모바일에서 시작·끝 칸을 차례로 눌러 활동을 보정할 수 있습니다. 우클릭·꾹 누르기도 됩니다.</p>
         {% endif %}
         <p class="selection-caption" id="selection-caption" aria-live="polite">&nbsp;</p>
         <!-- ★ 차트는 서버를 다시 안 부른다. 위 격자의 셀에서 직접 센다 —

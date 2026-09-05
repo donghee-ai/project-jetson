@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
 import logging
 import re
@@ -35,6 +36,7 @@ from lifetrainer.plan.achieve import day_achievement, plans_for_day
 from lifetrainer.plan.models import (
     Plan,
     PlanInstance,
+    add_instance,
     archive_instance,
     create_plan,
     delete_plan,
@@ -1315,6 +1317,113 @@ def create_app(cfg: Any) -> Flask:
         )
         slot_sec = cfg.rollup.slot_minutes * 60.0
         return day_start + start_slot * slot_sec, day_start + end_slot * slot_sec
+
+    @app.post("/api/plan-slot")
+    def api_plan_slot_set() -> Response:
+        """격자에서 고른 구간을 **계획**으로 만든다 (2026-09-05).
+
+        ★ `/api/slot`(실제 보정)과 짝이다. 고르개는 **보고 있는 층**을 고친다 —
+          계획 ON 이면 여기로, OFF 면 `/api/slot` 으로 간다. 같은 버튼이 화면에 안
+          보이는 층을 고치면 사람이 무엇을 바꿨는지 모른다.
+
+        ★ 겹치는 기존 계획은 **먼저 치운다.** 안 그러면 같은 시간에 계획이 둘 쌓이고,
+          `plan_cats` 는 "나중 것이 이긴다" 라 화면은 하나만 보여준다 — 보이지 않는
+          계획이 달성률에는 들어가는 상태가 된다.
+        """
+        body = request.get_json(silent=True) or {}
+        category = body.get("category")
+        if not category:
+            abort(400, description="category 가 필요합니다")
+        day, start_min, end_min = _plan_slot_range(body)
+
+        conn = db.open_db(cfg)
+        try:
+            # 팔레트 경로는 위에서 이미 한 번 정한 것을 쓴다 (반복 실패 2번: 같은 값을 두 곳에서)
+            title = _label_for(load_palette(palette_path, "light"), category)
+            removed = 0
+            ids = []
+            for lo, hi in _split_at_midnight(start_min, end_min):
+                removed += _archive_plans_in_range(conn, day, lo, hi)
+                ids.append(add_instance(
+                    conn, cfg, day, title=title,
+                    start_min=lo, end_min=hi, category=category, source="manual",
+                ))
+            return jsonify({"ok": True, "instance_ids": ids, "instance_id": ids[0], "replaced": removed})
+        finally:
+            conn.close()
+
+    @app.delete("/api/plan-slot")
+    def api_plan_slot_clear() -> Response:
+        """고른 구간의 계획을 치운다 — 취소하면 그 시간은 다시 실제 기록만 남는다."""
+        body = request.get_json(silent=True) or {}
+        day, start_min, end_min = _plan_slot_range(body)
+        conn = db.open_db(cfg)
+        try:
+            removed = sum(
+                _archive_plans_in_range(conn, day, lo, hi)
+                for lo, hi in _split_at_midnight(start_min, end_min)
+            )
+            return jsonify({"ok": True, "removed": removed})
+        finally:
+            conn.close()
+
+    def _plan_slot_range(body: dict) -> tuple[str, int, int]:
+        """`{day, start_slot, end_slot}` → `(day, start_min, end_min)`.
+
+        `end_slot` 은 **끝 다음 칸**이다 — `/api/slot`·`/api/private/purge` 와 같은 규칙.
+        세 곳이 갈리면 한 칸씩 어긋나고 그건 화면에서 잘 안 보인다.
+        """
+        day = body.get("day")
+        if not _valid_day(day):
+            abort(400, description="day 가 필요합니다 (YYYY-MM-DD)")
+        try:
+            start_slot, end_slot = int(body["start_slot"]), int(body["end_slot"])
+        except (KeyError, TypeError, ValueError):
+            abort(400, description="start_slot·end_slot 이 필요합니다")
+        if not (0 <= start_slot < end_slot <= cfg.slots_per_day):
+            abort(400, description=f"슬롯 범위가 올바르지 않습니다: {start_slot}~{end_slot}")
+        # ★ 슬롯은 **하루 경계(06:00) 기준**이고 `plan.start_min` 은 **자정 기준**이다.
+        #   `slot * slot_minutes` 로 보내면 6시간(36슬롯) 어긋난다 — 실제로 그렇게
+        #   만들었다가 계획이 엉뚱한 시간에 찍혔다. 변환점은 timeutil 한 곳이다.
+        to_min = functools.partial(
+            timeutil.slot_to_wallclock_min,
+            slot_minutes=cfg.rollup.slot_minutes,
+            boundary_hour=cfg.rollup.day_boundary_hour,
+        )
+        return str(day), to_min(start_slot), to_min(end_slot)
+
+    def _split_at_midnight(start_min: int, end_min: int) -> list[tuple[int, int]]:
+        """자정을 넘는 구간을 둘로 나눈다.
+
+        ★ 계획 모델은 **자정을 넘는 계획을 지원하지 않는다** (`_validate_time_range`:
+          "플래너는 하루 단위다"). 그런데 격자의 하루는 06:00~06:00 이라 저녁~새벽
+          선택이 자연스럽게 자정을 넘는다. 거절하는 대신 **경계에서 나눈다** —
+          사람이 두 번 고르게 만들 이유가 없고, 나눠도 화면에서는 이어져 보인다.
+        """
+        if start_min < end_min:
+            return [(start_min, end_min)]
+        # 하루 경계를 넘어 되감긴 경우: [start, 24:00) + [00:00, end)
+        out = []
+        if start_min < 1440:
+            out.append((start_min, 1440))
+        if end_min > 0:
+            out.append((0, end_min))
+        return out
+
+    def _archive_plans_in_range(conn, day: str, start_min: int, end_min: int) -> int:
+        """구간과 겹치는 **살아 있는** 인스턴스를 보관 처리한다. 반환값은 치운 수.
+
+        ★ 지우지 않고 보관한다 — `plan_instance` 는 사람의 의도 기록이라 지우면
+          "무엇을 하려 했었나" 를 잃는다 (모델의 archive 규칙과 같다).
+        """
+        rows = conn.execute(
+            "SELECT id FROM plan_instance WHERE day = ? AND archived_at IS NULL "
+            "AND start_min < ? AND end_min > ?",
+            (day, end_min, start_min),
+        ).fetchall()
+        for r in rows:
+            archive_instance(conn, int(r["id"]))
+        return len(rows)
 
     @app.post("/api/private/undo")
     def api_private_undo() -> Response:

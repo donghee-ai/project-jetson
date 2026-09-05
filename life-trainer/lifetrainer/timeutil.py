@@ -123,6 +123,17 @@ def wallclock_min_to_slot(minute: int, slot_minutes: int = 10, *, boundary_hour:
     return ((minute - boundary_hour * 60) % 1440) // slot_minutes
 
 
+def slot_to_wallclock_min(slot: int, slot_minutes: int = 10, *, boundary_hour: int = 6) -> int:
+    """`wallclock_min_to_slot` 의 역변환 — 슬롯 번호 -> 자정 기준 벽시계 분.
+
+    격자에서 고른 구간을 계획으로 옮길 때 쓴다 (`/api/plan-slot`).
+    ★ **직접 곱하지 않는다.** 슬롯은 하루 경계(06:00) 기준이고 `plan.start_min` 은
+      자정 기준이라, `slot * slot_minutes` 로 보내면 6시간(36슬롯)만큼 어긋난다 —
+      실제로 그렇게 만들었다가 계획이 엉뚱한 시간에 찍혔다 (2026-09-05).
+    """
+    return (slot * slot_minutes + boundary_hour * 60) % 1440
+
+
 def slot_index(ts: float, tz: tzinfo, slot_minutes: int = 10, *, boundary_hour: int = 6) -> int:
     """epoch 를 해당 논리적 하루 안에서의 슬롯 번호(0-base)로 변환한다."""
     dt = datetime.fromtimestamp(ts, tz=tz)
