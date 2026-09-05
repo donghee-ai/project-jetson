@@ -49,11 +49,21 @@ from lifetrainer.plan.models import (
     update_plan,
     sync_instances_from_plan,
 )
-from lifetrainer.plan.override import clear_override_range, list_overrides, set_override_range
+from lifetrainer.plan.override import (
+    apply_overrides,
+    clear_override_range,
+    list_overrides,
+    set_override_range,
+)
 from lifetrainer.report.palette import Palette, css_variables, load_palette
 from lifetrainer.rollup.classify import Classifier
 from lifetrainer.rollup.rollup import rollup_day
-from lifetrainer.report.stats import compute_daily, device_breakdown, format_hm
+from lifetrainer.report.stats import (
+    category_seconds,
+    compute_daily,
+    device_breakdown,
+    format_hm,
+)
 from lifetrainer.web import auth
 
 logger = logging.getLogger(__name__)
@@ -345,21 +355,10 @@ def _build_day_payload(
             for sl in range(pi.start_slot, pi.end_slot):
                 plan_cats[sl] = cat
 
-    plan_totals: dict[str, float] = {}
-    slot_sec = cfg.rollup.slot_minutes * 60.0
-    for sl, cat in plan_cats.items():
-        plan_totals[cat] = plan_totals.get(cat, 0.0) + slot_sec
-    if plan_cats:
-        for r in conn.execute(
-            "SELECT category, SUM(seconds) AS sec FROM slot_breakdown "
-            "WHERE day = ? AND slot NOT IN (%s) AND category NOT IN (?, ?) GROUP BY category"
-            % ", ".join("?" * len(plan_cats)),
-            (day, *sorted(plan_cats), cfg.rollup.afk_category, cfg.rollup.no_data_category),
-        ):
-            plan_totals[r["category"]] = plan_totals.get(r["category"], 0.0) + float(r["sec"])
-    else:
-        for c in stats.by_category:
-            plan_totals[c.category] = plan_totals.get(c.category, 0.0) + c.seconds
+    # 계획 보기 합계 — **같은 함수**를 계획 겹침만 얹어 부른다.
+    # 여기서 따로 세면 그 순간 "화면마다 다른 하루" 가 다시 시작된다
+    # (`stats.category_seconds` 머리말).
+    plan_totals = category_seconds(conn, cfg, day, overlay=plan_cats)
 
     pal = load_palette(palette_path, theme)
     total_device_sec = sum(d.seconds for d in devices)
@@ -1593,6 +1592,15 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             touched = set_override_range(conn, day, start_slot, end_slot, category, actor="web")
+            # ★ 보정을 `slot.category` 까지 **바로** 내린다 (2026-09-05).
+            #
+            #   전에는 `slot_override` 만 쓰고 끝냈다. 격자는 보정을 겹쳐 그리니 바로
+            #   바뀌어 보이는데, **지표·차트는 `slot.category` 를 읽으므로 다음 롤업까지
+            #   안 바뀐다.** 사람이 낮 시간을 수면으로 바꿔도 "오늘의 수면" 이 그대로였다
+            #   — 한 화면이 두 가지를 말하는 상태다.
+            #
+            #   `apply_overrides` 는 롤업이 끝에서 부르는 것과 같은 함수라 규칙이 하나다.
+            apply_overrides(conn, day)
         finally:
             conn.close()
         return jsonify(
@@ -1614,6 +1622,14 @@ def create_app(cfg: Any) -> Flask:
         conn = db.open_db(cfg)
         try:
             touched = clear_override_range(conn, day, start_slot, end_slot)
+            # ★ 해제는 **되계산이 필요하다.** 보정을 지운다고 원래 카테고리가 돌아오지
+            #   않는다 — `apply_overrides` 가 `slot.category` 를 덮어 썼고 원본은 안
+            #   남아 있다. 그래서 그 하루를 다시 롤업한다 (실측 1.35초).
+            #
+            #   지정(POST)은 `apply_overrides` 로 충분해서 즉시고, 해제만 이 값을 치른다.
+            #   둘 다 안 하면 "격자는 바뀌었는데 지표는 그대로" 가 된다 — 사람이 짚은 그 버그다.
+            if touched:
+                _reroll(conn, [day])
         finally:
             conn.close()
         return jsonify(
