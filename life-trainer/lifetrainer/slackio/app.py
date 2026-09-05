@@ -154,6 +154,12 @@ def _register_commands(app: App, cfg: Config) -> None:
         text = (command.get("text") or "").strip()
         threading.Thread(target=_dispatch_memo, args=(cfg, text, respond), daemon=True).start()
 
+    @app.command("/private")
+    def _handle_private(ack, respond, command) -> None:  # noqa: ANN001
+        ack()
+        text = (command.get("text") or "").strip()
+        threading.Thread(target=_dispatch_private, args=(cfg, text, respond), daemon=True).start()
+
     @app.command("/week")
     def _handle_week(ack, respond, command) -> None:  # noqa: ANN001
         ack()
@@ -1111,6 +1117,67 @@ def _dispatch_set_status(
 
 
 # ── /memo 처리 ────────────────────────────────────────────────────────
+
+
+_PRIVATE_USAGE = (
+    "`/private <분>` — 지금부터 그 시간 동안 안 잰다 (예: `/private 60`)\n"
+    "`/private off` — 지금 끈다   ·   `/private status` — 지금 상태"
+)
+
+
+def _dispatch_private(cfg: Config, text: str, respond, day: str | None = None) -> None:
+    """프라이빗 구간을 켜고·끄고·본다.
+
+    ## ★ 왜 에이전트 툴이 아니라 슬래시인가
+
+    이 경로는 `agent/slash.py` 를 통해 **모델도 부를 수 있다.** 그래서 모델이 고르는
+    것은 *명령 문자열*이고, **실제 동작은 코드가 한다** — 8B 가 툴을 안 부르고
+    "껐습니다" 로 끝내는 실패 모드가 구조적으로 불가능하다 (`CLAUDE.md` 대화 규칙).
+    다른 툴이면 답이 틀리고 마는데, 프라이빗은 **사람이 켜졌다고 믿고 행동한다.**
+
+    ## 그래서 답에 항상 결과 상태를 담는다
+
+    "껐습니다" 가 아니라 **"프라이빗: 꺼짐"** 이라고 답한다. 모델이 이 문자열을 그대로
+    인용하게 만드는 것이 목적이다 — 요청과 결과가 어긋나면 사람 눈에 보여야 한다.
+
+    ★ `day` 는 안 쓴다. 프라이빗은 **지금 이 순간부터**의 구간이라 날짜 인자가 없다.
+      `_delegate` 가 모든 명령에 `day` 를 넘기므로 받아만 두고 버린다.
+    """
+    from lifetrainer import privacy
+
+    arg = (text or "").strip().lower()
+    try:
+        conn = db.open_db(cfg)
+        try:
+            if arg in ("off", "끄기", "꺼"):
+                st = privacy.end_now(conn)
+                tail = "\n  끈 시각부터 다시 기록됩니다 — 구간 안의 기록은 돌아오지 않습니다."
+            elif arg in ("", "status", "상태"):
+                st = privacy.state(conn)
+                tail = "" if arg else "\n" + _PRIVATE_USAGE
+            else:
+                try:
+                    minutes = int(arg.rstrip("분m"))
+                except ValueError:
+                    respond(_PRIVATE_USAGE)
+                    return
+                if not (0 < minutes <= cfg.private.max_minutes):
+                    respond(f"분은 0 보다 크고 {cfg.private.max_minutes} 이하여야 합니다.")
+                    return
+                st = privacy.begin(conn, minutes, source="slack")
+                tail = "\n  이 시간의 창 제목·앱 이름은 저장되지 않습니다."
+        finally:
+            conn.close()
+
+        if st.active:
+            left = max(0.0, st.until_ts - st.server_ts)
+            line = f"프라이빗: 켜짐 — {left / 60:.0f}분 남음"
+        else:
+            line = "프라이빗: 꺼짐"
+        respond(line + tail)
+    except Exception:
+        logger.exception("/private 처리 실패")
+        respond("프라이빗 상태를 바꾸지 못했습니다. 지금 상태는 `/private status` 로 확인하세요.")
 
 
 def _dispatch_memo(cfg: Config, text: str, respond, day: str | None = None) -> None:

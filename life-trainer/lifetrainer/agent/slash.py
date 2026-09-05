@@ -55,16 +55,21 @@ logger = logging.getLogger(__name__)
 # 에이전트에게 열어 주는 명령. Slack 앱의 11개 중 `/openclaw` 는 게이트웨이 자신의
 # 것이라 빠지고, 나머지 10개가 그대로 온다.
 COMMANDS: dict[str, str] = {
-    "/lt": "ping|today|yesterday|week|status — 요약·상태 조회",
-    "/log": "<카테고리> <기간> [메모] — 활동을 손으로 기록 (예: /log 운동 60m 헬스장)",
+    "/lt": "ping|today|yesterday|week|status — 요약·상태",
+    "/log": "<카테고리> <기간> [메모] — 활동 기록 (예: /log 운동 60m)",
     "/plan": "<텍스트> — 계획 추가. #과목 @기간 !우선순위 HH:MM-HH:MM 문법",
-    "/del": "[번호,번호] — 계획 삭제. 인자가 없으면 오늘 목록을 번호와 함께 보여준다",
-    "/view": "[어제|YYYY-MM-DD] — 그날의 계획과 달성률",
-    "/done": "<제목> — 완료 처리 (예: /done 미팅)",
+    "/del": "[번호,번호] — 계획 삭제. 인자 없으면 오늘 목록",
+    "/view": "[어제|YYYY-MM-DD] — 그날 계획·달성률",
+    "/done": "<제목> — 완료 처리",
     "/doing": "<제목> — 진행중",
     "/defer": "<제목> — 내일로 연기",
     "/memo": "<텍스트> — 그날 메모",
-    "/week": "주간 비교",
+    # ★ 프라이빗을 **에이전트 툴이 아니라 여기** 둔 이유: 모델은 명령 문자열만 고르고
+    #   실제 동작은 코드가 한다. 8B 가 툴을 안 부르고 "껐습니다" 로 끝내는 실패 모드가
+    #   구조적으로 불가능하다 — 다른 명령이면 답이 틀리고 말지만, 프라이빗은
+    #   **사람이 켜졌다고 믿고 행동한다.** (툴 예산도 이미 3,000 중 2,853 을 쓴다)
+    "/private": "<분>|off|status — 안 재는 시간 (예: /private 60)",
+    "/week": "주간",
 }
 
 # 델리게이트 표 — 값은 `slackio.app` 의 함수 이름과 인자 모양이다.
@@ -75,6 +80,7 @@ _DELEGATED = {
     "/plan": "text",
     "/del": "command",
     "/memo": "text",
+    "/private": "text",
     "/done": "status",
     "/doing": "status",
     "/defer": "status",
@@ -350,6 +356,8 @@ def _delegate(
     elif kind == "text":
         if name == "/plan":
             slack_app._dispatch_plan(cfg, rest, collector, day)
+        elif name == "/private":
+            slack_app._dispatch_private(cfg, rest, collector, day)
         else:
             slack_app._dispatch_memo(cfg, rest, collector, day)
     elif kind == "status":
