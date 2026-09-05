@@ -307,6 +307,11 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
    잘못 누르면 안 된다 — 되돌릴 수는 있지만(휴지통) 사람을 놀라게 하면 안 된다. */
 /* 삭제 직후의 되돌리기 바. 화면 아래에 떠 있고 15초 뒤 사라진다.
    `position: fixed` 라 격자를 가리지 않고, 모바일에서도 엄지 근처에 온다. */
+/* 꾹 누르는 동안 눌린 티를 낸다 — 안 그러면 0.5초가 "안 눌렸나?" 로 느껴진다.
+   `user-select: none` 이 같이 필요하다: 길게 누르면 브라우저가 글자를 선택해 버린다. */
+.activity-item.pressing { background: color-mix(in srgb, var(--ink-primary) 6%, transparent);
+  border-radius: 10px; user-select: none; -webkit-user-select: none; }
+
 .undo-bar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
