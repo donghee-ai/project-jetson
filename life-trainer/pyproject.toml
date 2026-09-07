@@ -6,6 +6,10 @@ build-backend = "setuptools.build_meta"
 name = "lifetrainer"
 version = "0.1.0"
 description = "On-device personal life-logging agent for Jetson Orin NX"
+# ★ 기기는 3.14 로 돌지만 **바닥은 3.10 으로 남긴다** (2026-09-07).
+#   그게 되돌아갈 길이기 때문이다 — 3.11 로 올리면 `tomli` 분기를 지울 수 있지만,
+#   지우는 순간 `.venv` 를 3.10 으로 다시 만드는 복구 절차가 안 된다.
+#   올리는 것은 3.14 가 자리 잡은 뒤에 따로 한다 (규칙 §5: 두 가지를 같이 하지 않는다).
 requires-python = ">=3.10"
 dependencies = [
     "requests>=2.32",

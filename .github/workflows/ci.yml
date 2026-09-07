@@ -53,13 +53,21 @@ jobs:
                      life-trainer/scripts/*.sh life-trainer/deploy/*.sh
 
   tests:
-    name: Life Trainer 테스트
+    name: Life Trainer 테스트 (py${{ matrix.python }})
     runs-on: ubuntu-latest
+    # ★ **두 판을 본다** (2026-09-07). 기기는 3.14 로 돌지만 `requires-python` 이
+    #   `>=3.10` 이다 — 그 바닥이 살아 있어야 **3.10 으로 되돌리는 길**이 성립한다.
+    #   한 판만 보면 되돌린 순간 아무도 안 본 코드가 된다.
+    #   `fail-fast: false` 인 이유: 한쪽만 깨졌을 때 어느 쪽인지 알아야 한다.
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.14']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.10'
+          python-version: ${{ matrix.python }}
       - name: 설치
         working-directory: life-trainer
         # ★ `-c constraints.txt` 로 **판을 고정**해 설치한다.

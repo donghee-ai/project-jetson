@@ -86,14 +86,22 @@ def _raw_section(cfg: Any) -> dict:
     `load_config` 가 이미 파싱한 결과를 안 들고 있어서(알려진 섹션만 dataclass 로
     옮긴다) 파일을 한 번 더 연다. 기동 시 한 번뿐이라 값이 안 나오는 비용이다.
     """
-    import tomli
+    # ★ `tomli` 를 직접 부르지 않는다 (2026-09-07, 파이썬 3.14 로 올리다 드러났다).
+    #
+    #   여기는 `import tomli` 였다. 3.10 에서는 백포트가 깔려 있어 돌았지만,
+    #   **3.11+ 에는 표준 `tomllib` 이 있어 백포트를 안 깐다** — 그래서 올리자마자
+    #   `No module named 'tomli'` 로 죽었고, 증상은 에이전트 설정이 통째로 안 읽히는 것이다.
+    #
+    #   `lifetrainer.config` 가 이미 어느 파서를 쓸지 정해 뒀다. 그것을 받아 쓴다 —
+    #   같은 판단을 두 곳에서 각자 하면 한쪽만 고쳐진다 (반복 실패 2번).
+    from lifetrainer.config import tomllib
 
     path = Path(cfg.root) / "config" / "lifetrainer.toml"
     if not path.is_file():
         return {}
     try:
         with path.open("rb") as fh:
-            return dict(tomli.load(fh).get("agent") or {})
+            return dict(tomllib.load(fh).get("agent") or {})
     except Exception:  # noqa: BLE001 - 설정이 깨졌다고 에이전트가 못 뜨면 안 된다
         return {}
 

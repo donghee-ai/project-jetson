@@ -60,7 +60,13 @@ __pycache__/
 node_modules/
 
 # 파이썬 도구 산출물 (하위 프로젝트에도 각자 있지만, 어디서 생기든 막는 안전망)
+# ★ `.venv*/` 까지 막는다 (2026-09-07). 전에는 `.venv/` 하나였고, 파이썬을 올리며
+#   만든 `.venv310/` 이 **그대로 통과했다** — `git add -A` 한 번에 파이썬 설치본이
+#   저장소에 들어갈 뻔했다(검사기가 그 안의 .py 를 훑어 65건을 뱉어 알아챘다).
+#   이 저장소는 같은 구멍을 이미 한 번 겪었다:
+#   HISTORY/2026-08-25-the-gitignore-net-had-a-suffix-shaped-hole.md
 .venv/
+.venv*/
 venv/
 *.egg-info/
 .pytest_cache/
