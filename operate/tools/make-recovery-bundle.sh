@@ -27,7 +27,13 @@ REPO=$PWD
 LT=$REPO/life-trainer
 
 STAMP=$(date +%Y%m%d-%H%M)
-OUT="$REPO/recovery-bundle-$STAMP.tar.gz"
+
+# ★ 산출물은 **저장소 밖**(상위 폴더)에 둔다 (2026-09-07).
+#   전에는 `$REPO/` 안이었다. 그러면 이 묶음이 `git status` 에 뜨고, 저장소를 통째로
+#   지우거나 다시 클론하는 복구 시나리오에서 **묶음이 같이 사라진다** —
+#   되살리려고 만든 것이 되살릴 대상과 운명을 같이하면 안 된다.
+OUT_DIR="${LT_BUNDLE_DIR:-$(cd "$REPO/.." && pwd)}"
+OUT="$OUT_DIR/recovery-bundle-$STAMP.tar.gz"
 TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
 B="$TMP/recovery-$STAMP"; mkdir -p "$B"
 
@@ -122,6 +128,35 @@ mkdir -p "$B/rebuild"
 cp "$REPO/environment.md" "$B/rebuild/" 2>/dev/null || true
 say "재현 정보" "rebuild/versions.txt"
 
+# ── 5b. ★ 저장소 자체 — git bundle 로 통째로 ────────────────
+#
+# ★ 2026-09-07 에 더했다. 전에는 "저장소 자체는 git clone 하면 된다" 고 적어 두고
+#   HEAD 해시만 남겼다. **그건 origin 에 올라가 있을 때만 참이다** — 이 묶음을 만든
+#   날 안 올라간 커밋이 13개였다. 즉 그 안내를 그대로 따르면 나흘치 작업이 사라진다.
+#
+#   `git bundle --all` 은 **모든 ref 와 전체 이력**을 파일 하나로 만든다.
+#   되살릴 때 `git clone recovery.bundle project-jetson` 이면 끝이고,
+#   원격이 없어도(계정 잠김·저장소 삭제) 성립한다.
+#
+#   커밋 안 된 변경은 bundle 에 안 들어간다. 그래서 diff 를 따로 뜬다 —
+#   실측으로 이 기기는 상시 10~20개 파일이 더러운 상태로 돈다.
+mkdir -p "$B/repo"
+if git -C "$REPO" bundle create "$B/repo/project-jetson.bundle" --all >/dev/null 2>&1; then
+  # ★ 만든 묶음이 실제로 열리는지 확인한다. 백업은 **검증까지가 백업이다**
+  #   (life-trainer/CLAUDE.md — scripts/backup.sh 가 같은 규칙을 쓴다).
+  if git -C "$REPO" bundle verify "$B/repo/project-jetson.bundle" >/dev/null 2>&1; then
+    say "저장소" "$(du -sh "$B/repo/project-jetson.bundle" | cut -f1) · $(git -C "$REPO" rev-list --all --count) 커밋 (verify 통과)"
+  else
+    rm -f "$B/repo/project-jetson.bundle"
+    say "저장소" "★ bundle verify 실패 — 넣지 않았다 (깨진 사본을 '백업 있음' 으로 세지 않는다)"
+  fi
+else
+  say "저장소" "(git bundle 실패)"
+fi
+git -C "$REPO" status --porcelain > "$B/repo/dirty-files.txt" 2>/dev/null || true
+git -C "$REPO" diff HEAD            > "$B/repo/uncommitted.patch" 2>/dev/null || true
+say "커밋 안 된 변경" "$(wc -l < "$B/repo/dirty-files.txt") 개 파일 · uncommitted.patch"
+
 # ── 6. 어떻게 되살리나 ───────────────────────────────────────
 cp "$LT/docs/runbook-backup-restore.md" "$B/RESTORE.md" 2>/dev/null || true
 cat > "$B/README.txt" <<TXT
@@ -139,12 +174,14 @@ cat > "$B/README.txt" <<TXT
   wifi-driver/          ★ MT7601U 드라이버. 커널 hold 의 이유이고
                           재플래시 후 이게 없으면 WiFi 가 안 붙는다
   systemd/              유닛 심링크·활성 목록·타이머
+  repo/*.bundle         ★ 저장소 전체 이력. origin 이 없어도 되살아난다:
+                            git clone repo/project-jetson.bundle project-jetson
+  repo/uncommitted.patch 그때 커밋 안 돼 있던 변경 (git apply)
 
 안 들어 있는 것 (다시 만들 수 있는 것들 — rebuild/versions.txt 에 재현 정보)
   ~/models/     5.3G  모델 가중치. 파일명 + sha256 로 대조해 다시 받는다
   ~/llama.cpp/  1.5G  commit + 빌드 옵션으로 다시 빌드한다
-  .venv               pyproject 로 다시 만든다
-  저장소 자체         git clone (HEAD 는 versions.txt 에)
+  .venv               pyproject + constraints.txt 로 다시 만든다
 
 되살리는 순서: 이 묶음의 RESTORE.md — 5-2 절
 TXT

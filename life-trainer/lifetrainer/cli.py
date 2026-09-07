@@ -25,7 +25,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Callable
 
-from lifetrainer import db, timeutil
+from lifetrainer import db, devdb, timeutil
 from lifetrainer.config import Config, load_config, setup_logging
 
 logger = logging.getLogger(__name__)
@@ -51,6 +51,12 @@ def _common_parser() -> argparse.ArgumentParser:
     parent.add_argument(
         "-v", "--verbose", action="store_true", default=argparse.SUPPRESS, help="DEBUG 로그 레벨"
     )
+    # ★ 개발 사본에 대고 돈다 (`lt dev-db` 로 만든다). 환경변수가 아니라 플래그인
+    #   이유는 lifetrainer/devdb.py 머리말에 — 한 줄에만 걸리고 히스토리에 남는다.
+    parent.add_argument(
+        "--dev", action="store_true", default=argparse.SUPPRESS,
+        help="운영이 아니라 개발 사본(data/dev/)에 대고 실행 — `lt dev-db` 로 먼저 만든다",
+    )
     return parent
 
 
@@ -61,6 +67,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lt", description="Life Trainer — 개인 생활 로깅 에이전트")
     parser.add_argument("--config", type=str, default=None, help="설정 파일 경로 (기본: config/lifetrainer.toml)")
     parser.add_argument("-v", "--verbose", action="store_true", default=False, help="DEBUG 로그 레벨")
+    # ★ 서브커맨드 쪽(`common`)에도 같은 플래그가 있다 — `--config`·`-v` 와 같은 배치라
+    #   `lt --dev doctor` 와 `lt doctor --dev` 가 둘 다 된다. 서브커맨드 쪽은
+    #   `SUPPRESS` 라 안 주면 여기 값을 안 덮는다.
+    parser.add_argument(
+        "--dev", action="store_true", default=False,
+        help="운영이 아니라 개발 사본(data/dev/)에 대고 실행 — `lt dev-db` 로 먼저 만든다",
+    )
 
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -69,6 +82,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_initdb = sub.add_parser("init-db", parents=[common], help="스키마 생성")
     p_initdb.set_defaults(func=cmd_init_db)
+
+    p_devdb = sub.add_parser(
+        "dev-db", parents=[common],
+        help="운영 DB 의 개발 사본을 만든다 (이후 `lt --dev <명령>` 으로 그 사본에 대고 실행)",
+    )
+    p_devdb.add_argument("--refresh", action="store_true", help="사본이 이미 있으면 새로 뜬다 (덮어쓴다)")
+    p_devdb.set_defaults(func=cmd_dev_db)
+
+    p_compact = sub.add_parser(
+        "aw-compact", parents=[common],
+        help="이미 쌓인 중복 이벤트를 합친다 (issues/0027 — 기본은 미리보기)",
+    )
+    p_compact.add_argument("--apply", action="store_true", help="실제로 합친다 (기본은 보기만)")
+    p_compact.set_defaults(func=cmd_aw_compact)
 
     p_sync = sub.add_parser("sync", parents=[common], help="ActivityWatch 동기화")
     p_sync.set_defaults(func=cmd_sync)
@@ -356,6 +383,142 @@ def _top_job_error(conn: sqlite3.Connection) -> str:
     return f"{text[:70]}… ×{row['c']}" if len(text) > 70 else f"{text} ×{row['c']}"
 
 
+def cmd_dev_db(args: argparse.Namespace, cfg: Config) -> int:
+    """운영 DB 를 개발 사본으로 뜬다.
+
+    ★ `--dev` 와 같이 쓰면 안 된다 — 사본의 사본을 뜨는 것이라 뜻이 없다.
+      main() 이 `--dev` 를 먼저 적용하므로 여기서 걸러 준다.
+    """
+    if getattr(args, "dev", False):
+        raise CliError("`lt dev-db --dev` 는 사본의 사본을 뜬다. `--dev` 를 빼고 부르세요.")
+
+    try:
+        path, size = devdb.make_copy(cfg, force=bool(getattr(args, "refresh", False)))
+    except FileExistsError as exc:
+        raise CliError(str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise CliError(str(exc)) from exc
+
+    _, data_dir = devdb.dev_paths(cfg)
+    print(f"개발 사본을 떴다: {path} ({size / 1_048_576:.0f} MB)")
+    print(f"  원본       {cfg.db_path}")
+    print(f"  data_dir   {data_dir}  (본문·에이전트 파일도 같이 갈린다)")
+    print()
+    print("이제 이렇게 씁니다 —")
+    print("  lt --dev doctor            사본 상태 보기")
+    print("  lt --dev rollup --today    사본에 대고 롤업")
+    print("  lt dev-db --refresh        운영에서 다시 뜨기 (사본의 변경은 사라진다)")
+    return 0
+
+
+def cmd_aw_compact(args: argparse.Namespace, cfg: Config) -> int:
+    """상류 중복 발행으로 쌓인 행을 합친다.
+
+    ★ 기본이 **미리보기**다. 원본 표(`aw_event`)를 지우는 일이라, 보고 나서 하게 만든다.
+      `lt --dev aw-compact --apply` 로 사본에서 먼저 돌려 보는 것이 정석이다.
+    """
+    from lifetrainer.collect.aw_sync import compact_duplicates
+
+    apply = bool(getattr(args, "apply", False))
+    conn = db.open_db(cfg)
+    try:
+        # 합집합이 안 변하는 것이 이 작업의 불변식이다 — 전후로 직접 잰다.
+        before_union = _aw_union_seconds(conn)
+        result = compact_duplicates(conn, apply=apply)
+        after_union = _aw_union_seconds(conn) if apply else before_union
+    finally:
+        conn.close()
+
+    print("미리보기 (아무것도 안 바꿨다)" if not apply else "합쳤다")
+    total_before = total_after = 0
+    for bid, (before, after) in sorted(result.items()):
+        total_before += before
+        total_after += after
+        mark = "" if before == after else f"  −{before - after}"
+        print(f"  {bid:<40} {before:>7} → {after:>7}{mark}")
+    print(f"  {'합계':<40} {total_before:>7} → {total_after:>7}")
+
+    drift = abs(before_union - after_union)
+    if apply:
+        # ★ 이 검사가 없으면 "합쳤다" 가 "지웠다" 와 구분되지 않는다.
+        print(f"\n  덮은 시간 {before_union / 3600:.2f}h → {after_union / 3600:.2f}h", end="")
+        print("  ✅ 안 변했다" if drift < 1.0 else f"  ❌ {drift:.1f}초 사라졌다")
+        if drift >= 1.0:
+            raise CliError("합집합이 변했다 — 되돌리세요 (백업: data/backup/)")
+    else:
+        print("\n  실제로 합치려면 --apply. 사본에서 먼저: lt --dev aw-compact --apply")
+    return 0
+
+
+def _aw_union_seconds(conn) -> float:
+    """`aw_event` 가 실제로 덮은 시간(초). 버킷별 합집합의 합이다."""
+    total = 0.0
+    for row in conn.execute("SELECT DISTINCT bucket_id FROM aw_event"):
+        cur_s = cur_e = None
+        for ev in conn.execute(
+            "SELECT ts, ts_end FROM aw_event WHERE bucket_id = ? ORDER BY ts", (row["bucket_id"],)
+        ):
+            ts, te = float(ev["ts"]), float(ev["ts_end"])
+            if cur_e is None or ts > cur_e:
+                if cur_e is not None:
+                    total += cur_e - cur_s
+                cur_s, cur_e = ts, te
+            else:
+                cur_e = max(cur_e, te)
+        if cur_e is not None:
+            total += cur_e - cur_s
+    return total
+
+
+def _check_unpushed(ok, warn) -> None:  # noqa: ANN001 - cmd_doctor 의 보고 함수를 받는다
+    """CI 가 **얼마나 오래** 이 코드를 못 봤나 (2026-09-07).
+
+    ★ 왜 생겼나: 실사에서 안 올라간 커밋이 13개였고, CI 가 마지막으로 본 것은 이틀 전
+      커밋이었다. 워크플로 자체는 잘 짜여 있다 — 검사기를 fixture 로 자기시험하고,
+      문서 지표 표절을 막고, 테스트를 소켓 차단 상태로 돌린다. **다만 안 돌았다.**
+      *만들었다 ≠ 그게 실제로 불린다* (저장소 규칙 §2).
+
+    ★ 왜 **개수**가 아니라 **나이**인가: 커밋이 몇 개 밀렸는지는 고장이 아니다 —
+      하루에 열 번 커밋하는 날도 있다. 문제는 *"CI 가 며칠째 못 봤나"* 다.
+      같은 날 작업하는 동안에는 안 울고, 사흘 넘게 묵으면 운다.
+
+    언제 꺼지나: **push 하는 즉시.** 누적이 아니라 가장 오래된 미푸시 커밋의 나이다.
+
+    ★ 네트워크를 안 쓴다. `origin/main` 로컬 ref 만 본다 — doctor 는 빨라야 한다.
+      그래서 다른 기기에서 push 했으면 `git fetch` 전까지 낡은 값을 볼 수 있다.
+      그 경우도 안전한 쪽으로 틀린다(있지도 않은 밀림을 말할 뿐, 놓치지 않는다).
+    """
+    import subprocess
+
+    STALE_DAYS = 3.0
+    try:
+        proc = subprocess.run(
+            ["git", "log", "--format=%ct", "origin/main..HEAD"],
+            capture_output=True, text=True, timeout=10,
+            cwd=str(Path(__file__).resolve().parent.parent.parent),
+        )
+    except Exception:  # noqa: BLE001 - git 이 없거나 저장소가 아니면 할 말이 없다
+        return
+    if proc.returncode != 0:
+        # 업스트림이 없는 사본이다 — 실패가 아니라 **해당 없음**이다.
+        return
+
+    stamps = [int(line) for line in proc.stdout.split() if line.isdigit()]
+    if not stamps:
+        ok("CI 도달", "안 올라간 커밋 없음 — CI 가 HEAD 를 봤다")
+        return
+
+    age_days = (time.time() - min(stamps)) / 86400.0
+    if age_days > STALE_DAYS:
+        warn(
+            "CI 도달",
+            f"커밋 {len(stamps)}개가 {age_days:.1f}일째 안 올라갔다 — 그동안 CI 가 아무것도 안 봤다."
+            " `git push` (pre-push 훅이 make check 를 돌린다)",
+        )
+    else:
+        ok("CI 도달", f"안 올라간 커밋 {len(stamps)}개 (가장 오래된 것 {age_days:.1f}일)")
+
+
 def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
     """환경 점검. 사람이 설치 후 가장 먼저 돌리는 명령이라 실패 원인을 명확히 알려준다."""
     print(f"Life Trainer doctor — root={cfg.root} tz={cfg.timezone}")
@@ -378,8 +541,13 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
         try:
             conn = db.connect(cfg.db_path)
             version = db.schema_version(conn)
+            # ★ **어느 DB 를 보고 있는지 doctor 가 말한다.** `--dev` 를 준 것을 잊고
+            #   "운영이 이상하다" 고 읽는 것을 막는다 — 이 저장소가 nvm/시스템 Node 로
+            #   이미 겪은 부류다(*경로가 아니라 실물을 본다*).
+            role = devdb.role_of(conn)
+            role_note = "  ★ 개발 사본" if role == devdb.ROLE_DEV else ""
             if version == db.SCHEMA_VERSION:
-                ok("DB", f"{cfg.db_path} (schema v{version})")
+                ok("DB", f"{cfg.db_path} (schema v{version}){role_note}")
             elif version == 0:
                 warn("DB", f"{cfg.db_path} 존재하지만 스키마 미적용 — `lt init-db` 실행 필요")
             else:
@@ -604,9 +772,19 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
                 "WHERE enabled = 1 AND fail_count >= ? ORDER BY fail_count DESC, name",
                 (SOURCE_FAIL_WARN,),
             ).fetchall()
+            # ★ `fail_count = 0` 을 같이 본다 (2026-09-07 에 좁혔다).
+            #
+            #   처음엔 `last_status IS NULL` 만 봤는데, 그러면 **연결 실패**가 걸린다 —
+            #   TCP 가 안 붙으면 HTTP 상태 자체가 없으므로 NULL 이 정상이다.
+            #   실제로 붙이자마자 Hacker News 가 걸렸고(일시적 연결 실패, fail_count=1),
+            #   그건 이미 위 "연속 실패" 갈래가 볼 일이다 — **한 사건에 경보는 하나다.**
+            #
+            #   찾으려던 것은 *"실패로도 안 세지고 상태도 없는"* 자리다. arXiv 가 정확히
+            #   그랬다(fail_count 0 · last_status NULL). 그 조합만 남긴다.
             mute = conn.execute(
                 "SELECT name FROM source "
-                "WHERE enabled = 1 AND last_fetched IS NOT NULL AND last_status IS NULL "
+                "WHERE enabled = 1 AND last_fetched IS NOT NULL "
+                "  AND last_status IS NULL AND fail_count = 0 "
                 "ORDER BY name",
             ).fetchall()
             if dead or mute:
@@ -628,6 +806,8 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
             else:
                 total = conn.execute("SELECT COUNT(*) AS n FROM source WHERE enabled = 1").fetchone()["n"]
                 ok("수집 소스", f"{total}개 모두 정상")
+
+            _check_unpushed(ok, warn)
         except Exception as exc:  # noqa: BLE001
             warn("DB 조회", f"이벤트/롤업 조회 실패: {exc}")
 
@@ -2314,6 +2494,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if getattr(args, "verbose", False):
         cfg = replace(cfg, log_level="DEBUG")
+
+    # ★ `--dev` 는 **설정을 갈아끼우고 그 사실을 말한다.** 조용히 바꾸면 어느 DB 에
+    #   대고 돌았는지 나중에 못 가린다 — 이 저장소가 nvm/시스템 Node 로 이미 겪은 부류다.
+    if getattr(args, "dev", False):
+        dev_db, _ = devdb.dev_paths(cfg)
+        if not dev_db.exists():
+            print(f"개발 사본이 없다: {dev_db}\n  `lt dev-db` 로 먼저 뜨세요.", file=sys.stderr)
+            return 2
+        cfg = devdb.as_dev(cfg)
+        print(f"[개발 사본] {cfg.db_path}", file=sys.stderr)
+
     setup_logging(cfg)
 
     func: Callable[[argparse.Namespace, Config], int] = args.func

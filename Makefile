@@ -104,7 +104,7 @@ smoke-live:  ## smoke + 실제로 한 턴 돌려 툴이 불리는지 (30~100초)
 
 hooks:  ## pre-push 훅 설치 (git 이 훅을 안 따라가므로 명시적으로 건다)
 	@install -m 755 operate/tools/pre-push.sh .git/hooks/pre-push
-	@echo "  .git/hooks/pre-push 설치됨 — make check-fast 를 돌린다"
+	@echo "  .git/hooks/pre-push 설치됨 — make check 를 돌린다 (급할 때 LT_FAST_PUSH=1)"
 
 
 test:  ## Life Trainer 테스트 (네트워크 불필요 — conftest 가 소켓을 막는다)

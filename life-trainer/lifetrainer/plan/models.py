@@ -282,18 +282,50 @@ def list_plans(conn: sqlite3.Connection, *, enabled_only: bool = True) -> list[P
 
 
 def skip_plan(conn: sqlite3.Connection, plan_id: int, day: str) -> None:
-    """반복 계획을 그 날짜만 건너뛴다 (휴가·공휴일 등)."""
+    """반복 계획을 그 날짜만 건너뛴다 (휴가·공휴일 등).
+
+    두 가지를 **같이** 한다 — 그러지 않으면 버튼이 거짓말을 한다:
+
+    1. `plan_skip` 행. 이건 **미래**를 막는다 (전개 후보 쿼리에서 뺀다)
+    2. 그날 **이미 만들어진** 인스턴스를 보관한다 (`skipped_at` + `archived_at`)
+
+    ★ 2번이 없었다 (docs/issues/0026, 2026-09-07 에 고침). `materialize_day` 는 멱등이라
+      이미 만든 인스턴스를 안 지운다. 그래서 **아직 안 열어 본 날**에만 건너뛰기가 들었고,
+      사람이 보고 있는 날은 언제나 이미 전개된 날이다 — 화면을 열었다는 것이 곧 전개다.
+      결과: `200 {"skipped": true}` 를 받고 계획은 그대로 있었다.
+
+    ★ 왜 `archived_at` 만이 아니라 `skipped_at` 도 찍나: 되돌릴 때
+      *"건너뛰어서 보관된 것"* 과 *"사람이 지워서 보관된 것"* 을 갈라야 한다.
+      `archived_at` 하나로는 못 가른다 (마이그레이션 011).
+    """
+    now = timeutil.now_ts()
     with db.transaction(conn) as tx:
         tx.execute(
             "INSERT INTO plan_skip(plan_id, day) VALUES (?, ?) "
             "ON CONFLICT(plan_id, day) DO NOTHING",
             (plan_id, day),
         )
+        tx.execute(
+            "UPDATE plan_instance SET archived_at = ?, skipped_at = ?, updated_at = ? "
+            "WHERE plan_id = ? AND day = ? AND archived_at IS NULL",
+            (now, now, now, plan_id, day),
+        )
 
 
 def unskip_plan(conn: sqlite3.Connection, plan_id: int, day: str) -> None:
+    """`skip_plan` 을 되돌린다 — 막아 둔 미래와 보관한 오늘을 **둘 다** 푼다.
+
+    ★ `skipped_at IS NOT NULL` 인 것만 되살린다. 사람이 따로 지운 인스턴스까지
+      되살리면 "건너뛰기 해제" 가 "삭제 취소" 로 번져 버린다.
+    """
+    now = timeutil.now_ts()
     with db.transaction(conn) as tx:
         tx.execute("DELETE FROM plan_skip WHERE plan_id = ? AND day = ?", (plan_id, day))
+        tx.execute(
+            "UPDATE plan_instance SET archived_at = NULL, skipped_at = NULL, updated_at = ? "
+            "WHERE plan_id = ? AND day = ? AND skipped_at IS NOT NULL",
+            (now, plan_id, day),
+        )
 
 
 def set_check(conn: sqlite3.Connection, plan_id: int, day: str, checked: bool) -> None:

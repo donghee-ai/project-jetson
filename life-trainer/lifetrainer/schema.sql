@@ -390,6 +390,7 @@ CREATE TABLE IF NOT EXISTS plan_instance (
     source       TEXT NOT NULL DEFAULT 'template'
                  CHECK (source IN ('template','manual','carry','chat')),
     archived_at  REAL,                     -- 소프트 삭제. 실적이 사라지면 주간 통계가 깨진다
+    skipped_at   REAL,                     -- "오늘만 건너뛰기" 로 보관된 것 (지운 것과 갈라야 되돌린다)
     created_at   REAL NOT NULL,
     updated_at   REAL NOT NULL
 );
