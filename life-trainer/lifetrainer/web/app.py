@@ -300,6 +300,31 @@ def _request_is_https() -> bool:
     return request.headers.get("X-Forwarded-Proto", request.scheme).lower() == "https"
 
 
+def _undoable(conn: sqlite3.Connection) -> dict[str, Any]:
+    """되돌릴 수 있는 **가장 최근 삭제** 한 건과 휴지통 총량.
+
+    ★ 되돌리기는 **구간 단위**다(`privacy.undo`). 그래서 "몇 건 지웠나" 가 아니라
+      "무엇을 되돌릴 수 있나" 를 준다 — 날짜가 달라도 마지막 삭제는 되돌릴 수 있다.
+    """
+    span = conn.execute(
+        "SELECT id, start_ts, end_ts FROM private_span "
+        "WHERE kind = 'purge' AND revoked = 0 ORDER BY created_at DESC, id DESC LIMIT 1"
+    ).fetchone()
+    total = conn.execute("SELECT count(*) AS n FROM purged_event").fetchone()["n"]
+    if span is None:
+        return {"span_id": None, "events": 0, "trash": int(total)}
+    events = conn.execute(
+        "SELECT count(*) AS n FROM purged_event WHERE purge_span_id = ?", (span["id"],)
+    ).fetchone()["n"]
+    return {
+        "span_id": int(span["id"]),
+        "events": int(events),
+        "trash": int(total),
+        "start_ts": float(span["start_ts"]),
+        "end_ts": float(span["end_ts"]),
+    }
+
+
 def _build_day_payload(
     conn: sqlite3.Connection, cfg: Any, day: str, palette_path: Path, theme: str = "light"
 ) -> dict[str, Any]:
@@ -371,6 +396,11 @@ def _build_day_payload(
         "slots": slots,
         "plans": [_instance_to_dict(pi) for pi in instances],
         "unclassified": _unclassified_summary(conn, day),
+        # 되돌릴 수 있는 삭제 — 화면이 늘 알고 있어야 한다 (2026-09-07).
+        # ★ 전에는 삭제 직후 15초만 떴다. 그 사이를 놓치면 되돌리는 길이 화면에서
+        #   사라진다 — 되돌리기가 없는 것과 같다. `lt private status` 는 휴지통 건수를
+        #   늘 말하는데 웹만 안 그랬다.
+        "undoable": _undoable(conn),
         "stats": {
             "active_sec": stats.active_sec,
             "active_hm": format_hm(stats.active_sec),

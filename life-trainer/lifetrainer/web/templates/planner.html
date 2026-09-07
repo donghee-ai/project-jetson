@@ -98,6 +98,12 @@
         <p class="grid-hint" id="grid-hint">드래그하거나 모바일에서 시작·끝 칸을 차례로 눌러 활동을 보정할 수 있습니다. 우클릭·꾹 누르기도 됩니다.</p>
         {% endif %}
         <p class="selection-caption" id="selection-caption" aria-live="polite">&nbsp;</p>
+        {# 되돌릴 수 있는 삭제가 있으면 **늘** 보인다. 삭제 직후 15초만 띄웠더니
+           그 사이를 놓친 사람에게는 되돌리는 길이 화면에서 사라졌다. #}
+        <p class="undo-line" id="undo-line" hidden>
+          <span id="undo-line-text"></span>
+          <button type="button" id="undo-line-button" class="btn-secondary">되돌리기</button>
+        </p>
         <!-- ★ 차트는 서버를 다시 안 부른다. 위 격자의 셀에서 직접 센다 —
              같은 DOM 에서 유도하므로 격자와 합계가 어긋날 수가 없다.
              (이 저장소의 반복된 실패 2번: 같은 값을 여러 곳에서 각자 계산했다) -->

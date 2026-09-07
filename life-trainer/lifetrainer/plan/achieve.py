@@ -83,23 +83,50 @@ def _synth_plan(row: sqlite3.Row) -> Plan:
 def _actual_sec(
     conn: sqlite3.Connection, day: str, start_slot: int, end_slot: int, category: str | None, cfg
 ) -> float:
-    """[start_slot, end_slot) 구간에서 계획 카테고리로 계측된 초의 합 (SQL 집계).
+    """[start_slot, end_slot) 구간에서 계획 카테고리로 계측된 초의 합.
 
-    category 가 None 이면 off/away 를 뺀 모든 활동 초의 합.
+    `category` 가 None 이면 off/away 를 뺀 모든 활동 초의 합.
+
+    ## ★ 사람의 보정을 읽을 때 얹는다 (2026-09-07)
+
+    `slot_breakdown` 은 실측 원본이라 보정이 안 들어간다. 그대로 세면
+    **"그때 코딩했다" 고 표에서 고쳐도 코딩 계획의 달성률이 안 오른다** —
+    사람이 고친 것이 화면에는 반영되는데 달성률만 딴소리를 한다.
+
+    같은 결함을 오늘 카테고리 합계에서 먼저 잡았고(`stats.category_seconds`),
+    여기가 마지막 남은 자리였다. 규칙도 같다 — **보정된 칸은 칸 길이 전부**를
+    그 카테고리에 싣는다. 실측 초만 쓰면 `off` 였던 칸을 고쳐도 0 이라 안 잡힌다.
     """
+    slot_seconds = cfg.rollup.slot_minutes * 60.0
+    away, off = cfg.rollup.afk_category, cfg.rollup.no_data_category
+
+    overrides = {
+        int(r["slot"]): r["category"]
+        for r in conn.execute(
+            "SELECT slot, category FROM slot_override "
+            "WHERE day = ? AND slot >= ? AND slot < ?",
+            (day, start_slot, end_slot),
+        )
+    }
+
     if category is not None:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(seconds), 0) AS sec FROM slot_breakdown "
-            "WHERE day = ? AND slot >= ? AND slot < ? AND category = ?",
+        rows = conn.execute(
+            "SELECT slot, COALESCE(SUM(seconds), 0) AS sec FROM slot_breakdown "
+            "WHERE day = ? AND slot >= ? AND slot < ? AND category = ? GROUP BY slot",
             (day, start_slot, end_slot, category),
-        ).fetchone()
-    else:
-        row = conn.execute(
-            "SELECT COALESCE(SUM(seconds), 0) AS sec FROM slot_breakdown "
-            "WHERE day = ? AND slot >= ? AND slot < ? AND category NOT IN (?, ?)",
-            (day, start_slot, end_slot, cfg.rollup.no_data_category, cfg.rollup.afk_category),
-        ).fetchone()
-    return float(row["sec"])
+        ).fetchall()
+        total = sum(float(r["sec"]) for r in rows if int(r["slot"]) not in overrides)
+        total += slot_seconds * sum(1 for c in overrides.values() if c == category)
+        return total
+
+    rows = conn.execute(
+        "SELECT slot, COALESCE(SUM(seconds), 0) AS sec FROM slot_breakdown "
+        "WHERE day = ? AND slot >= ? AND slot < ? AND category NOT IN (?, ?) GROUP BY slot",
+        (day, start_slot, end_slot, off, away),
+    ).fetchall()
+    total = sum(float(r["sec"]) for r in rows if int(r["slot"]) not in overrides)
+    total += slot_seconds * sum(1 for c in overrides.values() if c not in (off, away))
+    return total
 
 
 def _dominant_actual(conn: sqlite3.Connection, day: str, start_slot: int, end_slot: int) -> str | None:

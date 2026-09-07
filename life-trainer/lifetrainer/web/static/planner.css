@@ -315,6 +315,14 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 .activity-item.pressing { background: color-mix(in srgb, var(--ink-primary) 6%, transparent);
   border-radius: 10px; user-select: none; -webkit-user-select: none; }
 
+/* 상시 되돌리기 줄 — 격자 위, 안내문 아래. 휴지통이 비면 사라진다. */
+.undo-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px; padding: 8px 12px; border-radius: 9px; font-size: .8rem;
+  color: var(--ink-secondary); background: var(--ground, transparent);
+  border: 1px dashed var(--ink-gridline); }
+.undo-line strong { color: var(--ink-primary); }
+.undo-line .btn-secondary { min-height: 30px; padding: 0 12px; font-size: .78rem; white-space: nowrap; }
+
 .undo-bar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));

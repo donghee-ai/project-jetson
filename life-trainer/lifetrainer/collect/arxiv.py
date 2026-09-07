@@ -56,7 +56,7 @@ def _normalize_entry(item) -> dict:
     return {"title": title, "url": link, "author": author, "abstract": abstract, "published_at": published_at}
 
 
-def search(
+def search_result(
     cfg: Config,
     session: PoliteSession,
     query: str,
@@ -64,11 +64,16 @@ def search(
     max_results: int = 50,
     start: int = 0,
     respect_robots: bool = False,
-) -> list[dict]:
+) -> tuple[list[dict], int, str | None]:
     """arXiv API 로 검색한다. `query` 는 arXiv 쿼리 문법 그대로 받는다 (예: 'cat:cs.CL').
 
-    페이지당 최대 `MAX_RESULTS_PER_PAGE`(100) 건. 실패해도 예외를 올리지 않고 빈 리스트를 반환한다
+    페이지당 최대 `MAX_RESULTS_PER_PAGE`(100) 건. 실패해도 예외를 올리지 않는다
     (계약서 §0: 개별 수집 실패로 전체가 죽으면 안 된다).
+
+    ★ **`(entries, status, error)` 를 돌려준다** (2026-09-07). 예전에는 실패해도 `[]` 만
+      돌려줬는데, 그러면 호출부에서 *"arXiv 가 죽었다"* 와 *"오늘 새 논문이 없다"* 가
+      **같은 값**이 된다. arXiv 는 주말에 발행을 안 하므로 빈손은 정상이기도 하다 —
+      즉 빈 리스트만으로는 고장을 영영 못 본다. 겉면인 `search()` 는 그대로 남는다.
 
     `respect_robots` 기본값은 `False` 다 — 모듈 docstring 에 적은 대로 `/api/query` 는
     robots.txt 가 아니라 arXiv 의 API 이용약관(요청 간 3초 이상)이 적용 대상이기 때문이다.
@@ -91,7 +96,10 @@ def search(
     if result.error or not result.body:
         if result.error:
             logger.warning("arXiv 검색 실패 (%s): %s", query, result.error)
-        return []
+        # ★ 304 는 실패가 아니다 — 조건부 GET 이 "안 바뀌었다" 고 답한 것이고 본문이 원래 없다.
+        #   실패와 미확인·정상 무변화를 같이 세면 fail_count 가 상수가 된다 (저장소 규칙 §1).
+        empty = None if (result.body or result.status == 304) else "empty_body"
+        return [], result.status, result.error or empty
 
     parsed = feedparser.parse(result.body)
     entries: list[dict] = []
@@ -101,6 +109,12 @@ def search(
         except Exception as exc:  # noqa: BLE001 - 항목 하나가 깨져도 나머지는 진행
             logger.warning("arXiv 항목 파싱 실패, 건너뜀: %s", exc)
             continue
+    return entries, result.status, None
+
+
+def search(cfg, session, query, **kwargs) -> list[dict]:
+    """`search_result()` 의 항목만. 결과가 필요 없는 호출부(`collect`)를 위한 얇은 겉면."""
+    entries, _status, _error = search_result(cfg, session, query, **kwargs)
     return entries
 
 

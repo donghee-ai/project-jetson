@@ -74,6 +74,7 @@ def load_sources(conn: sqlite3.Connection, cfg: Config) -> int:
 
     now = time.time()
     count = 0
+    seen: list[str] = []
     for entry in data.get("sources") or []:
         try:
             url = str(entry["url"]).strip()
@@ -84,9 +85,6 @@ def load_sources(conn: sqlite3.Connection, cfg: Config) -> int:
             tags = str(entry.get("tags", ""))
             interval_sec = int(entry.get("interval_sec", 3600))
             respect_robots = bool(entry.get("respect_robots", True))
-            # ★ 목록에서 지우는 것만으로는 수집이 멈추지 않는다 — 이 함수는 upsert 라
-            #   DB 행이 `enabled=1` 로 남는다. 끄려면 파일에 `enabled: false` 로 남겨야
-            #   한다. 그래야 sources.yaml 이 "무엇을 모으는가"의 단일 원본이 된다.
             enabled = 1 if bool(entry.get("enabled", True)) else 0
         except Exception as exc:  # noqa: BLE001
             logger.warning("잘못된 source 항목 무시: %r (%s)", entry, exc)
@@ -106,7 +104,32 @@ def load_sources(conn: sqlite3.Connection, cfg: Config) -> int:
             "tags=excluded.tags, interval_sec=excluded.interval_sec",
             (kind, name, url, tags, interval_sec, enabled, now),
         )
+        seen.append(url)
         count += 1
+
+    # ── 파일에서 사라진 소스는 **끈다** (2026-09-07) ──────────────────────
+    #
+    # ★ 전에는 안 껐다. 주석이 이렇게 적혀 있었다 —
+    #   *"끄려면 파일에 `enabled: false` 로 남겨야 한다. 그래야 sources.yaml 이 단일
+    #   원본이 된다."* 의도는 맞는데 **동작이 그 반대였다.** upsert 는 url 이 키라,
+    #   yaml 에서 주소 한 글자만 고쳐도 **옛 행이 `enabled=1` 인 채 남아** 영원히 수집된다.
+    #
+    #   실제로 그랬다: 폴더 개편이 Microsoft Research 의 URL 을 깨뜨렸고(`fe24900`),
+    #   주소를 고치자 **404 나는 행과 정상 행이 나란히 두 개**가 됐다. 죽은 쪽은
+    #   yaml 어디에도 없는데 계속 두드리고, 계속 실패하고, doctor 의 "수집 소스"
+    #   경보를 **끌 방법이 없는 상수**로 만든다 (저장소 규칙 §1 — 안 꺼지는 신호).
+    #
+    # 지우지 않고 끄는 이유: `doc.source_id` 가 이 행을 가리킨다. 지우면 이미 모아 둔
+    #   문서의 출처가 NULL 이 된다 — 되돌릴 수 없는 손실이라 되돌릴 수 있는 쪽을 고른다.
+    #   파일에 다시 넣으면 그대로 살아난다.
+    if seen:
+        placeholders = ",".join("?" * len(seen))
+        cur = conn.execute(
+            f"UPDATE source SET enabled = 0 WHERE enabled = 1 AND url NOT IN ({placeholders})",
+            seen,
+        )
+        if cur.rowcount:
+            logger.info("sources.yaml 에 없는 소스 %d개를 껐다", cur.rowcount)
 
     for entry in data.get("interests") or []:
         try:
@@ -272,20 +295,31 @@ def _fetch_arxiv_entries(
     from lifetrainer.collect import arxiv  # 지연 import: arxiv.py 가 필요시 feeds.py 를 되부르기 때문
 
     try:
-        entries = arxiv.search(
+        # ★ `search()` 가 아니라 `search_result()` — 겉면은 실패해도 `[]` 만 주는데,
+        #   그러면 "arXiv 가 죽었다" 와 "오늘 새 논문이 없다" 가 같은 값이 된다.
+        #   여기서 그 둘을 갈라야 `_mark_source_result` 가 fail_count 를 올릴 수 있다.
+        return arxiv.search_result(
             cfg, session, query, max_results=ARXIV_FETCH_MAX_RESULTS, respect_robots=respect_robots
         )
     except Exception as exc:  # noqa: BLE001
         return [], 0, str(exc)
-    return entries, 200, None
 
 
-def _mark_source_result(conn: sqlite3.Connection, row: sqlite3.Row) -> None:
+def _mark_source_result(
+    conn: sqlite3.Connection,
+    row: sqlite3.Row,
+    *,
+    status: int | None = None,
+    error: str | None = None,
+) -> None:
     """`PoliteSession` 이 `url_state` 에 남긴 결과를 `source` 행에도 반영한다.
 
     조건부 GET/적응형 주기/백오프 로직은 http.py 가 url_state 를 대상으로 이미 계산했으므로,
     여기서는 그 계산 결과를 그대로 복사해 due_sources() 의 스케줄링 기준(`source.next_fetch_at`)
     을 갱신한다. 중복 로직을 두 곳에 두지 않기 위한 설계다.
+
+    `status`/`error` 는 **url_state 를 안 쓰는 경로**(arXiv API)를 위한 것이다 —
+    호출부가 아는 결과를 받아 적는다 (아래 else 분기의 ★ 참고).
     """
     state = conn.execute("SELECT * FROM url_state WHERE url = ?", (row["url"],)).fetchone()
     now = time.time()
@@ -306,11 +340,24 @@ def _mark_source_result(conn: sqlite3.Connection, row: sqlite3.Row) -> None:
             ),
         )
     else:
-        # url_state 를 쓰지 않은 경로(arxiv 등)는 최소한 재시도 시각만 소스 자체 주기로 미룬다.
+        # ── url_state 를 쓰지 않은 경로 (arXiv API) ────────────────────────
+        #
+        # ★ 2026-09-07 까지 여기서 **결과를 안 적었다.** `arxiv.search` 는 쿼리
+        #   파라미터가 붙은 **다른 URL** 로 요청하므로 `url_state` 를 `row["url"]` 로
+        #   찾으면 언제나 못 찾는다. 그래서 arXiv 8개 소스의 `last_status` 가 전부
+        #   NULL 이고 `fail_count` 가 0 에 고정돼 있었다 —
+        #   **arXiv 가 죽어도 아무 표시가 안 난다.** 유일한 증상이 "문서가 안 들어온다"
+        #   인데 그건 주말에도 똑같이 보인다(arXiv 는 주말에 발행을 안 한다).
+        #
+        #   이 저장소가 아는 부류다 — 파이프는 도는데 원료 하나가 끊긴 것(2026-09-04).
+        #   호출부가 결과를 아니까 그걸 받아서 적는다.
         fallback_next = now + (row["interval_sec"] or 3600)
+        code = int(status or 0)
+        failed = error is not None or not (200 <= code < 300 or code == 304)
         conn.execute(
-            "UPDATE source SET last_fetched=?, next_fetch_at=? WHERE id=?",
-            (now, fallback_next, row["id"]),
+            "UPDATE source SET last_fetched=?, next_fetch_at=?, last_status=?, "
+            "fail_count = CASE WHEN ? THEN fail_count + 1 ELSE 0 END WHERE id=?",
+            (now, fallback_next, status, 1 if failed else 0, row["id"]),
         )
 
 
@@ -328,7 +375,7 @@ def fetch_source(conn: sqlite3.Connection, cfg: Config, session: PoliteSession, 
     else:
         entries, status, error = _fetch_feed_entries(session, url)
 
-    _mark_source_result(conn, row)
+    _mark_source_result(conn, row, status=status, error=error)
 
     if error is not None:
         logger.warning("소스 수집 실패 %s(%s): %s", name, url, error)

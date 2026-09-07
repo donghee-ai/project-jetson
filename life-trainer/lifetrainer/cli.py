@@ -577,6 +577,57 @@ def cmd_doctor(args: argparse.Namespace, cfg: Config) -> int:
                 )
             else:
                 ok("워처 침묵", "폰 워처가 기기와 같이 살아 있다")
+
+            # ── 수집 소스가 **죽어 있나** ──────────────────────────────
+            #
+            # ★ 2026-09-07 에 생겼다. 그날 `source` 표를 눈으로 보니
+            #   BAIR 가 11회 연속 실패(9.7일째), Microsoft Research 중복 항목이 404 였다.
+            #   **`fail_count` 를 읽는 코드가 하나도 없었다** — 세기만 하고 아무도 안 봤다.
+            #   *만들었다 ≠ 그게 실제로 불린다* (저장소 규칙 §2).
+            #
+            #   같은 날 더 나쁜 것도 나왔다: arXiv 8개는 `last_status` 가 전부 NULL 이었다.
+            #   `_mark_source_result` 가 `url_state` 를 `source.url`("cat:cs.CL")로 찾는데
+            #   실제 요청 URL 은 파라미터가 붙은 다른 주소라 **언제나 못 찾았다**.
+            #   그래서 아래 두 번째 갈래가 있다 — 결과가 **안 적히는 것** 자체가 고장이다.
+            #   (그건 "실패 0건" 과 구분이 안 되므로 fail_count 로는 영영 안 보인다.)
+            #
+            # 언제 꺼지나: 그 소스가 **한 번 성공하면 즉시**. 누적이 아니다
+            #   (`_mark_source_result` 가 성공 시 fail_count 를 0 으로 되돌린다).
+            #
+            # 왜 3회인가: 백오프가 붙어 있어 3회면 이미 수 시간~하루다. 1회로 잡으면
+            #   남의 서버 502 한 번에 매번 노란불이 켜지고, 그러면 사람이 doctor 를 안 본다.
+            #
+            # 한 번도 안 받아 본 소스(`last_fetched IS NULL`)는 **미확인이지 실패가 아니다.**
+            SOURCE_FAIL_WARN = 3
+            dead = conn.execute(
+                "SELECT name, last_status, fail_count FROM source "
+                "WHERE enabled = 1 AND fail_count >= ? ORDER BY fail_count DESC, name",
+                (SOURCE_FAIL_WARN,),
+            ).fetchall()
+            mute = conn.execute(
+                "SELECT name FROM source "
+                "WHERE enabled = 1 AND last_fetched IS NOT NULL AND last_status IS NULL "
+                "ORDER BY name",
+            ).fetchall()
+            if dead or mute:
+                parts = []
+                if dead:
+                    parts.append(
+                        "연속 실패: "
+                        + ", ".join(f"{r['name']}({r['fail_count']}회/{r['last_status'] or '응답없음'})" for r in dead)
+                    )
+                if mute:
+                    names = [r["name"] for r in mute]
+                    shown = ", ".join(names[:3]) + (f" 외 {len(names) - 3}개" if len(names) > 3 else "")
+                    parts.append(f"결과가 안 적히는 소스 {len(names)}개: {shown}")
+                warn(
+                    "수집 소스",
+                    " · ".join(parts) + " — `lt collect --once` 로 재현하고,"
+                    " 주소가 죽었으면 config/sources.yaml 에서 enabled: false",
+                )
+            else:
+                total = conn.execute("SELECT COUNT(*) AS n FROM source WHERE enabled = 1").fetchone()["n"]
+                ok("수집 소스", f"{total}개 모두 정상")
         except Exception as exc:  # noqa: BLE001
             warn("DB 조회", f"이벤트/롤업 조회 실패: {exc}")
 

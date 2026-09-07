@@ -72,9 +72,16 @@ sources:
      tags: "ml,hub,practice", interval_sec: 21600}
   - {kind: rss, name: "Google Research Blog", url: "https://research.google/blog/rss/",
      tags: "ml,research,google", interval_sec: 21600}
+  # ★ 2026-09-07 에 껐다. 11회 연속 실패(9.7일). 404 가 아니라 **TCP 타임아웃**이라
+  #   주소를 고쳐서 될 일이 아니다(이 기기에서 `curl` 도 25초 타임아웃).
+  #   되살리려면: `curl -I https://bair.berkeley.edu/blog/` 가 응답하는지 먼저 보고
+  #   enabled 를 지운다. 켜 둔 채로 두면 실패만 쌓여 "수집 소스" 경보가 상수가 된다.
   - {kind: rss, name: "BAIR (Berkeley AI Research)", url: "https://bair.berkeley.edu/blog/feed.xml",
-     tags: "ml,research,academia", interval_sec: 21600}
-  - {kind: rss, name: "Microsoft Research", url: "https://www.microsoft.com/en-us/measure/findings/feed/",
+     tags: "ml,research,academia", interval_sec: 21600, enabled: false}
+  # ★ 이 URL 은 2026-08-31 폴더 개편(`fe24900`)이 **본문 치환으로 깨뜨렸다** —
+  #   `research/` → `measure/findings/` 가 남의 도메인 주소 안에서도 일어났다.
+  #   404 를 이레(08-31~09-07) 아무도 못 봤다. 지금은 `lt doctor` 의 "수집 소스" 가 잡는다.
+  - {kind: rss, name: "Microsoft Research", url: "https://www.microsoft.com/en-us/research/feed/",
      tags: "ml,research,microsoft", interval_sec: 21600}
 
   # ── 논문 (arXiv). 갈래가 겹치지 않게 고른다 ──
