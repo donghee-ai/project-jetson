@@ -1,0 +1,15 @@
+[Unit]
+Description=에이전트 세션 파일 정리 — 주 1회
+
+[Timer]
+# ★ 일요일 새벽. 야간 배치(02:00~05:50)와 백업(06:20)을 피해 그 사이에 둔다 —
+#   셋이 겹치면 이 기기에서는 GPU·디스크가 같이 붐빈다.
+#   보존 기간이 일주일인데 주 1회 도는 것이라, 최대 나이는 14일이 될 수 있다.
+#   그건 의도한 여유다 — 매일 돌려 봐야 지울 것이 거의 없다.
+OnCalendar=Sun *-*-* 06:10:00
+RandomizedDelaySec=10min
+# 기기가 꺼져 있었으면 켜질 때 한 번 돈다.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

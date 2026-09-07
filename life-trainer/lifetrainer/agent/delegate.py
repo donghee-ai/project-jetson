@@ -16,7 +16,7 @@
     자연어 DM        2~9초 → 약 35초 (실측 24~87초)
 
 그 35초 중 **약 8초가 `openclaw` CLI(node) 기동**이다. 게이트웨이 WS 에 직접
-붙으면 없앨 수 있지만 (`docs/issues/h-0007-the-agent-path-takes-half-a-minute.md`) 지금은 CLI 를 부른다 — 검증된 경로이고
+붙으면 없앨 수 있지만 (`docs/issues/w-0007-the-agent-path-takes-half-a-minute.md`) 지금은 CLI 를 부른다 — 검증된 경로이고
 새 의존성이 없다.
 
 ## 세션을 게이트웨이에 맡긴다

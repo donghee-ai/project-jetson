@@ -1,0 +1,9 @@
+[Unit]
+Description=에이전트 세션 파일 정리 (일주일 보존)
+# ★ 게이트웨이를 멈추지 않는다. 지우는 것은 **지난 주** 파일이고, 지금 도는 세션은
+#   mtime 이 최신이라 애초에 대상이 아니다.
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/project/project-jetson
+ExecStart=%h/project/project-jetson/operate/tools/prune-agent-sessions.sh

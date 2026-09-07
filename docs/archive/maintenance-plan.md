@@ -12,7 +12,7 @@
 > | 열 안정성 · 24시간 soak (§E-3) | [`issues/0021`](../../life-trainer/docs/issues/p-0021-nothing-has-measured-this-machine-under-sustained-load.md) |
 > | 15W 측정 · README "1회 측정" (§E-3) | [`issues/0022`](../../life-trainer/docs/issues/p-0022-only-one-power-mode-was-ever-measured.md) |
 > | 의존성 lock · 버전 matrix (§E-4) | [`issues/0023`](../../life-trainer/docs/issues/p-0023-nothing-pins-what-actually-gets-installed.md) |
-> | 디스크 암호화 · Secure Boot · 방화벽 · avahi · 유닛 하드닝 (§E-5 · 사람이 정할 몫) | [`issues/0024`](../../life-trainer/docs/issues/p-0024-the-security-decisions-were-never-written-down.md) |
+> | 디스크 암호화 · Secure Boot · 방화벽 · avahi · 유닛 하드닝 (§E-5 · 사람이 정할 몫) | [`issues/0024`](../../life-trainer/docs/issues/n-0024-the-security-decisions-were-never-written-down.md) |
 > | `converse` 은퇴 판단 (계획 밖에서 열린 것) | [`issues/0025`](../../life-trainer/docs/issues/p-0025-converse-may-be-dead-and-nobody-is-counting.md) |
 >
 > **여기 남기고 안 옮긴 것** — 묵살이 아니라 판단이다.
