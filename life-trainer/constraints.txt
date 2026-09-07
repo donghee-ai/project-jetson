@@ -6,7 +6,7 @@
 # 손으로 고치지 않는다 — 이 기기를 정본으로 다시 뽑는다:  make lock
 # 왜 있는지는 operate/tools/lock-deps.sh 머리말에 있다.
 #
-# 뽑은 시각: 2026-08-31 14:59 KST · python 3.10.12
+# 뽑은 시각: 2026-09-07 12:47 KST · python 3.10.12
 
 annotated-types==0.8.0
 blinker==1.9.0
@@ -41,6 +41,7 @@ pytest-cov==7.1.0
 python-dateutil==2.9.0.post0
 PyYAML==6.0.3
 requests==2.34.2
+ruff==0.16.6
 shellcheck_py==0.11.0.1
 six==1.17.0
 slack_bolt==1.30.0

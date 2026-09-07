@@ -231,7 +231,8 @@ def _run(
     with interactive_turn(cfg):
         try:
             proc = subprocess.run(
-                command, capture_output=True, text=True, timeout=timeout_sec, env=env
+                # check=False: 실패도 결과로 담아 사람에게 보여준다 (예외로 만들면 그 내용이 사라진다)
+                command, capture_output=True, text=True, timeout=timeout_sec, env=env, check=False
             )
         except subprocess.TimeoutExpired:
             elapsed = time.monotonic() - started

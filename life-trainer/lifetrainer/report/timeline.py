@@ -209,7 +209,8 @@ def render_week(
     fig, ax = plt.subplots(figsize=(_FIG_WIDTH_IN, fig_h), dpi=_DPI)
 
     present_all: set[str] = set()
-    for row_idx, (d, st) in enumerate(zip(days, day_stats)):
+    # strict: 날짜와 그날 통계가 어긋나면 그림 전체가 하루씩 밀린다.
+    for row_idx, (d, st) in enumerate(zip(days, day_stats, strict=True)):
         # 위가 오래된 날이 되도록: row_idx 0(가장 오래됨)이 가장 큰 y0(=맨 위)을 갖는다.
         y0 = (n_rows - 1 - row_idx) * row_stride
         _draw_band(ax, st.slot_categories, classifier, y0=y0, height=row_h)

@@ -7,7 +7,7 @@
 # 새 기기에 세울 때:  sudo npm install -g <아래 그대로>
 # 다시 뽑기:         make lock
 #
-# 뽑은 시각: 2026-08-31 14:59 KST
+# 뽑은 시각: 2026-09-07 12:47 KST
 
 [/usr/local]  node v24.19.0
 openclaw@2026.7.1-2

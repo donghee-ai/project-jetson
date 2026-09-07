@@ -10,7 +10,7 @@ FIGURES   := measure/figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck check-fast check test hooks lock smoke smoke-live
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck lint check-fast check test hooks lock smoke smoke-live
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -63,10 +63,17 @@ check-docs:  ## 문서가 운영 지표를 옮겨 적고 있는지 (검사기 �
 	@bash operate/tools/check-docs.sh
 
 # ★ pre-push 는 이걸 부른다. 6분짜리 테스트는 여기 안 넣는다 — 훅이 느리면 꺼진다.
-check-fast:  ## 링크 + 문서 지표 + shellcheck (즉시. pre-push 훅이 부르는 것)
+check-fast:  ## 링크 + 문서 지표 + shellcheck + 파이썬 린트 (즉시. pre-push 훅이 부르는 것)
 	@$(MAKE) --no-print-directory links
 	@$(MAKE) --no-print-directory check-docs
 	@$(MAKE) --no-print-directory shellcheck
+	@$(MAKE) --no-print-directory lint
+
+# ★ 셸은 shellcheck 이 보는데 **파이썬은 아무도 안 봤다** (2026-09-07 실사).
+#   규칙은 좁게 골랐다 — 근거는 life-trainer/pyproject.toml 의 [tool.ruff] 주석에.
+#   여기(로컬)에서 돌 수 있어야 한다는 규칙(§1-5) 때문에 ruff 는 dev 의존성이다.
+lint:  ## 파이썬 정적 검사 (버그에 가까운 규칙만)
+	@cd life-trainer && .venv/bin/ruff check lifetrainer tests
 
 shellcheck:  ## 셸 스크립트 정적 검사
 	@# ★ 이 기기에는 apt shellcheck 이 없다. venv 의 shellcheck-py 를 쓴다.

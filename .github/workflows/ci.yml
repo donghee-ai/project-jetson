@@ -70,6 +70,10 @@ jobs:
           python -m pip install -q --upgrade pip
           pip install -q -e '.[dev]' -c constraints.txt
           python -m pip check
+      - name: 파이썬 린트
+        working-directory: life-trainer
+        run: python -m ruff check lifetrainer tests
+
       - name: 테스트
         working-directory: life-trainer
         run: python -m pytest tests/ -q

@@ -26,7 +26,9 @@ dependencies = [
 
 [project.optional-dependencies]
 # shellcheck-py: apt shellcheck 이 없는 기기에서도 `make check` 가 셸을 검사하게 한다.
-dev = ["pytest>=8", "pytest-cov", "shellcheck-py>=0.10"]
+# ★ ruff 도 여기 있다 — **로컬에서 못 도는 검사는 만들지 않는다**(저장소 규칙 §1-5).
+#   CI 에만 두면 이 기기에서 빨간불인 걸 모른다 (shellcheck 이 그랬다).
+dev = ["pytest>=8", "pytest-cov", "shellcheck-py>=0.10", "ruff>=0.16"]
 
 [project.scripts]
 lt = "lifetrainer.cli:main"
@@ -41,3 +43,46 @@ lifetrainer = ["schema.sql", "migrations/*.sql"]
 testpaths = ["tests"]
 addopts = "-q"
 filterwarnings = ["ignore::DeprecationWarning"]
+
+# ── ruff (2026-09-07) ────────────────────────────────────────────────────────
+#
+# ★ 스타일이 아니라 **버그에 가까운 것만** 고른다.
+#
+#   실사에서 "정적 분석이 하나도 없다" 가 지적됐다. 그런데 기본값 그대로 켜면
+#   350건이 나오고 그중 대부분이 따옴표 붙은 어노테이션·import 정렬이다.
+#   이 저장소는 주석 밀도가 높고 서술이 길어서, 그런 대량 자동수정은
+#   **읽기 위해 쓴 것을 흔들어 놓는다.** 그리고 한 번에 350건이 뜨는 검사는
+#   사람이 그냥 꺼 버린다 (저장소 규칙 §1 — 빡빡하면 꺼진다).
+#
+#   그래서 좁게 시작한다. 넓히고 싶으면 **한 규칙씩, 고치면서** 넣는다.
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "F",       # pyflakes — 안 쓰는 import·변수, 정의 안 된 이름
+    "E9",      # 문법·들여쓰기 오류
+    "B",       # bugbear — 가변 기본인자, 루프 안의 클로저 같은 실제 함정
+    "DTZ",     # ★ naive datetime. 이 프로젝트는 하루 경계가 KST 06:00 이라 치명적이다
+    "PLE",     # pylint error 급만
+    "SIM115",  # 컨텍스트 매니저 없이 연 파일
+    "PLW1510", # subprocess.run 의 check 를 안 적음 — 의도를 코드에 적게 한다
+]
+ignore = [
+    # ★ **광범위 예외는 이 저장소의 계약이다**, 사고가 아니다.
+    #   "개별 수집 실패로 전체가 죽으면 안 된다"(계약서 §0)를 지키려고 일부러 쓴다.
+    #   87곳 중 78곳이 같은 줄에 `noqa`·로깅을 달고 있다 — 규칙이 아니라 습관이 이미 있다.
+    "BLE001",
+    # assert 문은 테스트의 언어다.
+    "B011",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# ★ flock 을 잡은 파일 핸들은 **`with` 를 벗어나 살아 있어야 한다.**
+#   컨텍스트 매니저로 바꾸면 블록 끝에서 닫히고, 닫으면 **락이 풀린다** —
+#   린터 말을 그대로 들으면 GPU 잡 직렬화가 조용히 사라진다.
+"lifetrainer/llm/interactive.py" = ["SIM115"]
+"lifetrainer/llm/worker.py" = ["SIM115"]
+# 테스트는 픽스처 특성상 안 쓰는 이름이 정상적으로 생긴다.
+"tests/*" = ["F841", "B017"]

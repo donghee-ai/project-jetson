@@ -494,7 +494,7 @@ def _check_unpushed(ok, warn) -> None:  # noqa: ANN001 - cmd_doctor 의 보고 �
     try:
         proc = subprocess.run(
             ["git", "log", "--format=%ct", "origin/main..HEAD"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True, text=True, timeout=10, check=False,  # 반환코드는 아래서 직접 본다
             cwd=str(Path(__file__).resolve().parent.parent.parent),
         )
     except Exception:  # noqa: BLE001 - git 이 없거나 저장소가 아니면 할 말이 없다
@@ -1110,7 +1110,7 @@ def _check_agent(cfg: Config, ok, warn, fail) -> None:  # noqa: ANN001 - cmd_doc
             try:
                 gw = subprocess.run(
                     ["systemctl", "--user", "show", "openclaw-gateway", "-p", "ExecStart", "--value"],
-                    capture_output=True, text=True, timeout=5,
+                    capture_output=True, text=True, timeout=5, check=False,  # 없으면 빈 문자열이면 된다
                 ).stdout
             except Exception as exc:  # noqa: BLE001
                 gw = f"<확인 실패: {exc}>"
@@ -1326,8 +1326,8 @@ def cmd_private_undo(args: argparse.Namespace, cfg: Config) -> int:
         if n == 0:
             # `forget` 으로 이미 완전 삭제된 구간이다. 구간 취소만 되고 기록은 안 온다.
             print(
-                f"이벤트가 되살아나지 않았습니다 — 이 구간은 이미 `lt private forget` 으로 "
-                f"완전 삭제됐습니다. 구간 표시만 해제했습니다.",
+                "이벤트가 되살아나지 않았습니다 — 이 구간은 이미 `lt private forget` 으로 "
+                "완전 삭제됐습니다. 구간 표시만 해제했습니다.",
                 file=sys.stderr,
             )
         days = privacy.affected_days(cfg, float(row["start_ts"]), float(row["end_ts"]))

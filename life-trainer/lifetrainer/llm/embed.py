@@ -240,7 +240,8 @@ def embed_pending(
             continue
 
         with conn:
-            for (doc_id, shash), vec in zip(keep, vecs):
+            # strict: 길이가 어긋나면 **문서와 벡터가 어긋나 짝지어진다**. 조용히 자르면 안 된다.
+            for (doc_id, shash), vec in zip(keep, vecs, strict=True):
                 if len(vec) != cfg.embed.dim:
                     logger.warning(
                         "차원 불일치 doc=%s: %d (설정 %d) — 건너뛴다", doc_id, len(vec), cfg.embed.dim

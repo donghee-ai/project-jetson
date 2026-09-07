@@ -149,16 +149,6 @@ def image_block(file_id: str, title: str, alt: str) -> dict:
     }
 
 
-def error_blocks(title: str, detail: str) -> list[dict]:
-    """운영 알림용 간단한 오류 카드."""
-    return _enforce_block_limit(
-        [
-            header(f"⚠️ {title}"),
-            section(_truncate(detail)),
-        ]
-    )
-
-
 # ── `/plan` `/view` 카드 ─────────────────────────────────────────────
 
 

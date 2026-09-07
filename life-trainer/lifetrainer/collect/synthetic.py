@@ -531,7 +531,9 @@ def _generate_day(
         for seg_type, _ in plan
     ]
     naive_active = sum(
-        dur * rd for (seg_type, dur), rd in zip(plan, raw_densities) if seg_type in _ACTIVE_SEGMENT_TYPES
+        dur * rd
+        for (seg_type, dur), rd in zip(plan, raw_densities, strict=True)
+        if seg_type in _ACTIVE_SEGMENT_TYPES
     )
     target_active = rng.uniform(*_DAILY_ACTIVE_TARGET_HOURS) * 3600.0
     scale = (target_active / naive_active) if naive_active > 0 else 1.0
@@ -546,7 +548,7 @@ def _generate_day(
 
     cur = wake_ts
     cap = min(sleep_ts, cap_end)
-    for i, ((seg_type, dur), density) in enumerate(zip(plan, densities)):
+    for i, ((seg_type, dur), density) in enumerate(zip(plan, densities, strict=True)):
         if cur >= cap:
             break
         end = min(cur + dur, cap)

@@ -26,7 +26,7 @@ from slack_sdk.errors import SlackApiError
 from lifetrainer import timeutil
 from lifetrainer.config import Config
 from lifetrainer.db import transaction
-from lifetrainer.slackio.blocks import error_blocks, image_block
+from lifetrainer.slackio.blocks import image_block
 
 logger = logging.getLogger(__name__)
 
