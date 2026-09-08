@@ -10,7 +10,7 @@
 
 ## 0. 무엇을 만드는가
 
-**젯슨(NVIDIA Orin NX)에서 24시간 도는 개인 활동 로깅 에이전트 "Life Trainer" 가 있다.**
+**젯슨(NVIDIA Orin NX)에서 상시 실행되는 개인 활동 로깅 에이전트 "Life Trainer" 가 있다.**
 노트북 활동은 ActivityWatch 로 이미 자동 수집된다. **폰이 빠져 있다.**
 
 젯슨 쪽 수신부는 **이미 완성돼 있다** — `POST /ingest/aw`(HMAC 서명·재전송 방지),
@@ -455,7 +455,7 @@ alarmManager.setInexactRepeating(type, triggerAt, intervalMs, pendingIntent)
 ```
 
 **`allowBackup="true"` 면 앱 데이터가 구글/삼성 백업으로 클라우드에 올라간다.**
-이 프로젝트의 전제가 "데이터는 기기 밖으로 나가지 않는다" 인데 정면으로 충돌한다.
+원본 활동 데이터와 인증 비밀을 제3자 백업으로 보내지 않는다는 경계에 정면으로 충돌한다.
 **HMAC 시크릿까지 같이 올라간다.**
 
 ---

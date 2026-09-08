@@ -1,11 +1,12 @@
 # Life Trainer
 
-**Jetson Orin NX 위에서 24시간 도는 온디바이스 개인 활동 로깅·플래너 겸 대화 에이전트.**
+**Jetson Orin NX 위에서 상시 실행되는 개인 활동 로깅·플래너 겸 대화 에이전트.**
 
 하루 활동을 10분 단위로 자동 계측해 SQLite 에 쌓고, 집계는 전부 SQL 로 하고,
 LLM 은 이미 계산된 숫자를 문장으로 바꾸는 역할만 한다. 결과는 Slack 카드(텍스트 +
 타임라인 PNG)와 웹 플래너로 받는다. **Slack DM 으로 물어보면 자기 기록을 근거로 답한다.**
-데이터는 기기 밖으로 나가지 않는다.
+활동 원본과 전체 이력은 Jetson의 로컬 SQLite에 저장한다. 사용자가 설정한 Slack 리포트·대화와
+외부 검색 질의는 해당 서비스로 전송되며, 검색 질의는 전송 직전에 개인정보 패턴을 검사한다.
 
 **상태: 실사용 중** — 타이머와 상시 서비스가 재부팅을 넘겨 돈다 (`make status`).
 현황 수치(테스트 수·DB·doctor)는 [HANDOFF §1](HANDOFF.md) 하나에만 적는다.
@@ -295,7 +296,7 @@ sudo loginctl enable-linger aisw
 
 ## 현재 구현 상태
 
-- [x] **Phase 0 — 뼈대**: venv, SQLite 스키마(WAL·FTS5, 현재 schema v2 — 선언 28테이블
+- [x] **Phase 0 — 뼈대**: venv, SQLite 스키마(WAL·FTS5, 현재 schema v11 — 일반 테이블 31
       + FTS5 1 + 뷰 1), 설정 계층, 시간 유틸
 - [x] **Phase 1 — 활동 로깅**: AW 수집기, 합성 데이터, 규칙 분류기, 144슬롯 롤업,
       타임라인 PNG, 일일/주간 리포트, Slack 발송(notify 모드) — **LLM 없음**

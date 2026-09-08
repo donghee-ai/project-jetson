@@ -297,7 +297,7 @@ python3 measure/tools/deep-context-bench.py 24,40,56,80,104
 - [ ] **지속 부하 발열** — `measure/tools/thermal-test.sh 300` 을 MAXN에서 아직 미실행.
       측정된 것은 수 분짜리 짧은 부하뿐 (최대 20.4 W / 67°C)
 - [ ] **품질 반복 측정** — 각 항목 1회뿐. 다회 측정 및 다양한 태스크 필요
-- [ ] **8B 모델의 깊이별 곡선** — 30B-A3B만 측정. 깊은 컨텍스트에서 순위가
-      뒤집힐 가능성 있음 (8B는 KV 헤드 8개로 KV 캐시가 2배 무겁다)
-- [ ] **한국어 특화 모델 비교** — EXAONE / HyperCLOVAX (라이선스 확인 선행)
 - [ ] **캐시 없는 프롬프트 처리 속도** — 현재 측정값은 프리픽스 캐싱 영향을 받음
+
+8B 깊이별 곡선과 EXAONE 비교는 후속 측정에서 완료했다
+([llm-models.md](llm-models.md)). HyperCLOVAX는 로컬 배포 후보로 검증하지 않았다.

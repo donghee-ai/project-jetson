@@ -1,316 +1,308 @@
-# project-jetson
+# Project Jetson
 
-**NVIDIA Jetson Orin NX 16GB (reComputer J4012) — 무엇을 올릴 수 있는지 정하려고 잰 기록**
+**Jetson Orin NX 16GB에서 모델을 직접 고르고, PC·폰 활동을 10분 단위로 정리하며,
+자기 기록에 근거해 답하도록 만든 상시 실행형 온디바이스 개인 에이전트.**
 
-이 기기를 받고 세 가지를 정해야 했다.
+사양표만 보고 모델을 올리지 않았다. 실제 보드에서 메모리·전력·컨텍스트 깊이·툴 콜링을
+측정해 운영 구성을 정했고, 그 위에 [Life Trainer](life-trainer/)를 만들어 실사용하고 있다.
 
-> **① 내 환경에 올라가는가 · ② 어떤 모델이 적합한가 · ③ 메모리를 얼마나 둘지**
+![Life Trainer의 10분 단위 타임테이블과 기기별 활동 기록 예시](life-trainer/docs/images/life-trainer-example.png)
 
-사양서로는 셋 다 답이 안 나왔다. 그래서 직접 쟀고, 그 답 위에서
-[Life Trainer](life-trainer/) 가 24시간 돌고 있다.
+> **Life Trainer 예시 화면** — 계획, 노트북·폰 활동, 10분 단위 타임테이블을 한 화면에 모은다.
+> 화면에 보이는 기록은 공개용으로 승인된 예시다.
 
 ---
 
-## ① 올라가는가
+## 무엇을 만들었나
 
-| | 사양 | 실측 |
+| 구성요소 | 역할 | 결과 |
 |---|---|---|
-| LLM 가용 메모리 | 16 GB | **약 13.4 GB** (통합 메모리, OS 제외) |
-| GPU — 출고 15W 모드 | 1024 CUDA core | **512 (4 SM)** — TPC 절반이 게이팅돼 있었다 |
-| GPU — MAXN 적용 후 | — | **1024 (8 SM) @ 918 MHz** |
-| Super Mode (157 TOPS) | 지원 표기 | **사용 불가** — 디바이스 트리에 `-super` 가 없다 |
+| **Jetson Measurement Suite** | 13개 모델·양자화 구성의 생성 성능 실측, 후보 3종 깊이·툴 콜링 비교 | Qwen3-8B 운영 구성 결정 |
+| **Life Trainer** | 노트북과 폰의 활동을 수집해 10분 단위로 통합 | 웹 플래너·일일/주간 리포트 |
+| **Local Agent** | 활동·계획·문서를 도구로 조회하고 근거 기반 응답 | Qwen3-8B + MCP 도구 + Slack |
+| **Operations & Safety** | 재부팅 복구, 상태 점검, 백업, 개인정보·링크 검사 | systemd 상시 운영과 재현 가능한 검사 |
 
-**출고 기본값에서 GPU 절반이 꺼져 있었다.** MAXN 으로 SM 이 4 → 8 이 됐다.
-Super Mode 는 conf 파일이 있어도 부팅마다 되돌려지고, 하드웨어 과전류 보호도 25W 로 잡혀 있다.
-
-> **이 절에는 그림이 없다.** SM 게이팅이 *사실*로는 셋 문서에 있지만 **성능 수치가 안 붙어 있어서**
-> 그리면 측정이 아니라 모식도가 된다. 15W 에서 한 번 재면 채워진다 —
-> 그 한 번이 와트당 성능의 전력모드 비교도 같이 푼다.
-
-→ [measure/findings/hardware.md](measure/findings/hardware.md)
+핵심은 네 부분을 따로 만든 것이 아니라, **측정 → 선택 → 구현 → 운영**을 한 시스템으로
+연결했다는 데 있다.
 
 ---
 
-## ② 어떤 모델이 적합한가
+## 전체 워크플로
 
-에이전트로 쓸 것이므로 **툴 콜링이 되는지**가 첫 관문이었고, 대화가 길어질 것이므로
-**깊이에서 버티는지**가 두 번째였다.
+```mermaid
+flowchart LR
+    subgraph INPUT[입력]
+        PC["Windows<br/>ActivityWatch"]
+        PHONE["Android<br/>LT Phone"]
+        FEED["RSS · arXiv"]
+        HUMAN["계획 · 수동 정정"]
+    end
 
-| 모델 | 툴 콜링 | 깊이 특성 | 한국어 |
-|---|---|---|---|
-| **Qwen3-8B Q4_K_M** | **6/6** | 깊어질수록 유리 | — |
-| Qwen3-30B-A3B IQ2_M | 4/6 | 얕은 깊이에서 가장 빠름 | — |
-| EXAONE 3.5 7.8B | **미지원** — 채팅 템플릿에 `tools` 렌더링이 없다 | 전 구간 최고 속도 | 토큰 **19% 절약** |
+    subgraph EDGE[Jetson Orin NX 16GB]
+        COLLECT["수집 · 동기화"]
+        ROLLUP["10분 롤업<br/>기기 간 활동 중재"]
+        DB[("SQLite<br/>WAL · FTS5")]
+        SQL["SQL 집계"]
+        QUEUE["GPU 단일 큐"]
+        LLM["Qwen3-8B<br/>llama.cpp"]
+        AGENT["로컬 에이전트<br/>MCP 도구"]
+    end
 
-**깊이 9,603 토큰에서 8B(7.80 tok/s)가 30B(7.76)를 추월한다.** 실측된 교차점이고,
-얕은 벤치마크만 보고 모델을 고르면 안 된다는 것이 이 프로젝트의 가장 큰 교훈이다.
+    subgraph OUTPUT[출력]
+        WEB["웹 플래너"]
+        SLACK["Slack 리포트 · 대화"]
+    end
 
-라이선스도 봤다 — Qwen3 계열은 Apache 2.0, EXAONE 은 `other` 다.
+    PC -->|Tailscale| COLLECT
+    PHONE -->|HMAC ingest| COLLECT
+    FEED --> COLLECT
+    COLLECT --> ROLLUP --> DB
+    HUMAN --> DB
+    DB --> SQL
+    DB <--> QUEUE --> LLM --> AGENT
+    SQL --> WEB
+    SQL --> SLACK
+    AGENT --> SLACK
+```
+
+활동 원본과 집계 데이터는 Jetson의 SQLite에 둔다. Slack·검색·피드 같은 외부 연동은
+명시적으로 설정한 경우에만 사용하며, 검색 경로에는 전송 직전 개인정보 출구 검사를 둔다.
+
+→ [전체 워크플로와 에이전트 경계](life-trainer/docs/architecture.md#2-워크플로우)
+
+---
+
+## 핵심 데이터 모델
+
+현재 스키마는 일반 테이블 31개, FTS5 테이블 1개와 뷰 1개다. 루트에서는 실제 외래키 관계와
+시스템을 이해하는 데 필요한 엔터티만 보인다.
+
+```mermaid
+erDiagram
+    DEVICE ||--o{ AW_BUCKET : owns
+    AW_BUCKET ||--o{ AW_EVENT : contains
+    DEVICE ||--o{ SLOT_BREAKDOWN : contributes
+
+    PLAN ||--o{ PLAN_INSTANCE : materializes
+    PLAN_INSTANCE ||--o{ PLAN_INSTANCE_EVENT : audits
+
+    SOURCE ||--o{ DOC : collects
+    DOC ||--o| DOC_EMBEDDING : embeds
+    JOB ||--o{ LLM_CALL : measures
+
+    DEVICE {
+        int id PK
+        text name UK
+        text kind
+    }
+    AW_EVENT {
+        text bucket_id PK
+        real ts PK
+        real ts_end
+        text app
+        text title
+    }
+    SLOT_BREAKDOWN {
+        text day PK
+        int slot PK
+        text category PK
+        text app PK
+        int device_id PK
+        real seconds
+    }
+    PLAN_INSTANCE {
+        int id PK
+        text day
+        text status
+        int carried_from FK
+    }
+    DOC {
+        int id PK
+        text url
+        text title
+        text summary
+        text state
+    }
+```
+
+데이터는 의미에 따라 분리한다.
+
+- `aw_event`: 기계가 수집한 원본
+- `slot_breakdown`: 카테고리·앱·기기별 초 단위 집계 근거
+- `slot`: 화면에 표시할 10분 칸의 대표 활동 하나
+- `plan_instance`: 사람이 하려고 한 일
+- `slot_override`: 사람이 실제 기록을 바로잡은 값
+
+`slot`, `plan_instance`, `slot_override`는 같은 하루를 설명하지만 의도적으로 하나의 사실처럼
+합치지 않는다. **측정된 사실, 사람의 의도, 사람의 정정은 서로 다른 데이터다.**
+
+→ [계층별 전체 ERD와 설계 근거](life-trainer/docs/architecture.md#1-erd) ·
+[실제 스키마](life-trainer/lifetrainer/schema.sql)
+
+---
+
+## 설계를 결정한 원칙
+
+### 1. 집계는 SQL, 문장화만 LLM
+
+활동 시간·달성률·기기별 비중은 결정적 코드와 SQL이 계산한다. LLM은 계산된 값을 인용해
+설명하고, 데이터에 닿을 방법이 없으면 호출하지 않는다.
+
+### 2. 계획과 실제 활동을 섞지 않는다
+
+계획만 보고 “완료했다”고 답하거나, 실제 활동을 계획으로 오해하지 않도록 DB와 프롬프트
+양쪽에서 두 계층을 분리한다.
+
+### 3. GPU는 하나의 자원이다
+
+8B 서버가 약 6.7GB를 사용하므로 대화·요약·태깅을 동시에 실행하지 않는다. 하나의 큐와
+프로세스 락으로 직렬화하고, 사람의 대화 턴이 야간 배치보다 먼저 처리된다.
+
+### 4. 모델에게 무엇을 할지는 맡겨도, 얼마인지와 어디까지인지는 맡기지 않는다
+
+에이전트는 도구를 선택하지만 산술은 도구가 하고, 파일 접근은 지정된 폴더에 가둔다.
+외부로 나가는 문자열은 실제 전송 지점에서 다시 검사한다.
+
+---
+
+## 실측으로 정한 운영 구성
+
+| 질문 | 실측 결과 | 결정 |
+|---|---|---|
+| 출고 상태로 충분한가 | GPU 4 SM만 활성 | MAXN으로 8 SM 활성 |
+| 어떤 모델인가 | Qwen3-8B 툴 콜링 6/6, 깊은 컨텍스트에서 유리 | Qwen3-8B Q4_K_M |
+| 컨텍스트는 얼마인가 | 40,960에서 KV 캐시 2.99GB | 20,480으로 낮춰 1.50GB 확보 |
+| 동시에 몇 요청인가 | 슬롯 수만큼 KV 캐시가 증가 | 슬롯 1개 |
+| 짧은 생성 벤치 결과는 | `llama-bench tg128` 11.14 tok/s, 측정 중 VDD_IN 최대 20.4W | 운영 모델로 채택 |
+
+얕은 벤치마크에서는 30B MoE가 빨랐지만, **9,603 토큰에서 8B가 추월했다.** 에이전트는
+대화가 누적되므로 단일 짧은 프롬프트보다 깊이별 성능이 더 중요한 선택 기준이었다.
 
 ![generation speed vs context depth](measure/figures/depth-crossover.png)
 
-같은 보드에서 **모델마다 와트당 성능이 3배 넘게 갈린다.** 8B 를 고른 것은
-효율이 아니라 툴 콜링과 깊이 때문이고, 그 대가가 여기 보인다.
-
-![tokens per watt](measure/figures/tokens-per-watt.png)
-
-> MAXN 에서만 쟀다. 15W·25W 는 아직 측정하지 않았다.
-
-→ [measure/findings/llm-models.md](measure/findings/llm-models.md) · [measure/findings/performance.md](measure/findings/performance.md) · [measure/](measure/) (13종 실측)
-· [measure/findings/decode-profile.md](measure/findings/decode-profile.md) (커널 프로파일)
-
----
-
-## ③ 메모리를 얼마나 둘지
-
-13.4 GB 안에 **추론 서버 · 임베딩 · 게이트웨이 · 파이썬**이 같이 들어가야 했다.
-
-```
-llama-server (8B Q4_K_M)   6.7 GB      ← 그중 KV 캐시 1.50 GB
-임베딩 (0.6B, CPU)          1.8 GB      ← -ngl 0. GPU 에 올리면 8B 가 버퍼를 못 잡는다
-OpenClaw 게이트웨이          0.3 GB
-──────────────────────────────────
-남는 것                     약 4.5 GB   ← 파이썬 상주 300MB 이하로 묶었다
-```
-
-**컨텍스트를 40960 → 20480 으로 낮춰 KV 를 2.99 → 1.50 GB 로 줄인 것**이 이 예산을
-성립시킨 결정이다. 슬롯 수가 KV 를 배수로 잡으므로 슬롯도 1개로 뒀다.
+13.4GB 안에 추론 서버, KV 캐시, CPU 임베딩, 게이트웨이와 파이썬 서비스를 함께 넣었다.
 
 ![what fills the 13.4 GB](measure/figures/memory-budget.png)
 
-→ [operate/notes/llm-runtime.md](operate/notes/llm-runtime.md)
-
----
-
-## → 그래서 정한 것
-
-```
-Qwen3-8B Q4_K_M · ctx 20480 · 슬롯 1 · MAXN · Flash Attention · CUDA Graphs
-
-llama-bench   pp512 353.7 tok/s · tg128 11.14 tok/s · VDD_IN 20.4W · tj 67°C
-실사용 깊이    463 토큰 10.69 → 9,603 토큰 7.80 → 31,901 토큰 4.74 tok/s
-```
-
-이 설정 위에서 [Life Trainer](life-trainer/) 가 타이머와 상시 서비스로
-재부팅을 넘겨 돌고 있다.
-
----
+> 수치는 [측정 환경 스냅숏](environment.md) 기준이다. 현재 데스크톱 세션을 포함한 실시간
+> 메모리 사용량과는 차이가 날 수 있다.
 
 <details>
-<summary><b>참고 — 메모리 대역폭은 결정 인자가 아니었다</b></summary>
+<summary><b>모델별 와트당 성능 보기</b></summary>
 
-처음에는 `membw.cu` 로 잰 **60.0 GB/s** 를 "사양 102.4 대비 58%" 로 읽고 성능 예측의
-출발점으로 삼았다. **2026-08-18 에 모델 13종을 재면서 그 해석이 틀렸다는 게 드러났다.**
+![tokens per watt](measure/figures/tokens-per-watt.png)
 
-```
-membw.cu 읽기 커널        60.0 GB/s
-D2D 복사 (읽기+쓰기)       69.5 GB/s
-Qwen3-8B Q4_K_M 트래픽    56.0 GB/s
-Qwen3-8B Q8_0 트래픽      86.4 GB/s   ← 사양의 84%. 읽기 커널보다 44% 높다
-```
-
-![achieved bandwidth](measure/figures/achieved-bandwidth.png)
-
-60 GB/s 는 **단일 커널 마이크로벤치의 한계**이지 하드웨어 천장이 아니었다.
-K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 언패킹 연산 비용** 때문이고,
-즉 그 구간은 메모리가 아니라 **연산에 먼저 막힌다.**
-
-**2026-08-28: 이 추론을 커널 프로파일로 확인했다** — 디코드 시간의 **95.7% 가 언패킹을
-안에 품은 행렬곱 커널**이다 ([decode-profile.md](measure/findings/decode-profile.md)).
-역산으로 얻은 추론이 직접 측정이 됐다.
-
-관측은 맞았고 원인 귀속이 틀렸다. 그리고 **이 숫자는 ①②③ 어느 결정도 좌우하지 않았다** —
-모델 선택은 툴 콜링과 깊이가, 메모리 예산은 KV 크기가 정했다.
-
-→ [measure/findings/performance.md](measure/findings/performance.md)
+8B를 고른 이유는 최고 효율이 아니라 툴 콜링 정확도와 깊이별 성능이다.
 
 </details>
 
----
-
-## 개인정보와 데이터
-
-이 저장소에는 실제 활동 데이터베이스, 브라우저 방문 기록, 창 제목, 인증 토큰을 넣지 않는다.
-예시 화면과 문서에 필요한 기록은 합성 데이터로 만들었다.
-
-- 실행 중 생기는 `life-trainer/data/` 와 개인 설정 `life-trainer/config/lifetrainer.toml` 은 Git에서 제외된다.
-- Life Trainer는 설정한 기기에서 앱 이름·창 제목·브라우저 URL을 **로컬로 수집하는 도구**다.
-  별도의 광고·방문자 분석 SDK는 없으며, 외부 연동은 사용자가 직접 설정해야만 동작한다.
-- 공개 전에는 `make check-privacy`로 개인 열람 기록과 민감한 파일이 추적되지 않는지 검사한다.
+→ [모델 비교](measure/findings/llm-models.md) ·
+[성능 분석](measure/findings/performance.md) ·
+[런타임 운영 설정](operate/notes/llm-runtime.md)
 
 ---
 
-## 다시 돌리려면
+## 확인된 한계
+
+- **보드 한 대의 결과다.** 같은 Orin NX라도 전력 모드·JetPack·냉각·백그라운드 부하가
+  다르면 수치가 그대로 재현된다고 보장할 수 없다.
+- **13종 모두를 같은 깊이와 툴 시험으로 비교한 것은 아니다.** 13종 스위트는 짧은
+  `llama-bench`가 중심이고, 깊이·한국어·툴 콜링 상세 비교는 후보 3종에 한정된다.
+- **툴 콜링 6/6은 작은 고정 시험의 결과다.** 임의의 실제 요청에서 100% 정확하다는 뜻이 아니다.
+- **MAXN 지속 부하 검증이 남아 있다.** 현재 전력·온도 값은 수 분 이내의 벤치마크에서
+  관측한 값이며 장시간 열 안정성 시험 결과가 아니다.
+- **상시 실행은 SLA가 아니다.** 서비스는 systemd에 활성화되어 재기동되지만 무중단률이나
+  장기 가용성 수치를 산출하지 않았다.
+- **RAG 범위가 제한적이다.** 현재 색인은 제목·초록 중심이며, 문서 본문 저장과 청킹은
+  완료되지 않았다.
+- **개인정보 검사는 패턴 기반 안전망이다.** 알려진 형태와 추적 파일을 잡지만 보안 감사나
+  사람의 최종 공개 검토를 대체하지 않는다.
+
+→ [남은 측정 항목](measure/findings/performance.md#10-미검증-항목) ·
+[현재 상태와 대기 작업](life-trainer/HANDOFF.md)
+
+---
+
+## 실제 운영
+
+- Life Trainer 웹·동기화·워커·Slack 서비스를 systemd로 상시 운영한다.
+- `desired-state.txt`를 정본으로 삼아 설치 상태와 실제 실행 상태의 차이를 검사한다.
+- 포트가 열렸는지만 보지 않고, 기대한 모델 ID가 실제로 응답하는지 확인한다.
+- GPU 작업은 직렬화하고 대화 요청에 우선권을 준다.
+- 백업·복구 번들과 정기 상태 점검을 함께 둔다.
+- 링크·문서 수치·정적 분석·테스트·개인정보 검사를 push 전에 실행한다.
 
 ```bash
-make verify     # JetPack·CUDA·전력모드 점검 → environment.md 를 생성
-make bench      # 모델 벤치 무인 실행 (약 40분)
-make figures    # measure/results/ 에서 그림 재생성
-make check      # 링크 + 문서 지표 + shellcheck + 파이썬 린트 + 유닛 정적검사 + 테스트
-make check-fast # 그중 즉시 끝나는 것만 (링크·문서·shellcheck·lint·개인정보)
-make lint       # 파이썬 정적 검사만 (ruff — 버그에 가까운 규칙만 켰다)
-make check-privacy # 개인 열람·창 기록이 커밋됐는지 (자기시험 포함)
-make test       # Life Trainer 테스트 (네트워크 불필요)
-make lock       # 의존성 고정본 재생성 (life-trainer/constraints.txt)
+make status        # 현재 서비스·설정 상태
+make check-fast    # 링크·문서·셸·린트·개인정보
+make check         # 전체 테스트 포함
+make check-privacy # 개인 열람 기록과 민감 파일 검사
 ```
 
-**`pre-push` 훅은 `make check` 전체를 돈다** (약 3분. `make hooks` 로 기기마다 한 번 설치).
-급할 때는 `--no-verify` 대신 `LT_FAST_PUSH=1` 을 쓴다 — 그러면 테스트만 건너뛰고
-링크·문서·shellcheck·lint 는 그대로 돈다.
-
-측정 환경 스냅숏은 [environment.md](environment.md) — **이 저장소의 모든 수치가
-그 환경에서 나왔다.**
+실패는 수정된 코드만 남기지 않고, **어떤 가정이 깨졌는지**를
+[HISTORY](life-trainer/HISTORY/)에 한 사건당 한 문서로 기록한다.
 
 ---
 
-## 디렉토리 구조
+## 합성 데이터로 확인하기
 
-**폴더가 곧 상태다.** `measure/` 는 잰 것, `operate/` 는 돌고 있는 것,
-`life-trainer/` 는 그 위에 만든 것, `docs/` 는 기획과 접은 것, `refs/` 는 포인터다.
+ActivityWatch나 실제 개인 데이터 없이 수집 이후의 전체 파이프라인을 실행할 수 있다.
 
-새 파일을 어디 둘지는 질문 하나로 갈린다 — **재는 것인가, 돌리는 것인가**
-([CLAUDE.md §6](CLAUDE.md)).
+```bash
+cd life-trainer
+python3 -m venv .venv
+.venv/bin/pip install -e .
 
+.venv/bin/lt init-db
+.venv/bin/lt synth --days 14
+.venv/bin/lt rollup --range 2026-08-02 2026-08-15
+.venv/bin/lt stats --day 2026-08-15
+.venv/bin/lt report daily --day 2026-08-15
 ```
-├── CLAUDE.md            저장소 전체 작업 규칙 — **검사·경보를 붙이기 전에 읽는다**
-│
-├── measure/             ★ 잰 것. 한 번 재면 불변 기록이고 다시 돌 일이 드물다
-│   ├── tools/               측정·조사 도구 (llama-bench · membw.cu · nsys · gh-*)
-│   ├── results/             측정 원본 — raw/run-<타임스탬프>/ · nsys · csv
-│   ├── figures/             results/ 에서 재생성된다  ← make figures
-│   └── findings/            해석. **근거 데이터 바로 옆이다**
-│       ├── hardware.md          하드웨어 실측 · 전력모드 · 메모리 예산
-│       ├── performance.md       대역폭 · 깊이별 곡선 · 품질 · 한국어 토크나이저
-│       ├── llm-models.md        모델 3종 비교 (툴콜링 · 속도 · 한국어)
-│       ├── model-suite.md       모델 13종 실측 (2026-08-18) · 대역폭 해석 정정
-│       ├── decode-profile.md    디코드 커널 프로파일 (Nsight)
-│       └── reference-survey.md  GitHub 생태계 전수 스캔
-│
-├── operate/             ★ 도는 것. 매일·매 push 돌고 지금 상태를 말한다
-│   ├── tools/               status · host-status · daily-check · heartbeat · verify-boot
-│   │                        check-links · check-docs · recovery-bundle · install
-│   │                        lock-deps · prune-agent-sessions(주 1회 세션 정리)
-│   │                        check-privacy ★ 개인 열람·창 기록이 들어왔는지
-│   │                          — **검사기 안에 막을 값을 안 적는다**(모양으로 잡는다)
-│   ├── systemd/             llama-server + ctx.conf(LLAMA_CTX=20480) · 점검 타이머
-│   │                        무엇을 켜는지는 desired-state.txt 가 정본
-│   └── notes/               llm-runtime.md(빌드·운영) · agent-gateway.md(함정 14가지)
-│
-├── life-trainer/        ★ 만든 것. 상시 구동 중이고 자체 문서 트리를 갖는다
-│   └── deploy/              이 앱을 이 기기에 세우는 것 (게이트웨이 포함)
-│
-├── docs/                저장소 차원의 기획
-│   ├── folder-structure.md  이 구조를 왜 이렇게 잡았나
-│   ├── plans/               ⏳ 미완
-│   └── archive/             ⛔ 판단 종료 · 접은 것
-│
-└── refs/                포인터만 — 실물은 트리 밖에 있다
-    ├── models/              어떤 가중치를 왜 골랐나 (실물 `~/models/`)
-    └── reference/           타 프로젝트 클론 — URL + 커밋만 (실물 `~/reference/`)
-```
+
+위의 `lt report` 명령은 `--post`를 명시했을 때만 Slack으로 발송된다. 실제 PC·폰 연결과 상시 서비스 설치는
+[Life Trainer README](life-trainer/README.md#빠른-시작--합성-데이터로-5분-안에-결과-보기)를 따른다.
 
 ---
 
-## 이 위에 올린 것 — Life Trainer
+## 개인정보와 공개 범위
 
-측정으로 확인한 제약(**60 GB/s · 11 tok/s · 13.4 GB**) 위에서 실제로 돌아가는 응용.
+- 실제 활동 DB, 방문 기록, 창 제목, 인증 토큰과 개인 설정은 Git에서 제외한다.
+- 공개 문서에는 합성 데이터 또는 명시적으로 공개 승인된 화면만 사용한다.
+- 활동 기록은 로컬 SQLite에 저장한다.
+- 외부 검색에는 필요한 질의어만 보내며 전송 직전에 개인정보 패턴을 검사한다.
+- 공개 전 `make check-privacy`로 추적 파일과 문서를 다시 검사한다.
+- 이 검사는 알려진 패턴을 찾는 보조 수단이며, 공개 전 사람의 확인도 필요하다.
 
-하루 활동을 10분 단위 144슬롯으로 계측하고, 야간에 관심사 문서를 수집·요약하고,
-Slack 으로 리포트를 보내며, **물어보면 자기 기록을 근거로 답하는** 온디바이스 개인 에이전트.
-**실사용 중** — 타이머와 상시 서비스가 재부팅을 넘겨 돌고 있다.
+---
 
-```
-ActivityWatch(PC) ──Tailscale──┐
-RSS · arXiv ───────────────────┼─→ SQLite(WAL·FTS5) ─→ GPU 단일 큐 ─→ Slack · 웹 플래너
-수동 입력 / Slack 대화 ─────────┘                        (Qwen3-8B, llama-server 공유)
-```
+## 문서 지도
 
-설계 3원칙: **수집이 8할이다 · 집계는 SQL 문장화는 LLM · GPU 는 단일 자원이다.**
-
-**2026-08-24: 같은 물건이 OpenClaw 의 에이전트로도 돈다.** 툴을 고르는 주체가
-규칙에서 **모델**로 바뀐 경로가 하나 더 생겼다 — 슬래시 명령 10개·플래너·RAG 를
-MCP 툴 13개로 내보내고, **지정된 폴더 밖으로는 못 나간다.** 프레임워크 기본
-구성이 시스템 프롬프트 12,541 토큰이던 것을 **5,247 토큰**으로 줄인 것이 이 결합의
-대부분이었다 ([agent-gateway.md §7](operate/notes/agent-gateway.md)).
-
-→ **[life-trainer/HANDOFF.md](life-trainer/HANDOFF.md)** (지금 상태 · 이어받는다면 여기부터) ·
-[README](life-trainer/README.md) · [전체 설명서](life-trainer/docs/handbook.md) ·
-[설계서](life-trainer/docs/life-trainer-design.md) ·
-[버그 기록](life-trainer/HISTORY/) (깨진 가정만 남긴다)
+| 읽고 싶은 것 | 문서 |
+|---|---|
+| 지금 무엇이 돌고 있는가 | [HANDOFF](life-trainer/HANDOFF.md) |
+| Life Trainer 설치·사용법 | [Life Trainer README](life-trainer/README.md) |
+| 전체 기능과 파이프라인 | [Handbook](life-trainer/docs/handbook.md) |
+| ERD·워크플로·설계 판단 | [Architecture](life-trainer/docs/architecture.md) |
+| 모델·성능 실측 | [Measure](measure/) |
+| Jetson 상시 운영 | [Operate](operate/) |
+| 깨진 가정과 재발 방지 | [HISTORY](life-trainer/HISTORY/) |
+| Android 수집 앱 | [LT Phone](https://github.com/donghee-ai/lt-phone) |
 
 ---
 
 ## 환경
 
-```
+```text
 하드웨어   Jetson Orin NX 16GB / Ampere 1024 CUDA / Cortex-A78AE ×8 / LPDDR5 128-bit
 소프트웨어 JetPack 6.2.3 / L4T 36.5.0 / CUDA 12.6 / TensorRT 10.3 / Ubuntu 22.04
-추론       llama.cpp (CUDA, SM 8.7, Flash Attention, CUDA Graphs)
-전력모드   MAXN (CPU 8코어 1984 MHz / GPU 8 SM 918 MHz)
+추론       llama.cpp / Qwen3-8B Q4_K_M / ctx 20480 / 슬롯 1
+전력모드   MAXN
 ```
 
----
-
-## 주요 스크립트
-
-**하드웨어 · 런타임**
-
-| 스크립트 | 용도 | 결과 |
-|---|---|---|
-| `verify-jetpack.sh` | JetPack · CUDA · DLA · 전력모드 일괄 검증 | [hardware.md](measure/findings/hardware.md) |
-| `membw.cu` | 메모리 대역폭 실측 (LLM 속도 예측의 기준값) | 〃 |
-| `thermal-test.sh` | CPU+GPU 동시 부하 발열 측정 | 〃 |
-| `build-llamacpp.sh` | llama.cpp CUDA 빌드 (SM 8.7) | [llm-runtime.md](operate/notes/llm-runtime.md) |
-
-**모델 벤치마크**
-
-| 스크립트 | 용도 | 결과 |
-|---|---|---|
-| `run-model-suite.sh` | 모델별 벤치마크 무인 실행 | [llm-models.md](measure/findings/llm-models.md) |
-| `deep-context-bench.py` | 컨텍스트 깊이별 성능 + 장거리 검색 | [performance.md](measure/findings/performance.md) |
-| `chat-bench.py` | 운영 설정 그대로 대화로 깊이·품질 동시 측정 | 〃 |
-| `tool-bench.py` | 툴 콜링 정확도 (에이전트 적합성) | [llm-models.md](measure/findings/llm-models.md) |
-
-**생태계 조사**
-
-| 스크립트 | 용도 | 결과 |
-|---|---|---|
-| `gh-research*.mjs` | Playwright 로 GitHub 검색 (**70% 차단당함**) | [reference-survey.md](measure/findings/reference-survey.md) |
-| `gh-api-collect.py` | REST API 로 전환해 재수집 | 〃 |
-| `gh-analyze.py` | 4개 소스 병합 + 젯슨 적합성 점수화 | 〃 |
-
----
-
-## 기록해둔 함정들
-
-- **Super Mode 불가 원인** — `nvpower.sh`가 부팅마다 conf 심링크를 되돌리고,
-  하드웨어 과전류 보호도 25W로 설정된다 ([measure/findings/hardware.md](measure/findings/hardware.md))
-- **25W 프로파일이 MAXN보다 느리다** — GPU를 408 MHz로 고정 제한
-- **`llama-cli`의 `-no-cnv` 미동작** — stdin EOF 시 프롬프트 무한 출력 (30MB 로그 발생)
-- **슬롯 수가 KV 캐시를 배수로 잡는다** — 기본 4슬롯이면 4배 소요
-- **`pkill -f` 자기매칭** — 자신의 셸 명령줄까지 죽인다
-- **툴 스키마의 정규식 하나가 요청 전체를 400 으로 만든다** — llama.cpp 의 GBNF 변환기가
-  `pattern` 을 못 다룬다. 앵커를 붙여도 안 된다 ([operate/notes/agent-gateway.md](operate/notes/agent-gateway.md))
-- **에이전트 워크스페이스의 인격 파일은 지워도 다시 생긴다** — `openclaw agents add` 가
-  깔아 두는 6,122바이트가 시스템 프롬프트에 통째로 실리는데, 삭제하면 재기동 때
-  시드된다. **비워서 남겨야** 시드가 안 돈다 (§7-2)
-- **"툴을 불렀다"와 "일을 했다"는 다르다** — 8B 가 계획 목록만 조회하고 완료는
-  사용자에게 시켰다. 툴 이름만 채점하면 통과한다. **툴 인자까지 봐야** 잡힌다 (§7-5)
-- **소형 모델에게 선택 인자는 없는 것과 같다** — "내일 계획 넣어줘" 에서 `day` 를
-  3/3 빠뜨려 계획이 조용히 오늘에 들어갔다. 프롬프트로도 툴 결과 경고로도 안 잡혔고,
-  **스키마에서 필수로 만들자 0/3** 이 됐다 (왕복도 하나 줄었다)
-- **ActivityWatch 의 마지막 이벤트는 duration 이 자란다** — 끝 시각 기준으로 페이징하면
-  진행 중인 활동이 조각나고 이중 계산된다. 시작 시각 기준 + 겹침 재조회가 정답
-  ([life-trainer/docs/research/activitywatch.md](life-trainer/docs/research/activitywatch.md))
-- **aw-server 를 Tailscale IP 에만 바인딩하면 수집이 멈춘다** — 로컬 워처가
-  `localhost:5600` 으로 붙기 때문. `0.0.0.0` + 방화벽으로 대역 제한이 맞다
-- **EXAONE 툴 콜링 2/6 은 모델 탓이 아니었다** — 채팅 템플릿에 `tools` 렌더링 코드가
-  없어 llama.cpp 가 툴 정의를 조용히 버렸다. **모델은 툴 존재를 몰랐다**
-  ([llm-models.md](measure/findings/llm-models.md))
-
----
+정확한 측정 조건은 [environment.md](environment.md), 재현 명령은 [measure/](measure/)에 있다.
 
 ## 라이선스
 
-문서·스크립트는 자유롭게 참고하되, `refs/reference/` 하위 프로젝트와 `refs/models/` 가중치는
-각 원저작자의 라이선스를 따른다.
+이 저장소에는 아직 별도 라이선스를 선언하지 않았다. 외부 참고 프로젝트와 모델 가중치는
+각 원저작자의 라이선스를 따른다. 재사용 조건을 명확히 하려면 `LICENSE`를 추가해야 한다.
