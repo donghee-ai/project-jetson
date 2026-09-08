@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시안 C — 차분 (Calm)</title>
+<script src="data.js"></script>
+<style>
+/* ── 시안 C: 폰에서 하루 열 번 여는 화면 ─────────────────────────
+ * 진단: 지금 UI 는 데스크톱 격자를 폰으로 줄인 모양이다. 폰에서 10분 칸은
+ *       손가락보다 작고, 정보 밀도보다 "지금 뭘 해야 하나"가 먼저다.
+ * 처방: (1) 현재 시각과 지금 걸린 계획이 화면의 주인공
+ *       (2) 타임테이블은 격자가 아니라 한 줄 레일 — 병합 블록을 시간순 피드로 읽는다
+ *       (3) 손가락 크기(최소 44px) 타깃, 큰 글자, 색은 적게
+ * 밀도는 포기한다. 하루 전체를 뜯어보는 건 주간 뷰/PNG 의 몫으로 넘긴다.
+ */
+* { box-sizing: border-box; }
+:root {
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --hair: color-mix(in srgb, var(--ink-primary) 9%, transparent);
+  --card: color-mix(in srgb, var(--ink-primary) 3.5%, transparent);
+  --r: 18px;
+}
+html, body { margin: 0; background: var(--surface); color: var(--ink-primary);
+  font: 17px/1.45 -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 480px; margin: 0 auto; padding: 0 20px 80px; }
+@media (min-width: 900px) { .wrap { max-width: 900px; } .split { display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: start; } }
+
+/* ── 지금 ─────────────────────────────────────────────────────
+ * 화면에서 가장 큰 것이 현재 시각이다. 그 다음이 "지금 걸린 계획".
+ * 계획이 없으면 지어내지 않고 그냥 없다고 쓴다. */
+.hero { padding: 34px 0 26px; }
+.datepill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 13px;
+  border-radius: 999px; background: var(--card);
+  font: 500 12.5px/1 var(--mono); letter-spacing: 0.02em; color: var(--ink-secondary); }
+.big { display: flex; align-items: baseline; gap: 4px; margin: 18px 0 0; }
+.big .hm { font: 200 68px/0.9 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.055em; }
+.big .s { font: 300 24px/1 var(--mono); color: var(--ink-muted); letter-spacing: -0.02em; }
+.nowline { margin-top: 16px; font-size: 19px; letter-spacing: -0.01em; }
+.nowline .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 9px; vertical-align: 2px; }
+.nowsub { margin-top: 6px; font: 400 14px/1.4 var(--mono); color: var(--ink-muted); }
+.remain { margin-top: 18px; height: 4px; border-radius: 2px; background: var(--hair); overflow: hidden; }
+.remain i { display: block; height: 100%; border-radius: 2px; }
+
+/* ── 오늘 요약: 숫자 3개, 카드 없음 ──────────────────────────── */
+.sum { display: flex; gap: 26px; padding: 22px 0 26px; border-top: 1px solid var(--hair); }
+.sum div { flex: 1; }
+.sum .k { font: 500 12px/1 var(--mono); color: var(--ink-muted); letter-spacing: 0.06em; }
+.sum .v { margin-top: 8px; font: 300 22px/1.1 var(--mono); font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em; white-space: nowrap; }
+
+h2 { margin: 26px 0 14px; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; color: var(--ink-secondary); }
+
+/* ── 계획: 큰 터치 타깃 + 진행 링 ───────────────────────────── */
+.plans { list-style: none; margin: 0; padding: 0; border-radius: var(--r); overflow: hidden; background: var(--card); }
+.plans li { display: flex; align-items: center; gap: 14px; min-height: 62px; padding: 12px 16px;
+  border-bottom: 1px solid var(--hair); }
+.plans li:last-child { border-bottom: 0; }
+.ring { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--rc) var(--deg), var(--hair) 0); }
+.ring span { width: 26px; height: 26px; border-radius: 50%; background: var(--surface);
+  display: grid; place-items: center; font: 500 9.5px/1 var(--mono); color: var(--ink-secondary); }
+.pl-body { flex: 1; min-width: 0; display: block; }
+.pl-title { display: block; font-size: 16px; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-sub { display: block; margin-top: 3px; font: 400 13px/1 var(--mono); color: var(--ink-muted); }
+.chev { flex: 0 0 auto; color: var(--ink-muted); font-size: 18px; }
+
+/* ── 레일: 격자 대신 한 줄. 블록은 시간 길이에 비례한다 ──────── */
+.rail-wrap { display: flex; gap: 14px; border-radius: var(--r); background: var(--card); padding: 18px 16px; }
+.rail { position: relative; flex: 0 0 12px; width: 12px; }
+.rail-inner { position: absolute; inset: 0; border-radius: 6px; background: var(--hair);
+  clip-path: inset(0 round 6px); }
+/* 레일은 하나의 띠다 — 조각마다 둥글리면 알약이 흩어진 그림이 된다.
+ * 둥근 모서리는 레일 양 끝에서만 (clip-path 로 띠 전체를 자른다). */
+.seg { position: absolute; left: 0; right: 0; }
+.seg.away { background: color-mix(in srgb, var(--ink-primary) 8%, transparent); }
+.ticks { position: relative; flex: 0 0 38px; }
+.ticks b { position: absolute; left: 0; font: 400 11.5px/1 var(--mono); color: var(--ink-muted);
+  transform: translateY(-50%); }
+.feed { position: relative; flex: 1; min-width: 0; }
+.item { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 9px;
+  font-size: 14.5px; letter-spacing: -0.005em; }
+.item i { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.item .t { font: 400 12.5px/1 var(--mono); color: var(--ink-muted); margin-left: auto; white-space: nowrap; }
+.item.plan { color: var(--ink-secondary); }
+.item.plan .b { border-bottom: 1px dashed var(--hair); }
+/* NOW — 레일 위의 작은 알약 하나. 선을 화면 전체에 긋지 않는다. */
+.nowdot { position: absolute; left: -5px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--ink-primary); transform: translateY(-50%); z-index: 3;
+  box-shadow: 0 2px 10px rgba(0,0,0,.14); }
+.nowdot::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--ink-primary); }
+.nowtag { position: absolute; left: 26px; transform: translateY(-50%); z-index: 3;
+  padding: 3px 8px; border-radius: 999px; background: var(--ink-primary); color: var(--surface);
+  font: 500 11px/1.3 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 16px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-secondary); }
+.legend i { width: 9px; height: 9px; border-radius: 50%; }
+.tag { display: inline-block; margin: 12px 0 -6px; padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-primary) 8%, transparent); color: var(--ink-muted);
+  font: 500 9.5px/1.7 var(--mono); letter-spacing: 0.1em; z-index: 20; }
+</style>
+</head>
+<body>
+<div class="tag">시안 C · 차분</div>
+<div class="wrap">
+  <div class="hero">
+    <span class="datepill" id="pill"></span>
+    <div class="big"><span class="hm" id="hm"></span><span class="s" id="ss"></span></div>
+    <div class="nowline" id="nowline"></div>
+    <div class="nowsub" id="nowsub"></div>
+    <div class="remain"><i id="remain"></i></div>
+  </div>
+
+  <div class="sum" id="sum"></div>
+
+  <div class="split">
+    <section>
+      <h2>오늘 계획</h2>
+      <ul class="plans" id="plans"></ul>
+    </section>
+    <section>
+      <h2>기록</h2>
+      <div class="rail-wrap">
+        <div class="ticks" id="ticks"></div>
+        <div class="rail" id="rail"><div class="rail-inner" id="rail-inner"></div></div>
+        <div class="feed" id="feed"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function () {
+  var D = LT.D;
+  // 레일은 "기록이 있는 구간"만 담는다 — 잠든 7시간을 폰 화면에서 스크롤할 이유가 없다.
+  var first = 0, last = D.slots.length - 1;
+  while (first < D.slots.length && D.slots[first].c === "off") first++;
+  while (last > first && D.slots[last].c === "off") last--;
+  D.plans.forEach(function (p) {
+    first = Math.min(first, slotOf(p.start_min)); last = Math.max(last, slotOf(p.end_min) - 1);
+  });
+  first = Math.floor(first / 6) * 6; last = Math.ceil((last + 1) / 6) * 6 - 1;
+  function slotOf(min) { var m = min - D.grid_start_hour * 60; if (m < 0) m += 1440; return Math.round(m / D.slot_minutes); }
+
+  var RAIL_H = 460;
+  var span = last - first + 1;
+  function y(slot) { return (slot - first) / span * RAIL_H; }
+
+  function tick() {
+    document.getElementById("hm").textContent = LT.hhmm(LT.nowMin());
+    document.getElementById("ss").textContent = ":" + String(LT.nowSec()).padStart(2, "0");
+  }
+  tick(); setInterval(tick, 1000);
+
+  document.getElementById("pill").textContent = D.day + " " + LT.weekdayKr(D.day) + "요일";
+
+  var cp = LT.currentPlan(), m = LT.nowMin();
+  if (cp) {
+    document.getElementById("nowline").innerHTML =
+      '<span class="dot" style="background:' + (cp.category ? LT.colorVar(cp.category) : "var(--ink-primary)") + '"></span>' + cp.title;
+    document.getElementById("nowsub").textContent =
+      cp.time_range + " · " + (cp.end_min - m) + "분 남음 · 달성 " + Math.round(cp.achievement * 100) + "%";
+    var el = document.getElementById("remain");
+    el.style.width = ((m - cp.start_min) / (cp.end_min - cp.start_min) * 100) + "%";
+    el.style.background = cp.category ? LT.colorVar(cp.category) : "var(--ink-primary)";
+  } else {
+    var next = D.plans.filter(function (p) { return p.start_min > m; })[0];
+    document.getElementById("nowline").textContent = "계획이 걸려 있지 않은 시간";
+    document.getElementById("nowsub").textContent = next
+      ? "다음 · " + next.title + " " + LT.hhmm(next.start_min) + " (" + (next.start_min - m) + "분 뒤)"
+      : "남은 계획 없음";
+    document.querySelector(".remain").style.display = "none";
+  }
+
+  var s = D.stats;
+  document.getElementById("sum").innerHTML = [
+    ["활동", s.active_hm], ["달성", Math.round(s.achievement * 100) + "%"], ["커버리지", Math.round(s.coverage * 100) + "%"]
+  ].map(function (k) { return "<div><div class='k'>" + k[0] + "</div><div class='v'>" + k[1] + "</div></div>"; }).join("");
+
+  document.getElementById("plans").innerHTML = D.plans.map(function (p) {
+    var pct = Math.round(p.achievement * 100);
+    var c = p.category ? LT.colorVar(p.category) : "var(--ink-primary)";
+    return "<li><span class='ring' style='--deg:" + (pct * 3.6) + "deg;--rc:" + c + "'><span>" + pct + "</span></span>" +
+      "<span class='pl-body'><span class='pl-title'>" + p.title + "</span>" +
+      "<span class='pl-sub'>" + p.time_range + " · " + LT.dur(p.actual_sec) + " 실측</span></span>" +
+      "<span class='chev'>›</span></li>";
+  }).join("");
+
+  // 레일 + 눈금 + 피드
+  var rail = document.getElementById("rail"), railInner = document.getElementById("rail-inner"), ticks = document.getElementById("ticks"), feed = document.getElementById("feed");
+  rail.style.height = RAIL_H + "px"; ticks.style.height = RAIL_H + "px"; feed.style.height = RAIL_H + "px";
+
+  var th = "";
+  for (var sl = first; sl <= last; sl += 12) {   // 2시간마다
+    th += "<b style='top:" + y(sl) + "px'>" + LT.hhmm(LT.slotToMin(sl)) + "</b>";
+  }
+  ticks.innerHTML = th;
+
+  var runs = LT.runs(D.slots).filter(function (r) { return r.start <= last && r.end > first && r.c !== "off"; });
+  runs.forEach(function (r) {
+    var el = document.createElement("div");
+    el.className = "seg" + (r.c === "away" ? " away" : "");
+    if (r.c !== "away") el.style.background = LT.colorVar(r.c);
+    el.style.top = y(r.start) + "px";
+    el.style.height = Math.max(3, y(r.end) - y(r.start)) + "px";
+    el.title = LT.hhmm(LT.slotToMin(r.start)) + "–" + LT.hhmm(LT.slotToMin(r.end)) + " " + LT.labelOf(r.c);
+    railInner.appendChild(el);
+  });
+
+  // 피드: 30분 이상 블록만 이름을 적는다 (계약서 §2). 겹치면 아래로 민다.
+  var lastY = -99;
+  runs.filter(function (r) { return r.len >= 3 && LT.isActivity(r.c); }).forEach(function (r) {
+    var top = Math.max(lastY + 24, y(r.start) + (y(r.end) - y(r.start)) / 2);
+    lastY = top;
+    var el = document.createElement("div");
+    el.className = "item";
+    el.style.top = top + "px";
+    el.innerHTML = "<i style='background:" + LT.colorVar(r.c) + "'></i><span>" + LT.labelOf(r.c) + "</span>" +
+      "<span class='t'>" + LT.hhmm(LT.slotToMin(r.start)) + " · " + (r.len * D.slot_minutes) + "분</span>";
+    feed.appendChild(el);
+  });
+  // 계획도 같은 축에 얹는다 — 점선으로, 실측과 구분되게
+  D.plans.forEach(function (p) {
+    var a = slotOf(p.start_min);
+    if (a < first || a > last) return;
+    var el = document.createElement("div");
+    el.className = "item plan";
+    el.style.top = y(a) + "px";
+    el.innerHTML = "<i style='background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink-muted)'></i>" +
+      "<span class='b'>" + p.title + "</span><span class='t'>" + p.time_range + "</span>";
+    feed.appendChild(el);
+  });
+
+  // NOW
+  var p = LT.nowPos();
+  if (p >= first && p <= last + 1) {
+    var d = document.createElement("div"); d.className = "nowdot"; d.style.top = y(p) + "px"; rail.appendChild(d);
+    var t = document.createElement("div"); t.className = "nowtag"; t.style.top = y(p) + "px";
+    t.textContent = LT.hhmm(LT.nowMin()); rail.appendChild(t);
+  }
+
+  var seen = [];
+  D.slots.forEach(function (x) { if (seen.indexOf(x.c) < 0 && x.c !== "off" && x.c !== "away") seen.push(x.c); });
+  seen.sort(function (a, b) { return D.order.indexOf(a) - D.order.indexOf(b); });
+  document.getElementById("legend").innerHTML = seen.map(function (c) {
+    return "<span><i style='background:" + LT.colorVar(c) + "'></i>" + LT.labelOf(c) + "</span>";
+  }).join("");
+})();
+</script>
+</body>
+</html>

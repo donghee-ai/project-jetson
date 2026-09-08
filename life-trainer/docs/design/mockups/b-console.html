@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시안 B — 계기판 (Console)</title>
+<script src="data.js"></script>
+<style>
+/* ── 시안 B: 종이를 흉내내지 않는다. 계측기다 ────────────────────
+ * 진단: 24행×6칸 격자는 종이의 제약(줄바꿈)을 그대로 물려받은 형태다.
+ *       화면에서는 시간이 끊기지 않고 흐르므로 블록이 시간 위에 그대로 앉을 수 있다.
+ * 처방: (1) 계획 레인 | 실측 레인을 나란히 둬서 의도와 실제를 직접 대조한다
+ *       (2) 연속 블록은 병합하고 길이에 비례해 그린다
+ *       (3) 비어 있는 구간은 접는다 — 하루 24시간 중 볼 게 있는 곳만 크게 본다
+ *       (4) 현재 시각은 화면에서 가장 큰 숫자다. 눈금자 위 NOW 선과 같은 값을 쓴다
+ */
+* { box-sizing: border-box; }
+:root {
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --line: color-mix(in srgb, var(--ink-primary) 10%, transparent);
+  --line-2: color-mix(in srgb, var(--ink-primary) 20%, transparent);
+  --panel: color-mix(in srgb, var(--ink-primary) 3%, transparent);
+}
+html, body { margin: 0; background: var(--surface); color: var(--ink-primary);
+  font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Noto Sans KR", "Malgun Gothic", sans-serif; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px 56px; }
+
+/* ── 계기판 머리 ─────────────────────────────────────────────── */
+header { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center;
+  padding: 26px 0 18px; border-bottom: 1px solid var(--line-2); }
+.clock { line-height: 1; }
+.clock .hm { font: 200 56px/0.92 var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -0.045em; }
+.clock .hm .s { font-size: 22px; font-weight: 300; color: var(--ink-muted); letter-spacing: -0.02em; }
+.clock .meta { margin-top: 9px; font: 500 11px/1 var(--mono); letter-spacing: 0.14em;
+  color: var(--ink-muted); text-transform: uppercase; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line);
+  border: 1px solid var(--line); }
+.kpi { background: var(--surface); padding: 11px 14px; }
+.kpi .k { font: 500 10px/1 var(--mono); letter-spacing: 0.13em; color: var(--ink-muted); text-transform: uppercase; }
+.kpi .v { margin-top: 7px; font: 400 22px/1 var(--mono); font-variant-numeric: tabular-nums; }
+.kpi .v small { font-size: 12px; color: var(--ink-muted); margin-left: 3px; }
+.kpi .track { margin-top: 8px; height: 3px; background: var(--line); }
+.kpi .track i { display: block; height: 100%; background: var(--ink-primary); }
+
+/* 하루 전체 24시간 요약 띠 — 접힌 구간까지 포함해 "하루의 모양"을 한 줄로 남긴다 */
+.daybar { display: flex; height: 9px; margin: 14px 0 0; gap: 1px; }
+.daybar i { display: block; }
+.daybar-scale { display: flex; justify-content: space-between; margin-top: 5px;
+  font: 400 9.5px/1 var(--mono); color: var(--ink-muted); }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 34px; padding-top: 22px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+/* B 는 데스크톱/태블릿용 밀도다. 폰에서는 KPI 를 2×2 로 접고 머리를 쌓는다. */
+@media (max-width: 620px) {
+  .wrap { padding: 0 14px 40px; }
+  header { grid-template-columns: 1fr; gap: 16px; padding: 18px 0 14px; }
+  .clock .hm { font-size: 44px; }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi .v { font-size: 19px; }
+  .hourband, .lanes, .lane-head { grid-template-columns: 40px 1.1fr 1fr; gap: 6px; }
+  .now .l { left: 40px; }
+  .pblk b { font-size: 11.5px; }
+  .pblk span { font-size: 9px; }
+  .blk b { font-size: 10.5px; }
+}
+h2 { margin: 0 0 12px; font: 500 10.5px/1 var(--mono); letter-spacing: 0.18em;
+  color: var(--ink-muted); text-transform: uppercase; }
+
+/* ── 눈금자 + 2레인 ─────────────────────────────────────────── */
+.ruler { position: relative; border-top: 1px solid var(--line-2); }
+.lane-head { display: grid; grid-template-columns: 46px 1fr 1.9fr; gap: 8px;
+  padding: 0 0 7px; font: 500 10px/1 var(--mono); letter-spacing: 0.14em;
+  color: var(--ink-muted); text-transform: uppercase; }
+.hourband { position: relative; display: grid; grid-template-columns: 46px 1fr 1.9fr; gap: 8px;
+  border-bottom: 1px solid var(--line); }
+.hourband .gutter { position: relative; border-right: 1px solid var(--line); }
+.hourband .gutter b { position: absolute; top: -1px; right: 8px; transform: translateY(-50%);
+  z-index: 2;
+  font: 400 11px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-muted);
+  background: var(--surface); padding: 2px 0 2px 4px; }
+.lane { position: relative; }
+.lane.plan { background: var(--panel); }
+/* 블록은 시간 밴드 안이 아니라 눈금자 전체를 덮는 오버레이에 얹는다 —
+ * 그래야 09:00-12:00 계획이 3조각이 아니라 한 덩어리로 그려진다 */
+.lanes { position: absolute; left: 0; right: 0; top: 0; display: grid;
+  grid-template-columns: 46px 1fr 1.9fr; gap: 8px; pointer-events: none; }
+.lanes .lane { pointer-events: auto; background: none; }
+/* 30분 눈금 */
+.hourband .lane::after { content: ""; position: absolute; left: 0; right: 0; top: 50%;
+  border-top: 1px dashed var(--line); }
+.blk { position: absolute; left: 0; right: 0; border-radius: 3px; overflow: hidden;
+  display: flex; align-items: center; padding: 0 8px; }
+.blk b { font: 500 11.5px/1 -apple-system, "Noto Sans KR", sans-serif; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.blk em { font: 400 10.5px/1 var(--mono); color: rgba(255,255,255,.82); font-style: normal; margin-left: 7px; }
+.blk.away { background: repeating-linear-gradient(-45deg,
+  color-mix(in srgb, var(--ink-primary) 8%, transparent) 0 1px, transparent 1px 6px);
+  border: 1px solid var(--line); }
+.blk.away b { color: var(--ink-muted); text-shadow: none; font-weight: 400; }
+/* 계획 블록 — 실측과 달리 채우지 않는다. 테두리 + 달성분만 옅게 채운다 */
+.pblk { position: absolute; left: 0; right: 0; border: 1px solid var(--line-2); border-radius: 3px;
+  padding: 5px 8px; overflow: hidden; }
+.pblk .fillbg { position: absolute; left: 0; top: 0; bottom: 0; opacity: .16; }
+.pblk b { position: relative; display: block; font: 500 12px/1.25 -apple-system, "Noto Sans KR", sans-serif; }
+.pblk span { position: relative; display: block; margin-top: 3px;
+  font: 400 10px/1 var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.pblk.done { border-color: var(--plan-achieved); }
+/* 빈 구간 접기 */
+.folded { display: grid; grid-template-columns: 46px 1fr; gap: 8px; align-items: center;
+  padding: 9px 0 5px; border-bottom: 1px solid var(--line); color: var(--ink-muted); }
+.folded .rng { font: 400 10.5px/1 var(--mono); text-align: right; padding-right: 8px; }
+.folded .txt { font: 400 10.5px/1 var(--mono); letter-spacing: 0.06em;
+  border-top: 1px dashed var(--line-2); padding-top: 6px; }
+
+/* NOW — 눈금자를 가로지르는 실선 + 좌측 시각 (머리글의 큰 시계와 같은 값) */
+.now { position: absolute; left: 0; right: 0; height: 0; z-index: 6; pointer-events: none; }
+.now .l { position: absolute; left: 46px; right: 0; top: 0; border-top: 1.5px solid var(--ink-primary); }
+.now .c { position: absolute; left: 0; top: 0; transform: translateY(-50%);
+  padding: 2px 5px; background: var(--ink-primary); color: var(--surface);
+  font: 500 10px/1 var(--mono); font-variant-numeric: tabular-nums; }
+
+/* ── 우측: 계획 대조표 ───────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; font: 500 10px/1 var(--mono); letter-spacing: 0.12em; color: var(--ink-muted);
+  text-transform: uppercase; padding: 0 0 8px; border-bottom: 1px solid var(--line-2); }
+.tbl th.n, .tbl td.n { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+.tbl td { padding: 11px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl .ttl { display: flex; align-items: center; gap: 7px; }
+.tbl .dot { width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto; }
+.tbl .sub { margin-top: 4px; font: 400 10.5px/1.3 var(--mono); color: var(--ink-muted); }
+.bar { margin-top: 6px; height: 2px; background: var(--line); }
+.bar i { display: block; height: 100%; background: var(--ink-primary); }
+.unc { margin-top: 22px; }
+.unc li { font: 400 11.5px/1.7 var(--mono); color: var(--ink-muted); list-style: none; display: flex; justify-content: space-between; }
+.unc ul { margin: 0; padding: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 15px; margin-top: 13px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; font: 400 11px/1 var(--mono); color: var(--ink-secondary); }
+.legend i { width: 9px; height: 9px; border-radius: 2px; }
+.tag { display: inline-block; margin: 12px 0 -6px; padding: 3px 9px; border-radius: 999px;
+  background: color-mix(in srgb, var(--ink-primary) 8%, transparent); color: var(--ink-muted);
+  font: 500 9.5px/1.7 var(--mono); letter-spacing: 0.1em; z-index: 20; }
+</style>
+</head>
+<body>
+<div class="tag">시안 B · 계기판</div>
+<div class="wrap">
+  <header>
+    <div class="clock">
+      <div class="hm" id="c-time"></div>
+      <div class="meta" id="c-meta"></div>
+    </div>
+    <div>
+      <div class="kpis" id="kpis"></div>
+      <div class="daybar" id="daybar"></div>
+      <div class="daybar-scale"><span>06</span><span>10</span><span>14</span><span>18</span><span>22</span><span>02</span><span>06</span></div>
+    </div>
+  </header>
+
+  <div class="cols">
+    <section>
+      <h2>하루</h2>
+      <div class="lane-head"><span></span><span>계획</span><span>실측</span></div>
+      <div class="ruler" id="ruler"></div>
+      <div class="legend" id="legend"></div>
+    </section>
+    <section>
+      <h2>계획 대조</h2>
+      <table class="tbl">
+        <thead><tr><th>항목</th><th class="n">계획</th><th class="n">실측</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="unc">
+        <h2>미분류 상위</h2>
+        <ul id="unc"></ul>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function () {
+  var D = LT.D;
+  var PX_PER_MIN = 0.62;                 // 1시간 = 37px
+  var HOUR_H = 60 * PX_PER_MIN;
+
+  function tick() {
+    var m = LT.nowMin();
+    document.getElementById("c-time").innerHTML = LT.hhmm(m) + '<span class="s">:' + String(LT.nowSec()).padStart(2, "0") + "</span>";
+    var cp = LT.currentPlan();
+    document.getElementById("c-meta").textContent =
+      D.day + " " + LT.weekdayKr(D.day) + " · " + (cp ? cp.title : "계획 없음");
+  }
+  tick(); setInterval(tick, 1000);
+
+  // KPI
+  var s = D.stats;
+  document.getElementById("kpis").innerHTML = [
+    ["활동", s.active_hm, null],
+    ["달성", Math.round(s.achievement * 100) + "%<small>" + s.achieved_count + "/" + s.total_count + "</small>", s.achievement],
+    ["커버리지", Math.round(s.coverage * 100) + "%", s.coverage],
+    ["자리비움", LT.dur(s.afk_sec), null]
+  ].map(function (k) {
+    return '<div class="kpi"><div class="k">' + k[0] + '</div><div class="v">' + k[1] + "</div>" +
+      (k[2] === null ? "" : '<div class="track"><i style="width:' + (k[2] * 100) + '%"></i></div>') + "</div>";
+  }).join("");
+
+  // 24시간 요약 띠 (144칸 그대로 — 여기서는 "모양"만 본다)
+  document.getElementById("daybar").innerHTML = LT.runs(D.slots).map(function (r) {
+    var bg = r.c === "off" ? "var(--structural-off)" : LT.colorVar(r.c);
+    return '<i style="flex:' + r.len + ';background:' + bg + '" title="' + LT.labelOf(r.c) + '"></i>';
+  }).join("");
+
+  // ── 시간 눈금 만들기: 볼 게 없는 구간은 접는다 ──────────────
+  var slotsPerHour = 60 / D.slot_minutes;
+  var planSlots = {};
+  D.plans.forEach(function (p) {
+    for (var i = slotOf(p.start_min); i < slotOf(p.end_min); i++) planSlots[i] = true;
+  });
+  function slotOf(min) { var m = min - D.grid_start_hour * 60; if (m < 0) m += 1440; return Math.round(m / D.slot_minutes); }
+  function hourHasContent(h) {
+    for (var i = h * slotsPerHour; i < (h + 1) * slotsPerHour; i++) {
+      if (D.slots[i] && D.slots[i].c !== "off") return true;
+      if (planSlots[i]) return true;
+    }
+    return false;
+  }
+  var keep = [];
+  for (var h = 0; h < 24; h++) keep.push(hourHasContent(h) || hourHasContent(h - 1) || hourHasContent(h + 1));
+
+  var ruler = document.getElementById("ruler"), y = 0, tops = {};   // hour -> y
+  var html = "", i2 = 0;
+  while (i2 < 24) {
+    if (keep[i2]) {
+      tops[i2] = y;
+      html += '<div class="hourband" style="height:' + HOUR_H + 'px" data-h="' + i2 + '">' +
+        '<div class="gutter"><b>' + String((D.grid_start_hour + i2) % 24).padStart(2, "0") + ":00</b></div>" +
+        '<div class="lane plan"></div><div class="lane"></div></div>';
+      y += HOUR_H + 1; i2++;
+    } else {
+      var j = i2; while (j < 24 && !keep[j]) j++;
+      var from = (D.grid_start_hour + i2) % 24, to = (D.grid_start_hour + j) % 24;
+      html += '<div class="folded"><span class="rng">' + String(from).padStart(2, "0") + "–" + String(to).padStart(2, "0") +
+        '</span><span class="txt">기록 없음 ' + (j - i2) + "시간 · 접힘</span></div>";
+      y += 33; i2 = j;
+    }
+  }
+  ruler.innerHTML = html;
+
+  // 좌표 변환: 슬롯 -> y (접힌 구간은 좌표가 없다)
+  function slotY(slot) {
+    var h = Math.floor(slot / slotsPerHour);
+    if (tops[h] === undefined) return null;
+    return tops[h] + (slot % slotsPerHour) * D.slot_minutes * PX_PER_MIN;
+  }
+
+  // 오버레이 레인 — 눈금자 전체 높이를 덮는다
+  var lanes = document.createElement("div");
+  lanes.className = "lanes";
+  lanes.style.height = y + "px";
+  lanes.innerHTML = '<div></div><div class="lane" id="lane-plan"></div><div class="lane" id="lane-act"></div>';
+  ruler.appendChild(lanes);
+  var lanePlan = lanes.querySelector("#lane-plan"), laneAct = lanes.querySelector("#lane-act");
+
+  // 실측 — 병합된 런을 한 덩어리로. 접힌 구간에 걸치면 그 부분만 건너뛴다.
+  LT.runs(D.slots).forEach(function (run) {
+    if (run.c === "off") return;
+    var y0 = slotY(run.start), y1 = slotY(run.end - 1);
+    if (y0 === null || y1 === null) return;
+    var el = document.createElement("div");
+    el.className = "blk" + (run.c === "away" ? " away" : "");
+    if (run.c !== "away") el.style.background = LT.colorVar(run.c);
+    el.style.top = y0 + "px";
+    el.style.height = Math.max(3, (y1 + D.slot_minutes * PX_PER_MIN) - y0 - 1) + "px";
+    if (run.len >= 3) el.innerHTML = "<b>" + LT.labelOf(run.c) + "</b><em>" + (run.len * D.slot_minutes) + "m</em>";
+    el.title = LT.hhmm(LT.slotToMin(run.start)) + "\u2013" + LT.hhmm(LT.slotToMin(run.end)) + " " + LT.labelOf(run.c) +
+      (run.t ? " \u00b7 " + run.t : "");
+    laneAct.appendChild(el);
+  });
+
+  // 계획 — 채우지 않고 테두리 + 달성분만 옅게
+  D.plans.forEach(function (p) {
+    var a = slotOf(p.start_min), b = slotOf(p.end_min);
+    var y0 = slotY(a), y1 = slotY(b - 1);
+    if (y0 === null || y1 === null) return;
+    var el = document.createElement("div");
+    el.className = "pblk" + (p.checked ? " done" : "");
+    el.style.top = y0 + "px";
+    el.style.height = ((y1 + D.slot_minutes * PX_PER_MIN) - y0 - 2) + "px";
+    el.innerHTML = '<i class="fillbg" style="width:' + Math.round(p.achievement * 100) + "%;background:" +
+      (p.category ? LT.colorVar(p.category) : "var(--ink-primary)") + '"></i>' +
+      "<b>" + p.title + "</b><span>" + p.time_range + " \u00b7 " + Math.round(p.achievement * 100) + "%</span>";
+    lanePlan.appendChild(el);
+  });
+
+  // NOW
+  var now = document.createElement("div");
+  now.className = "now";
+  now.innerHTML = '<div class="c"></div><div class="l"></div>';
+  ruler.appendChild(now);
+  function placeNow() {
+    var p = LT.nowPos(), yy = slotY(Math.floor(p));
+    if (yy === null) { now.style.display = "none"; return; }
+    now.style.display = "";
+    now.style.top = (yy + (p % 1) * D.slot_minutes * PX_PER_MIN) + "px";
+    now.querySelector(".c").textContent = LT.hhmm(LT.nowMin());
+  }
+  placeNow(); setInterval(placeNow, 30000);
+
+  // 계획 대조표
+  document.getElementById("rows").innerHTML = D.plans.map(function (p) {
+    var pct = Math.round(p.achievement * 100);
+    var sub = p.time_range + (p.dominant_actual && p.dominant_actual !== p.category ? " · 실제 " + LT.labelOf(p.dominant_actual) : "");
+    return "<tr><td><div class='ttl'>" + (p.category ? "<i class='dot' style='background:" + LT.colorVar(p.category) + "'></i>" : "") +
+      "<span>" + p.title + "</span></div><div class='sub'>" + sub + "</div>" +
+      "<div class='bar'><i style='width:" + pct + "%'></i></div></td>" +
+      "<td class='n'>" + LT.durShort(p.end_min - p.start_min) + "</td>" +
+      "<td class='n'>" + Math.round(p.actual_sec / 60) + "m</td></tr>";
+  }).join("");
+
+  document.getElementById("unc").innerHTML = D.unclassified.map(function (u) {
+    return "<li><span>" + (u.title || u.app) + "</span><span>" + Math.max(1, Math.round(u.seconds / 60)) + "m</span></li>";
+  }).join("");
+
+  var seen = [];
+  D.slots.forEach(function (x) { if (seen.indexOf(x.c) < 0 && x.c !== "off") seen.push(x.c); });
+  seen.sort(function (a, b) { return D.order.indexOf(a) - D.order.indexOf(b); });
+  document.getElementById("legend").innerHTML = seen.map(function (c) {
+    return "<span><i style='background:" + LT.colorVar(c) + "'></i>" + LT.labelOf(c) + "</span>";
+  }).join("");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+# Life Trainer — 활동 분류 규칙 (담당 B)
+#
+# 원칙 (계약서 §4):
+#   - 규칙은 리스트 순서대로 평가하고 첫 매칭이 승리한다.
+#   - match 안의 app/title/url 은 AND 조건이다.
+#   - 정규식은 파이썬 re 문법. 대소문자 무시는 (?i) 를 직접 붙인다.
+#   - away/off/unknown 은 예약 카테고리라 규칙에서 직접 지정하지 않는다.
+#   - **구체적인(URL/제목) 규칙을 앱 규칙보다 먼저 둔다.** 안 그러면
+#     `chrome.exe -> browsing` 같은 포괄 규칙이 모든 URL 규칙을 잡아먹는다.
+
+version: 1
+default_category: unknown
+
+categories:
+  - {id: coding,        label: 코딩}
+  - {id: research,      label: 리서치}
+  - {id: writing,       label: 문서}
+  - {id: sns,           label: SNS}
+  - {id: ops,           label: 운영}
+  - {id: learning,      label: 학습}
+  - {id: browsing,      label: 웹}
+  - {id: entertainment, label: 여가}
+  - {id: gaming,        label: 게임}
+  # 예약 카테고리 — 규칙으로 지정하지 않는다. 롤업이 직접 붙인다.
+  # ★ 여기 빠지면 `classifier.label(...)` 이 KeyError 로 죽는다. PNG 리포트의 범례가
+  #   그 날 나온 카테고리를 전부 라벨로 바꾸기 때문이다 (report/timeline.py).
+  #   `private` 은 2026-09-01 에 생겼는데 여기 안 넣어서 **잠재 결함으로 남아 있었다** —
+  #   프라이빗이 있는 날의 일일 PNG 를 그리면 죽었을 것이다. 2026-09-05 에 같이 넣었다.
+  - {id: away,          label: 자리비움}
+  - {id: "off",         label: 꺼짐}
+  - {id: unknown,       label: 미분류}
+  - {id: private,       label: 프라이빗}
+  - {id: sleep,         label: 수면}
+
+# rollup.py 가 "브라우저 앱일 때만 url 을 붙인다" 를 판단할 때 쓰는 목록.
+# 계약서에는 없는 확장이지만, Classifier 가 이 목록을 노출해 두 파일(classify/rollup)이
+# 같은 진실의 원천을 공유하게 한다.
+#
+# ★ 안드로이드 패키지가 여기 없으면 **폰 브라우징 URL 이 슬롯에 하나도 안 붙는다.**
+#   `rollup.py` 는 `if classifier.is_browser(app): url = _best_web_url(...)` 이라
+#   목록에 없는 앱은 웹 버킷에 url 이 멀쩡히 있어도 게이트를 못 넘는다.
+#   08-23 에 `bucket_type` 에서 web 을 android 보다 앞으로 옮겨 같은 증상을 고쳤다고
+#   적었는데 그건 절반이었다 — 이벤트가 `dev.buckets["web"]` 까지는 왔지만 여기서 막혔다.
+#   (09-04 실측: 폰 웹 이벤트 전부에 url 이 있는데 폰 크롬 슬롯은 browsing/away 두
+#    덩어리뿐이었다.)
+#
+#   폰이 url 을 뽑을 수 있는 브라우저는 앱의 `WebWatcher.KNOWN_BROWSER_PACKAGES` 가
+#   정한다. **그 목록과 같게 유지한다** — 한쪽만 늘리면 조용히 다시 갈린다.
+browser_apps:
+  # 데스크톱 (Windows/Linux/macOS 실행파일명)
+  - chrome.exe
+  - msedge.exe
+  - firefox.exe
+  - brave.exe
+  - opera.exe
+  - vivaldi.exe
+  - google-chrome
+  - google-chrome-stable
+  - chromium
+  - chromium-browser
+  - brave-browser
+  - firefox
+  - microsoft-edge
+  - safari
+  # 안드로이드 (패키지명) — 앱의 WebWatcher.KNOWN_BROWSER_PACKAGES 와 같아야 한다
+  - com.android.chrome
+  - org.mozilla.firefox
+  - com.sec.android.app.sbrowser
+  - com.opera.browser
+  - com.microsoft.emmx
+
+rules:
+  # ═══════════════════════════════════════════════════════════════════
+  # 1. URL 규칙 — 브라우저 앱 규칙보다 먼저 평가되어야 한다
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: research
+    subcategory: paper
+    match: {url: '(?i)(arxiv\.org|semanticscholar\.org|openreview\.net|paperswithcode\.com|huggingface\.co)'}
+
+  - category: coding
+    subcategory: reference
+    match: {url: '(?i)(github\.com|gitlab\.(com|io)|bitbucket\.org|stackoverflow\.com|docs\.python\.org|developer\.mozilla\.org|readthedocs\.io|pypi\.org|npmjs\.com)'}
+
+  - category: sns
+    subcategory: mail
+    match: {url: '(?i)(mail\.google\.com|outlook\.(office|live)\.com|web\.whatsapp\.com|web\.telegram\.org)'}
+
+  # 게임 전적·공략 사이트. youtube/twitch(시청)보다 먼저 평가한다 —
+  # op.gg 를 보는 것은 "영상 시청"이 아니라 게임 활동의 연장이다.
+  - category: gaming
+    subcategory: stats
+    match: {url: '(?i)(op\.gg|lolchess\.gg|fow\.kr|tracker\.gg|dak\.gg|inven\.co\.kr|maplestory\.nexon\.com|leagueoflegends\.com|valorant\.com|playoverwatch\.com|steamcommunity\.com|store\.steampowered\.com)'}
+
+  - category: entertainment
+    subcategory: video
+    match: {url: '(?i)(youtube\.com|youtu\.be|netflix\.com|twitch\.tv)'}
+
+  - category: browsing
+    subcategory: news
+    match: {url: '(?i)(news\.ycombinator\.com|reddit\.com|n\.news\.naver\.com|hani\.co\.kr|chosun\.com|yonhapnews\.co\.kr|bbc\.co\.uk|nytimes\.com|reuters\.com|cnn\.com)'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 2. 제목 규칙 — url 이 없는 브라우저 창을 창 제목으로 세분화
+  #    (app 이 브라우저일 때만 매칭되도록 app 필드도 같이 건다)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: entertainment
+    subcategory: video
+    match:
+      app: '(?i)^(chrome\.exe|msedge\.exe|firefox\.exe|brave\.exe|opera\.exe|vivaldi\.exe|google-chrome|google-chrome-stable|chromium|chromium-browser|brave-browser|firefox|microsoft-edge|safari)$'
+      title: '(?i)(-\s*youtube\s*$|netflix|twitch)'
+
+  - category: coding
+    subcategory: browser-dev
+    match:
+      app: '(?i)^(chrome\.exe|msedge\.exe|firefox\.exe|brave\.exe|opera\.exe|vivaldi\.exe|google-chrome|google-chrome-stable|chromium|chromium-browser|brave-browser|firefox|microsoft-edge|safari)$'
+      title: '(?i)(·\s*github|-\s*github|pull request|stack overflow)'
+
+  - category: sns
+    subcategory: mail
+    match:
+      app: '(?i)^(chrome\.exe|msedge\.exe|firefox\.exe|brave\.exe|opera\.exe|vivaldi\.exe|google-chrome|google-chrome-stable|chromium|chromium-browser|brave-browser|firefox|microsoft-edge|safari)$'
+      title: '(?i)(gmail|받은편지함|inbox)'
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 3. 앱 규칙 — 코딩 (에디터 / IDE / 터미널)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: coding
+    subcategory: editor
+    match: {app: '(?i)^(code|code\.exe|cursor|cursor\.exe|nvim|vim|neovide|sublime_text\.exe|notepad\+\+\.exe)$'}
+
+  - category: coding
+    subcategory: ide
+    match: {app: '(?i)^(pycharm64\.exe|pycharm|idea64\.exe|idea|webstorm64\.exe|webstorm|clion64\.exe|goland64\.exe|rider64\.exe|studio64\.exe|android studio|xcode)$'}
+
+  - category: coding
+    subcategory: terminal
+    match: {app: '(?i)^(windowsterminal\.exe|powershell\.exe|pwsh\.exe|cmd\.exe|conhost\.exe|gnome-terminal-server|gnome-terminal|alacritty|kitty|konsole|xterm|terminal|iterm2?)$'}
+
+  - category: coding
+    subcategory: gamedev
+    match: {app: '(?i)^unity(\.exe)?$'}
+
+  # 3D 프린팅 · CAD (2026-08-19 추가). 미분류 1위였던 bambu-studio 가 여기다.
+  #
+  # ★ 카테고리 선택은 판단이다. 슬라이서·CAD 는 "만드는 일"이라 coding 에 넣었고
+  #   (LLM 태깅도 coding 0.95 를 제안했다), 취미로 출력만 한다면 entertainment 가
+  #   맞을 수 있다. 바꾸려면 이 두 항목의 category 만 고치면 된다 —
+  #   subcategory 는 그대로 두면 나중에 어느 쪽이 맞았는지 되짚을 수 있다.
+  - category: coding
+    subcategory: 3d-print
+    match: {app: '(?i)^(bambu-studio(\.exe)?|bambustudio(\.exe)?|orcaslicer(\.exe)?|prusaslicer(\.exe)?|cura(\.exe)?|ultimaker-cura(\.exe)?|superslicer(\.exe)?|ideamaker(\.exe)?|chitubox(\.exe)?|slic3r(\.exe)?)$'}
+
+  - category: coding
+    subcategory: cad
+    match: {app: '(?i)^(fusion360(\.exe)?|fusion\.exe|freecad(\.exe)?|solidworks(\.exe)?|onshape(\.exe)?|blender(\.exe)?|tinkercad(\.exe)?|autocad(\.exe)?|inventor(\.exe)?|sketchup(\.exe)?)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 4. 앱 규칙 — 리서치
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: research
+    subcategory: tool
+    match: {app: '(?i)^(zotero|zotero\.exe|jupyter|jupyter-lab|jupyter-notebook)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 5. 앱 규칙 — 문서 / 오피스
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: writing
+    subcategory: office
+    match: {app: '(?i)^(winword\.exe|excel\.exe|powerpnt\.exe|hwpapp\.exe|hwp\.exe|soffice\.bin|libreoffice)$'}
+
+  - category: writing
+    subcategory: notes
+    match: {app: '(?i)^(obsidian\.exe|obsidian|notion\.exe|notion)$'}
+
+  - category: writing
+    subcategory: pdf
+    match: {app: '(?i)^(sumatrapdf\.exe|acrobat\.exe|acrord32\.exe|evince|okular)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 6. 앱 규칙 — 소통
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: sns
+    subcategory: chat
+    match: {app: '(?i)^(slack\.exe|slack|zoom\.exe|zoom|teams\.exe|ms-teams|discord\.exe|discord|kakaotalk\.exe|skype\.exe)$'}
+
+  - category: sns
+    subcategory: mail
+    match: {app: '(?i)^(outlook\.exe|thunderbird\.exe|thunderbird)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 7. 앱 규칙 — 운영
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: ops
+    subcategory: remote
+    match: {app: '(?i)^(mstsc\.exe|putty\.exe|mobaxterm\.exe|docker desktop\.exe|windowssandbox\.exe|virtualbox|vmware)$'}
+
+  - category: ops
+    subcategory: files
+    match: {app: '(?i)^(explorer\.exe|nautilus|finder|dolphin)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 8. 앱 규칙 — 학습
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: learning
+    subcategory: flashcards
+    match: {app: '(?i)^(anki\.exe|anki|duolingo|duolingo\.exe)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 9. 앱 규칙 — 게임 (2026-08-19 신설)
+  #
+  #   ★ 게임은 실행파일 이름을 열거할 수 없다. 스팀 하나만 해도 수만 개다.
+  #     그래서 **모양으로 잡는 규칙을 먼저** 두고, 그다음 런처, 그다음 개별 타이틀
+  #     순서로 간다. 개별 타이틀 목록은 실제 미분류 상위에서 나온 것만 적는다 —
+  #     안 쓰는 게임을 상상해서 채우면 유지보수만 늘고 정확도는 안 오른다.
+  #
+  #   ★ unity(코딩/gamedev) 규칙이 §3 에 있어 이 섹션보다 먼저 평가된다.
+  #     게임을 "만드는" 것과 "하는" 것은 다른 카테고리다.
+  # ═══════════════════════════════════════════════════════════════════
+
+  # 언리얼 엔진 패키징 규약. VALORANT-Win64-Shipping.exe, TslGame-Win64-Shipping.exe 등
+  # 상용 언리얼 게임 대부분이 이 접미사로 끝난다 — 타이틀을 몰라도 잡힌다.
+  - category: gaming
+    subcategory: client
+    match: {app: '(?i)-Win(32|64)-Shipping\.exe$'}
+
+  # 게임 런처·클라이언트. 게임 자체는 아니지만 게임 시간의 일부다
+  # (대기열·상점·패치 대기가 전부 여기서 일어난다).
+  - category: gaming
+    subcategory: launcher
+    match: {app: '(?i)^(steam\.exe|steam|steamwebhelper\.exe|riot client\.exe|riotclientservices\.exe|leagueclient\.exe|leagueclientux\.exe|battle\.net\.exe|epicgameslauncher\.exe|galaxyclient\.exe|eadesktop\.exe|origin\.exe|upc\.exe|ubisoftconnect\.exe|nexonplug\.exe|nexonlauncher\.exe|nexon\.exe|playnite\.desktopapp\.exe|hd-player\.exe|bluestacks\.exe|ldplayer\.exe)$'}
+
+  # 개별 타이틀. 미분류 상위에서 실제로 나온 것 + 흔한 것.
+  - category: gaming
+    subcategory: title
+    match: {app: '(?i)^(maplestory\.exe|league of legends\.exe|tft\.exe|overwatch\.exe|cs2\.exe|csgo\.exe|dota2\.exe|hearthstone\.exe|wow\.exe|worldofwarcraft\.exe|diablo iv\.exe|starcraft\.exe|sc2\.exe|genshinimpact\.exe|zenlesszonezero\.exe|robloxplayerbeta\.exe|minecraft\.exe|minecraftlauncher\.exe|dnf\.exe|sudden\.exe|blackdesert64\.exe|lostark\.exe)$'}
+
+  # 자바 게임(마인크래프트)은 프로세스명이 javaw.exe 라 앱만으로는 못 가른다.
+  # 창 제목까지 함께 걸어야 개발용 JVM 과 구분된다.
+  - category: gaming
+    subcategory: title
+    match:
+      app: '(?i)^javaw?(\.exe)?$'
+      title: '(?i)(minecraft|마인크래프트)'
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 10. 앱 규칙 — 여가 (게임 아닌 것: 영상·음악)
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: entertainment
+    subcategory: app
+    match: {app: '(?i)^(vlc\.exe|vlc|spotify\.exe|spotify|potplayer\.exe|melon\.exe|kakaotv\.exe)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 11. 브라우저 폴백 — 위의 URL/제목 규칙에 안 걸린 나머지 브라우저 창.
+  #     반드시 앱별 구체 규칙들 다음, 마지막 근처에 둔다.
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: browsing
+    subcategory: general
+    match: {app: '(?i)^(chrome\.exe|msedge\.exe|firefox\.exe|brave\.exe|opera\.exe|vivaldi\.exe|google-chrome|google-chrome-stable|chromium|chromium-browser|brave-browser|firefox|microsoft-edge|safari)$'}
+
+  # ═══════════════════════════════════════════════════════════════════
+  # 12. 안드로이드 (LT Phone, 2026-08-22 추가)
+  #
+  #     젯슨이 수신 시 `app` 컬럼에 **패키지명**을 넣으므로 패키지로 매칭한다
+  #     (표시 이름은 `title` 로 간다 — 로케일에 따라 바뀌어서 규칙에 못 쓴다).
+  #     데스크톱 규칙은 전부 `.exe` 등으로 앵커돼 있어 충돌하지 않는다.
+  #
+  #     ★ 런처·시스템 UI 는 일부러 분류하지 않는다. 화면 전환 중 스쳐가는
+  #       시간이라 어디에 넣어도 그 카테고리를 부풀린다. 미분류로 남겨 둔다.
+  # ═══════════════════════════════════════════════════════════════════
+
+  - category: gaming
+    subcategory: android
+    match: {app: '(?i)^(com\.riotgames\..*|com\.supercell\..*|com\.nexon\..*|com\.ncsoft\..*|com\.netmarble\..*|com\.kakaogames\..*|com\.miHoYo\..*|com\.gamevil\..*)$'}
+
+  # 퍼블리셔 접두사만으로는 안 잡히는 인디/이식작. 회귀 표본에서 게임 실행 파일이
+  # 통째로 '미분류'로 찍혀서 추가했다 (2026-08-22, com.humble.SlayTheSpire).
+  # 이름에 회사가 안 드러나는 게임은 여기에 하나씩 쌓는다.
+  - category: gaming
+    subcategory: android
+    match: {app: '(?i)^(com\.humble\..*|com\.devolver\..*|com\.playdead\..*|com\.mojang\..*|com\.innersloth\..*|com\.robtopx\..*|com\.ea\.game\..*|com\.king\..*)$'}
+
+  - category: entertainment
+    subcategory: video
+    match: {app: '(?i)^(com\.google\.android\.youtube|com\.google\.android\.apps\.youtube\.music|com\.netflix\.mediaclient|com\.cj\.android\.tving|com\.wavve\.player|com\.coupang\.play|tv\.twitch\.android\.app|com\.spotify\.music|com\.iloen\.melon)$'}
+
+  # ★ 소셜은 SNS 로 간다 (2026-08-25). 인스타 232분이 여가에 섞여 있어서
+  #   "영상 본 시간"과 "SNS 본 시간"이 한 덩어리로 보였다.
+  #   `co.spoonme`(오디오 방송)는 소셜이 아니라 듣는 것이라 여가에 남긴다.
+  - category: sns
+    subcategory: social
+    match: {app: '(?i)^(com\.instagram\.android|com\.instagram\.barcelona|com\.zhiliaoapp\.musically|com\.twitter\.android|com\.facebook\.katana|com\.reddit\.frontpage)$'}
+
+  - category: entertainment
+    subcategory: audio-social
+    match: {app: '(?i)^(co\.spoonme)$'}
+
+  - category: sns
+    subcategory: android
+    match: {app: '(?i)^(com\.kakao\.talk|com\.Slack|com\.discord|org\.telegram\..*|com\.whatsapp|com\.samsung\.android\.messaging|com\.google\.android\.gm|com\.microsoft\.office\.outlook|com\.everytime\.v2|com\.samsung\.android\.dialer)$'}
+
+  - category: research
+    subcategory: llm
+    match: {app: '(?i)^(com\.anthropic\.claude|com\.openai\.chatgpt|com\.google\.android\.apps\.bard|com\.perplexity\.app)$'}
+
+  - category: browsing
+    subcategory: android
+    match: {app: '(?i)^(com\.android\.chrome|com\.sec\.android\.app\.sbrowser|org\.mozilla\.firefox|com\.microsoft\.emmx|com\.brave\.browser|com\.opera\.browser)$'}
+
+  - category: writing
+    subcategory: notes
+    match: {app: '(?i)^(com\.sec\.android\.app\.voicenote|com\.samsung\.android\.app\.notes|md\.obsidian|notion\.id|com\.google\.android\.keep)$'}
+
+  - category: learning
+    subcategory: android
+    match: {app: '(?i)^(com\.duolingo|com\.coursera\.android|org\.khanacademy\.android|com\.udemy\.android|com\.google\.android\.apps\.classroom)$'}
+
+  - category: ops
+    subcategory: device
+    match: {app: '(?i)^(net\.lifetrainer\.awphone|net\.activitywatch\.android|com\.android\.settings|com\.samsung\.android\.lool|com\.samsung\.android\.spay|com\.android\.vending|com\.google\.android\.apps\.authenticator2)$'}
+
+
+  # ── 미분류 상위를 보고 승격한 규칙 (2026-08-25) ────────────────────────
+  #
+  # `unclassified` 상위 20개와 야간 태깅이 붙여 둔 llm_category 를 보고 골랐다.
+  # 열거가 아니라 **모양**으로 잡을 수 있는 것은 그렇게 했다.
+  #
+  # ★ `com.sec.android.app.launcher`(175분, 미분류 1위)는 **일부러 안 넣었다.**
+  #   홈 화면은 활동이 아니라 앱과 앱 사이다. 억지로 카테고리를 주면
+  #   "폰을 만지작거린 시간"이 실제 활동으로 둔갑한다.
+
+  - category: browsing
+    subcategory: shopping
+    match: {app: '(?i)^(com\.coupang\.mobile(\.eats)?|com\.alibaba\.aliexpresshd|com\.towneers\.www|com\.elevenst|com\.gmarket\.mobile|com\.ssg\.serviceapp\.android\.egiftcertificate|com\.tmon)$'}
+
+  - category: browsing
+    subcategory: maps
+    match: {app: '(?i)^(net\.daum\.android\.map|com\.nhn\.android\.nmap|com\.google\.android\.apps\.maps)$'}
+
+  - category: entertainment
+    subcategory: gallery
+    match: {app: '(?i)^(com\.sec\.android\.gallery3d|com\.google\.android\.apps\.photos)$'}
+
+  - category: coding
+    subcategory: android
+    match: {app: '(?i)^(com\.github\.android|com\.gitlab\.app|dev\.termux|com\.termux)$'}
+
+  - category: ops
+    subcategory: calendar
+    match: {app: '(?i)^(com\.samsung\.android\.calendar|com\.google\.android\.calendar|com\.samsung\.android\.app\.reminder)$'}
+
+  - category: ops
+    subcategory: capture
+    match: {app: '(?i)^(snippingtool\.exe|screensketch\.exe|greenshot\.exe|sharex\.exe)$'}
