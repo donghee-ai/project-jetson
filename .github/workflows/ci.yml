@@ -53,21 +53,19 @@ jobs:
                      life-trainer/scripts/*.sh life-trainer/deploy/*.sh
 
   tests:
-    name: Life Trainer 테스트 (py${{ matrix.python }})
+    name: Life Trainer 테스트
     runs-on: ubuntu-latest
-    # ★ **두 판을 본다** (2026-09-07). 기기는 3.14 로 돌지만 `requires-python` 이
-    #   `>=3.10` 이다 — 그 바닥이 살아 있어야 **3.10 으로 되돌리는 길**이 성립한다.
-    #   한 판만 보면 되돌린 순간 아무도 안 본 코드가 된다.
-    #   `fail-fast: false` 인 이유: 한쪽만 깨졌을 때 어느 쪽인지 알아야 한다.
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ['3.10', '3.14']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: ${{ matrix.python }}
+          # ★ **기기가 도는 판 하나만 본다** (2026-09-08).
+          #   하루 전에는 3.10 과 3.14 를 같이 돌렸다. 근거는 *"3.10 이 되돌아갈 길"* 이었는데
+          #   확인해 보니 **앱은 3.10 을 전혀 안 쓰고**(서비스도 타이머도 전부 .venv=3.14),
+          #   그 잡은 첫 실행에서 바로 실패했다 — 테스트가 `import tomllib` 을 하는데
+          #   3.10 에는 없다. 즉 **아무도 안 쓰는 판을 지키느라 빨간불이 상수가 될 뻔했다.**
+          #   `requires-python` 도 같이 `>=3.11` 로 올렸다.
+          python-version: '3.14'
       - name: 설치
         working-directory: life-trainer
         # ★ `-c constraints.txt` 로 **판을 고정**해 설치한다.

@@ -134,10 +134,16 @@ K-quant 가 55~57 에서 평평한 것은 대역폭이 아니라 **슈퍼블록 
 make verify     # JetPack·CUDA·전력모드 점검 → environment.md 를 생성
 make bench      # 모델 벤치 무인 실행 (약 40분)
 make figures    # measure/results/ 에서 그림 재생성
-make check      # 링크 + 문서 지표 + 유닛 정적검사 + 테스트
-make check-fast # 그중 즉시 끝나는 것만 (pre-push 훅이 부른다 — `make hooks`)
+make check      # 링크 + 문서 지표 + shellcheck + 파이썬 린트 + 유닛 정적검사 + 테스트
+make check-fast # 그중 즉시 끝나는 것만 (링크·문서·shellcheck·lint)
+make lint       # 파이썬 정적 검사만 (ruff — 버그에 가까운 규칙만 켰다)
 make test       # Life Trainer 테스트 (네트워크 불필요)
+make lock       # 의존성 고정본 재생성 (life-trainer/constraints.txt)
 ```
+
+**`pre-push` 훅은 `make check` 전체를 돈다** (약 3분. `make hooks` 로 기기마다 한 번 설치).
+급할 때는 `--no-verify` 대신 `LT_FAST_PUSH=1` 을 쓴다 — 그러면 테스트만 건너뛰고
+링크·문서·shellcheck·lint 는 그대로 돈다.
 
 측정 환경 스냅숏은 [environment.md](environment.md) — **이 저장소의 모든 수치가
 그 환경에서 나왔다.**
@@ -170,6 +176,7 @@ make test       # Life Trainer 테스트 (네트워크 불필요)
 ├── operate/             ★ 도는 것. 매일·매 push 돌고 지금 상태를 말한다
 │   ├── tools/               status · host-status · daily-check · heartbeat · verify-boot
 │   │                        check-links · check-docs · recovery-bundle · install
+│   │                        lock-deps · prune-agent-sessions(주 1회 세션 정리)
 │   ├── systemd/             llama-server + ctx.conf(LLAMA_CTX=20480) · 점검 타이머
 │   │                        무엇을 켜는지는 desired-state.txt 가 정본
 │   └── notes/               llm-runtime.md(빌드·운영) · agent-gateway.md(함정 14가지)

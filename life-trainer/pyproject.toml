@@ -6,11 +6,14 @@ build-backend = "setuptools.build_meta"
 name = "lifetrainer"
 version = "0.1.0"
 description = "On-device personal life-logging agent for Jetson Orin NX"
-# ★ 기기는 3.14 로 돌지만 **바닥은 3.10 으로 남긴다** (2026-09-07).
-#   그게 되돌아갈 길이기 때문이다 — 3.11 로 올리면 `tomli` 분기를 지울 수 있지만,
-#   지우는 순간 `.venv` 를 3.10 으로 다시 만드는 복구 절차가 안 된다.
-#   올리는 것은 3.14 가 자리 잡은 뒤에 따로 한다 (규칙 §5: 두 가지를 같이 하지 않는다).
-requires-python = ">=3.10"
+# ★ **3.11 로 올렸다** (2026-09-08). 하루 전까지는 `>=3.10` 이었고 이유는
+#   *"3.10 이 되돌아갈 길"* 이었다. 그런데 실제로 확인하니 **앱은 3.10 을 전혀 안 쓴다** —
+#   서비스 셋도 타이머도 전부 `.venv`(3.14)다. 그리고 CI 의 3.10 잡이 실패했다:
+#   테스트가 `import tomllib` 을 하는데 3.10 에는 그게 없다.
+#
+#   즉 `>=3.10` 은 **아무도 안 쓰고 검사도 안 되는 약속**이었다. 되돌리는 길은
+#   3.10 이 아니어도 된다 — 3.12·3.13 도 tomllib 이 있고 uv 로 바로 깔린다.
+requires-python = ">=3.11"
 dependencies = [
     "requests>=2.32",
     "PyYAML>=6.0",
@@ -25,7 +28,6 @@ dependencies = [
     "flask>=3.0",          # web/app.py
     "werkzeug>=3.0",       # web/app.py — flask 가 끌고 오지만 직접 import 한다
     "numpy>=1.24",         # llm/embed.py
-    "tomli>=2.0; python_version < '3.11'",   # config.py — 3.11+ 는 표준 tomllib
 ]
 
 [project.optional-dependencies]
@@ -61,7 +63,7 @@ filterwarnings = ["ignore::DeprecationWarning"]
 #   그래서 좁게 시작한다. 넓히고 싶으면 **한 규칙씩, 고치면서** 넣는다.
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"  # requires-python 의 바닥과 같이 움직인다
 
 [tool.ruff.lint]
 select = [

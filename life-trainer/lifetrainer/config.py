@@ -18,16 +18,11 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-try:
-    import tomllib
-except ModuleNotFoundError:
-    try:
-        import tomli as tomllib  # type: ignore[no-redef]
-    except ModuleNotFoundError as exc:  # pragma: no cover - 설치 환경 문제 안내용
-        raise RuntimeError(
-            "TOML 파서를 찾을 수 없습니다. `pip install tomli` 로 설치하세요 "
-            "(Python 3.11+ 이면 표준 라이브러리 tomllib 이 있어 불필요합니다)."
-        ) from exc
+# ★ 폴백이 없다 (2026-09-08). `requires-python` 이 `>=3.11` 이라 `tomllib` 은 항상 표준이다.
+#   전에는 `tomli` 백포트로 떨어지는 갈래가 있었는데, 3.14 로 올린 뒤로는
+#   **아무도 안 타는 길**이었다 — 그리고 그 백포트를 조건 없이 부른 자리가 하나 있어
+#   실제로 죽었다(HISTORY 2026-09-07). 안 쓰는 갈래를 남기면 다음 사람이 그걸 보고 따라 쓴다.
+import tomllib
 
 logger = logging.getLogger(__name__)
 
