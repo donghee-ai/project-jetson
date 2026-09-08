@@ -1,6 +1,6 @@
 # 오픈소스 공개 · 기여 계획
 
-> 작성일: 2026-08-15 / 상태: **계획 단계**
+> 작성일: 2026-08-15 / 최근 갱신: 2026-09-08 / 상태: **공개 직전 정리**
 > 관련: [reference-survey.md](../../measure/findings/reference-survey.md) · [performance.md](../../measure/findings/performance.md)
 
 ---
@@ -120,9 +120,8 @@ K-quant 가 55~57 GB/s 에서 평평한 것은 대역폭이 아니라 **슈퍼�
 
 ### 할 일
 
-- [ ] `measure/findings/` 문서에서 개인 환경 정보 제거 또는 일반화
-      (Tailscale IP `100.64.0.2`, 홈 LAN `192.168.0.x`, SSID `home`)
-- [ ] §2 정정 사항 반영
+- [x] 개인 환경 정보·실제 활동 기록 제거 및 일반화 — Git 이력까지 정리하고 작성자 주소를 GitHub `noreply`로 통일
+- [x] §2 정정 사항 반영
 - [ ] 영문 요약 추가 — 젯슨 사용자 대다수가 비한국어권
 - [ ] 재현 절차를 README 최상단에 배치 (`scripts/` 실행법)
 - [ ] 라이선스 파일 추가 (MIT 권장 — 인용·재사용 장벽 최소)

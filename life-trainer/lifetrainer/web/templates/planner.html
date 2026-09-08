@@ -75,8 +75,8 @@
           </div>
           <div class="view-picker" role="group" aria-label="보기 방식">
             <button type="button" data-view-choice="grid" class="view-btn" title="10분 격자">격자</button>
-            <button type="button" data-view-choice="bar" class="view-btn" title="카테고리별 막대">막대</button>
-            <button type="button" data-view-choice="donut" class="view-btn" title="카테고리별 도넛">도넛</button>
+            <button type="button" data-view-choice="bar" class="view-btn" title="카테고리별 시간 차트">차트</button>
+            <button type="button" data-view-choice="donut" class="view-btn" title="카테고리별 시간 원그래프">원그래프</button>
           </div>
           <button type="button" class="plan-toggle" id="plan-toggle" aria-pressed="false"
                   title="켜면 하기로 한 것, 끄면 실제로 한 것">
@@ -108,8 +108,8 @@
              같은 DOM 에서 유도하므로 격자와 합계가 어긋날 수가 없다.
              (이 저장소의 반복된 실패 2번: 같은 값을 여러 곳에서 각자 계산했다) -->
         <div class="chart-panel" id="chart-panel" hidden>
-          <div class="chart-bar" id="chart-bar" role="img" aria-label="카테고리별 시간 막대"></div>
-          <div class="chart-donut" id="chart-donut" role="img" aria-label="카테고리별 시간 도넛"></div>
+          <div class="chart-bar" id="chart-bar" role="img" aria-label="카테고리별 시간 차트"></div>
+          <div class="chart-donut" id="chart-donut" role="img" aria-label="카테고리별 시간 원그래프"></div>
           <p class="chart-empty" id="chart-empty" hidden>이 날에는 집계할 활동이 없습니다.</p>
           <p class="chart-caption" id="chart-caption"></p>
         </div>

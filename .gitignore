@@ -100,6 +100,7 @@ secrets.*
 nohup.out
 core
 core.*
+tmp/
 *.tmp
 *.swp
 .DS_Store

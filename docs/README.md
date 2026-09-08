@@ -32,7 +32,7 @@
 
 | 문서 | 무엇 | 어디까지 |
 |---|---|---|
-| [plans/opensource-plan.md](plans/opensource-plan.md) | 측정 자료 공개·`whichllm` 기여 | 스키마 확인·패치 작성 완료, **PR 승인 대기** · ★ 공개는 **안 하기로** (2026-08-31) |
+| [plans/opensource-plan.md](plans/opensource-plan.md) | 측정 자료 공개·`whichllm` 기여 | 개인정보·Git 이력 정리 완료, **GitHub 게시 준비 중** · 외부 PR 승인 대기 |
 | [archive/grant-radar-plan.md](archive/grant-radar-plan.md) | 지원사업 자격요건 매칭 서비스 | **미착수인 채로 아카이브** (2026-08-28) |
 
 > `plans/opensource-plan.md` 는 이 저장소 **바깥**(`~/project/opensource/`)의 산출물을

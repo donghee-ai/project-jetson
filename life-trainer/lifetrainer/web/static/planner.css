@@ -171,7 +171,7 @@ button, summary, a { -webkit-tap-highlight-color: transparent; }
 
    ★ 두 값이 **한 응답에 같이** 실려 온다. 토글은 어느 변수를 칠할지만 바꾸므로
      서버를 다시 부르지 않고, 서로 다른 시점의 데이터가 섞일 수 없다. */
-/* ★ 보기 고르개(격자·막대·도넛)와 **다른 것**이라 사이를 벌린다. 붙여 두면
+/* ★ 보기 고르개(격자·차트·원그래프)와 **다른 것**이라 사이를 벌린다. 붙여 두면
    네 번째 보기처럼 읽힌다 — 이건 보기 전환이 아니라 겹쳐 그릴 층의 스위치다. */
 .plan-toggle {
   margin-left: auto;
@@ -566,7 +566,7 @@ body.page-entering {
   }
 }
 
-/* ── 보기 전환: 격자 ↔ 막대 ↔ 도넛 (2026-09-01) ──────────────────────
+/* ── 보기 전환: 격자 ↔ 차트 ↔ 원그래프 (2026-09-01) ────────────────────
    색은 격자와 **같은 변수**를 쓴다 (--cat-* · --structural-*). palette.yaml 이
    단일 원본이라, 테마를 바꾸면 차트도 같이 바뀐다. */
 /* ★ 머리줄에 고르개가 셋이 되면서 자리가 모자라 글자가 세로로 쪼개졌다
@@ -622,7 +622,7 @@ body.page-entering {
       color-mix(in srgb, var(--structural-private) 78%, transparent) 3px 5px) !important;
 }
 
-/* 도넛 — SVG 하나 + 범례. 라이브러리 없이 stroke-dasharray 로 그린다. */
+/* 원그래프 — SVG 하나 + 범례. 라이브러리 없이 stroke-dasharray 로 그린다. */
 .chart-donut { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; padding: 6px 0; }
 .donut-svg { width: 200px; height: 200px; flex: none; transform: rotate(-90deg); }
 .donut-track { fill: none; stroke: var(--ink-gridline); stroke-width: 22; }
