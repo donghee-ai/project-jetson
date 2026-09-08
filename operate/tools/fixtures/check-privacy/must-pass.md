@@ -12,6 +12,10 @@
     ("youtube.com", "웃긴 고양이 모음 - YouTube", "https://www.youtube.com/watch?v=%08d")
     app="chrome.exe", title="유튜브", url="https://youtube.com/watch?v=x"
     실제:  m.example-forum.com · m.example-board.com · example-blog.net
+    {"album":"예시 앨범","artist":"예시 아티스트","title":"예시 곡"}
+    합성 회귀 예시: 유튜브 20건 · 게임 30분
+    /home/user/project/app · /home/runner/work/app
+    100.64.0.2 · 100.64.0.3 · 192.168.1.100
 
 정상적인 문서 내용도 걸리면 안 된다:
 

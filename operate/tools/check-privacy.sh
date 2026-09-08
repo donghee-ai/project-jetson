@@ -23,7 +23,7 @@
 #
 # ## 언제 안 울리나 (저장소 규칙 §1)
 #
-# 다섯 규칙 전부 **예시값을 통과시키도록** 짜여 있다 — `[SSH: host]`,
+# 규칙 전부 **예시값을 통과시키도록** 짜여 있다 — `[SSH: host]`,
 # `op.gg/summoners/kr/example`, `m.example-forum.com`, `watch?v=%08d`.
 # 도입 시점에 현재 트리 적중 0건을 확인했다. 새로 걸리면 그건 진짜다.
 #
@@ -56,7 +56,22 @@ scan() {   # scan <파일목록파일> → 위반을 stdout 으로
   # ⑤ 모바일 사이트 주소 = 폰 열람 기록의 모양. 예시는 m.example-*
   xargs -a "$list" grep -nHP '\bm\.(?!example-)[a-z0-9-]+\.(com|net|kr|co\.kr)' 2>/dev/null \
     | sed 's/^/[폰 열람 기록] /'
-  # ⑥ 이 기기에만 있는 금지어 목록 (저장소에 안 들어간다)
+  # ⑥ 곡·영상 메타데이터. 공개 예시는 예시/Example 으로 시작한다.
+  xargs -a "$list" grep -niHP '"(artist|album)"\s*:\s*"(?!예시|example|unknown|없음|\.\.\.)[^"\r\n]{2,}"' 2>/dev/null \
+    | sed 's/^/[미디어 메타데이터] /'
+  # ⑦ 개인 행동을 실측/기준선이라고 밝히면서 수량까지 적은 줄.
+  xargs -a "$list" grep -niHP '((실측|실기기|운영 DB|기준선|하루치).{0,100}(유튜브|youtube|게임|수면|잠금해제|unlock|폰|노트북).{0,60}[0-9]+([.:][0-9]+)?(분|시간|초|건|%))|((유튜브|youtube|게임|수면|잠금해제|unlock|폰|노트북).{0,100}(실측|실기기|운영 DB|기준선|하루치).{0,60}[0-9]+([.:][0-9]+)?(분|시간|초|건|%))' 2>/dev/null \
+    | grep -viE '합성|예시|공개본|제거|첫 롤업' | sed 's/^/[개인 행동 집계] /'
+  # ⑧ 미디어·잠금해제와 실제 시각이 한 줄에 붙은 기록.
+  xargs -a "$list" grep -niHP '((유튜브|youtube|게임|수면|잠금해제|unlock).{0,80}[0-2]?[0-9]:[0-5][0-9])|([0-2]?[0-9]:[0-5][0-9].{0,80}(유튜브|youtube|게임|수면|잠금해제|unlock))' 2>/dev/null \
+    | grep -viE '합성|예시|T[0-9]' | sed 's/^/[개인 행동 시각] /'
+  # ⑨ 개인 홈 경로. 공개본은 /home/user 또는 일반적인 CI 계정만 쓴다.
+  xargs -a "$list" grep -nHP '(?<![A-Za-z0-9_$])/home/(?!user(?:/|[^A-Za-z0-9._-])|runner(?:/|[^A-Za-z0-9._-])|ubuntu(?:/|[^A-Za-z0-9._-])|nvidia(?:/|[^A-Za-z0-9._-])|<user>)[A-Za-z0-9._-]+' 2>/dev/null \
+    | sed 's/^/[개인 홈 경로] /'
+  # ⑩ 실제 환경에서 쓰던 주소 모양. 낮은 번호는 문서·테스트 예시로 허용한다.
+  xargs -a "$list" grep -nHP '\b100\.64\.0\.(?![0-5]\b)[0-9]{1,3}\b|\b192\.168\.0\.(?![01]\b)[0-9]{1,3}\b' 2>/dev/null \
+    | sed 's/^/[개인 네트워크 주소] /'
+  # ⑪ 이 기기에만 있는 금지어 목록 (저장소에 안 들어간다)
   if [ -s "$TERMS_FILE" ]; then
     grep -vE '^\s*(#|$)' "$TERMS_FILE" | while IFS= read -r term; do
       xargs -a "$list" grep -nFH -- "$term" 2>/dev/null | sed 's/^/[로컬 금지어] /'
@@ -71,7 +86,7 @@ if [ -n "$SELF_TEST" ]; then
 
   echo "$d/must-fail.md" > "$tmp"
   n=$(scan "$tmp" | wc -l)
-  if [ "$n" -ge 4 ]; then echo "  ✅ must-fail.md 를 잡는다 ($n건 · 규칙 4개 전부)"
+  if [ "$n" -ge 9 ]; then echo "  ✅ must-fail.md 를 잡는다 ($n건 · 개인정보 모양 9종)"
   else echo "  ❌ must-fail.md 에서 $n건만 잡았다 — 규칙이 헐거워졌다"; exit 1; fi
 
   echo "$d/must-pass.md" > "$tmp"

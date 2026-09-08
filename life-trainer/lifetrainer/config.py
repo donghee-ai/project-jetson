@@ -72,7 +72,7 @@ _DEFAULTS: dict[str, dict[str, Any]] = {
         "bot_token": "",
         "app_token": "",
         "default_channel": "",
-        "openclaw_config": "/home/user/.openclaw/openclaw.json",
+        "openclaw_config": str(Path.home() / ".openclaw" / "openclaw.json"),
     },
     "llm": {
         "base_url": "http://127.0.0.1:8080/v1",
