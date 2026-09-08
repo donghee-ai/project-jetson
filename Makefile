@@ -10,7 +10,7 @@ FIGURES   := measure/figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck lint check-fast check test hooks lock smoke smoke-live
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck lint check-privacy check-fast check test hooks lock smoke smoke-live
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -68,12 +68,21 @@ check-fast:  ## 링크 + 문서 지표 + shellcheck + 파이썬 린트 (즉시. 
 	@$(MAKE) --no-print-directory check-docs
 	@$(MAKE) --no-print-directory shellcheck
 	@$(MAKE) --no-print-directory lint
+	@$(MAKE) --no-print-directory check-privacy
 
 # ★ 셸은 shellcheck 이 보는데 **파이썬은 아무도 안 봤다** (2026-09-07 실사).
 #   규칙은 좁게 골랐다 — 근거는 life-trainer/pyproject.toml 의 [tool.ruff] 주석에.
 #   여기(로컬)에서 돌 수 있어야 한다는 규칙(§1-5) 때문에 ruff 는 dev 의존성이다.
 lint:  ## 파이썬 정적 검사 (버그에 가까운 규칙만)
 	@cd life-trainer && .venv/bin/ruff check lifetrainer tests
+
+# ★ 개인 열람·창 기록이 커밋되는 것을 막는다 (2026-09-08). 실제로 세 군데에서
+#   GitHub 까지 올라갔고, 이력을 다시 써서 지웠다 — 지운 것으로는 재발을 못 막는다.
+#   ★ 검사기 안에 막을 값을 적지 않는다. 값이 아니라 **모양**으로 잡는다
+#     (적으면 그 목록이 곧 개인정보이고 그게 올라간다). 자세한 건 스크립트 머리말.
+check-privacy:  ## 개인 열람·창 기록이 들어왔는지 (자기시험 포함)
+	@bash operate/tools/check-privacy.sh --self-test
+	@bash operate/tools/check-privacy.sh
 
 shellcheck:  ## 셸 스크립트 정적 검사
 	@# ★ 이 기기에는 apt shellcheck 이 없다. venv 의 shellcheck-py 를 쓴다.

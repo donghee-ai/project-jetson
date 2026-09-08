@@ -27,6 +27,18 @@ jobs:
       - name: 문서 참조가 전부 실재하는가
         run: bash operate/tools/check-links.sh
 
+  privacy:
+    name: 개인정보
+    # ★ 이 저장소는 개인 활동 기록을 다루므로, **기록 자체가 커밋되는 것**을 막는다.
+    #   검사기는 막을 값을 안 갖는다 — 모양으로 잡는다 (스크립트 머리말 참고).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: 검사기가 헐거워지지 않았는가 (fixture)
+        run: bash operate/tools/check-privacy.sh --self-test
+      - name: 개인 열람·창 기록이 들어왔는가
+        run: bash operate/tools/check-privacy.sh
+
   docs:
     name: 문서 지표
     runs-on: ubuntu-latest

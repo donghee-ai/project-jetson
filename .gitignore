@@ -107,3 +107,7 @@ core.*
 # 복구 묶음 — 토큰·키·개인 활동 기록이 들어 있다. 절대 커밋하지 않는다.
 recovery-bundle-*.tar.gz
 recovery-bundle-*.sha256
+
+# ★ 이 기기에만 두는 금지어 목록 (operate/tools/check-privacy.sh 가 읽는다).
+#   막을 낱말을 저장소에 적으면 **그 목록이 곧 개인정보**라 여기서 막는다.
+private-terms.local.txt
