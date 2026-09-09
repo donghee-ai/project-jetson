@@ -335,8 +335,8 @@ sudo loginctl enable-linger aisw
 코드로 대신할 수 없는 것들 (자세한 내용은
 [implementation-plan.md §4](docs/implementation-plan.md)).
 
-**이 기기에서는 1~4 가 이미 끝났다.** 아래는 새로 세울 때의 순서이고, 현재 남은
-것은 [HANDOFF §6](HANDOFF.md) 에 우선순위로 정리돼 있다.
+**이 기기에서는 1~6 가 이미 끝났다.** 아래는 새로 세울 때의 순서이고, 7은
+필요에 따라 적용하는 선택 사항이다.
 
 | # | 할 일 | 없으면 | 이 기기 |
 |---|---|---|---|
@@ -345,8 +345,8 @@ sudo loginctl enable-linger aisw
 | 3 | `loginctl enable-linger aisw` (sudo 필요) | 재부팅 후 타이머가 안 뜬다 | ✅ |
 | 4 | 전용 Slack 앱 생성 후 `mode="bolt"` 전환 | 슬래시 커맨드·DM 대화 없음. 발송(notify)은 그대로 됨 | ✅ 08-17 |
 | 5 | **Serper 키** (`[search]`) | 대화가 주소를 추측한다 | ✅ 08-21 (Slack 에서 답 확인은 남음) |
-| 6 | 실제 계획으로 교체 (테스트용 5건이 들어 있다) | 달성률이 의미 없다 | ❌ **남음** |
-| 7 | (선택) 헤드리스 전환(`sudo systemctl set-default multi-user.target`) | GUI 가 계속 ~0.5GB 를 먹는다 | ❌ |
+| 6 | 실제 계획으로 교체 | 달성률이 의미 없다 | ✅ **실사용 중** |
+| 7 | (선택) 헤드리스 전환(`sudo systemctl set-default multi-user.target`) | GUI 가 계속 ~0.5GB 를 먹는다 | **선택 사항** |
 
 ---
 
