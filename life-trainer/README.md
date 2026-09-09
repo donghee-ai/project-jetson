@@ -320,8 +320,8 @@ sudo loginctl enable-linger aisw
 - [x] **플래너 UI 리디자인** (08-19): 2/3 타임테이블 + 1/3 사이드바, 연속 활동 병합,
       데스크톱/모바일/다크 ([docs/design/README.md](docs/design/README.md))
 - [x] **Phase 4 — RAG**: [rag-plan.md](docs/rag-plan.md) 의 **1~4단계 완료**.
-      야간 요약·대화 우선권·검색 결과 요약·임베딩+하이브리드 검색이 동작한다.
-      본문 활용과 청킹은 범위에서 제외하고 여기서 완료로 닫았다
+      제목·초록·요약을 FTS5와 임베딩으로 검색해 LLM 답변의 근거로 제공하는
+      경량 RAG가 동작한다. 문서 본문 활용과 청킹은 범위에서 제외했다
 - [x] **폰 사용 기록 수집** ([android/](android/)): aw-android 포크 앱이 배포돼
       **5분마다 젯슨으로 전송 중**이다. 미디어·웹 페이지 제목 보강(F4·F5)은 남아 있다
 
