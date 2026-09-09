@@ -68,7 +68,7 @@ scan() {   # scan <파일목록파일> → 위반을 stdout 으로
   xargs -a "$list" grep -niHP '((유튜브|youtube|게임|수면|잠금해제|unlock).{0,80}[0-2]?[0-9]:[0-5][0-9])|([0-2]?[0-9]:[0-5][0-9].{0,80}(유튜브|youtube|게임|수면|잠금해제|unlock))' 2>/dev/null \
     | grep -viE '합성|예시|T[0-9]' | sed 's/^/[개인 행동 시각] /'
   # ⑨ 개인 홈 경로. 공개본은 /home/user 또는 일반적인 CI 계정만 쓴다.
-  xargs -a "$list" grep -nHP '(?<![A-Za-z0-9_$])/home/(?!user(?:/|[^A-Za-z0-9._-])|runner(?:/|[^A-Za-z0-9._-])|ubuntu(?:/|[^A-Za-z0-9._-])|nvidia(?:/|[^A-Za-z0-9._-])|<user>)[A-Za-z0-9._-]+' 2>/dev/null \
+  xargs -a "$list" grep -nHP '(?<![A-Za-z0-9_$])/home/(?!user(?:/|$|[^A-Za-z0-9._-])|runner(?:/|$|[^A-Za-z0-9._-])|ubuntu(?:/|$|[^A-Za-z0-9._-])|nvidia(?:/|$|[^A-Za-z0-9._-])|<user>)[A-Za-z0-9._-]+' 2>/dev/null \
     | sed 's/^/[개인 홈 경로] /'
   # ⑩ 실제 환경에서 쓰던 주소 모양. 낮은 번호는 문서·테스트 예시로 허용한다.
   xargs -a "$list" grep -nHP '\b100\.64\.0\.(?![0-5]\b)[0-9]{1,3}\b|\b192\.168\.0\.(?![01]\b)[0-9]{1,3}\b' 2>/dev/null \
