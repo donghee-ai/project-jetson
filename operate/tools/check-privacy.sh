@@ -34,6 +34,8 @@ cd "$(dirname "$0")/../.." || exit 1
 
 SELF_TEST=""
 [ "${1:-}" = "--self-test" ] && SELF_TEST=1
+HISTORY_MODE=""
+[ "${1:-}" = "--history" ] && HISTORY_MODE=1
 
 TERMS_FILE=operate/tools/private-terms.local.txt
 
@@ -71,7 +73,14 @@ scan() {   # scan <파일목록파일> → 위반을 stdout 으로
   # ⑩ 실제 환경에서 쓰던 주소 모양. 낮은 번호는 문서·테스트 예시로 허용한다.
   xargs -a "$list" grep -nHP '\b100\.64\.0\.(?![0-5]\b)[0-9]{1,3}\b|\b192\.168\.0\.(?![01]\b)[0-9]{1,3}\b' 2>/dev/null \
     | sed 's/^/[개인 네트워크 주소] /'
-  # ⑪ 이 기기에만 있는 금지어 목록 (저장소에 안 들어간다)
+  # ⑪ MAC 주소와 MAC 기반 인터페이스명. 예시는 wlan0 / wlxEXAMPLEMAC.
+  xargs -a "$list" grep -nHPi '\b([0-9a-f]{2}:){5}[0-9a-f]{2}\b|\bwlx(?!EXAMPLEMAC)[0-9a-f]{12}\b' 2>/dev/null \
+    | sed 's/^/[MAC 주소] /'
+  # ⑫ 공인 IPv4. 사설·루프백·CGNAT·링크로컬·문서용 대역은 통과시킨다.
+  #   테스트가 공인 주소 의미로 쓰는 두 값과 브라우저 버전도 명시적인 예시다.
+  xargs -a "$list" grep -nHP '(?<![\d.])(?<!Chrome/)(?<!Firefox/)(?<!Version/)(?<!Edg/)(?!8\.8\.8\.8\b|93\.184\.216\.(?:34|35)\b|10\.|127\.|192\.168\.|192\.0\.2\.|198\.51\.100\.|203\.0\.113\.|172\.(?:1[6-9]|2\d|3[01])\.|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|169\.254\.|0\.|22[4-9]\.|23\d\.|24\d\.|25[0-5]\.)(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}(?![\d.])' 2>/dev/null \
+    | sed 's/^/[공인 IP] /'
+  # ⑬ 이 기기에만 있는 금지어 목록 (저장소에 안 들어간다)
   if [ -s "$TERMS_FILE" ]; then
     grep -vE '^\s*(#|$)' "$TERMS_FILE" | while IFS= read -r term; do
       xargs -a "$list" grep -nFH -- "$term" 2>/dev/null | sed 's/^/[로컬 금지어] /'
@@ -86,7 +95,7 @@ if [ -n "$SELF_TEST" ]; then
 
   echo "$d/must-fail.md" > "$tmp"
   n=$(scan "$tmp" | wc -l)
-  if [ "$n" -ge 9 ]; then echo "  ✅ must-fail.md 를 잡는다 ($n건 · 개인정보 모양 9종)"
+  if [ "$n" -ge 11 ]; then echo "  ✅ must-fail.md 를 잡는다 ($n건 · 개인정보 모양 11종)"
   else echo "  ❌ must-fail.md 에서 $n건만 잡았다 — 규칙이 헐거워졌다"; exit 1; fi
 
   echo "$d/must-pass.md" > "$tmp"
@@ -96,12 +105,34 @@ if [ -n "$SELF_TEST" ]; then
   exit 0
 fi
 
-echo "▶ 개인 열람·창 기록 검사"
-list=$(mktemp); trap 'rm -f "$list"' EXIT
-# 남의 저장소를 복사해 둔 참고 자료는 뺀다 — 우리 기록이 아니다.
-git ls-files '*.md' '*.py' '*.js' '*.json' '*.yaml' '*.yml' '*.txt' '*.html' '*.sh' \
-  | grep -vE '^(life-trainer/docs/design/refs/|life-trainer/reference/|refs/reference/)' \
-  | grep -v '^operate/tools/fixtures/check-privacy/' > "$list"
+list=$(mktemp)
+if [ -n "$HISTORY_MODE" ]; then
+  echo "▶ 전체 Git 이력 개인정보 검사"
+  history_dir=$(mktemp -d)
+  trap 'rm -f "$list"; rm -rf "$history_dir"' EXIT
+  declare -A seen=()
+  while read -r oid path; do
+    [ -n "${path:-}" ] || continue
+    case "$path" in
+      life-trainer/docs/design/refs/*|life-trainer/reference/*|refs/reference/*|operate/tools/fixtures/check-privacy/*) continue ;;
+      *.md|*.py|*.js|*.mjs|*.json|*.yaml|*.yml|*.toml|*.txt|*.html|*.sh|*.ps1|*.service|*.conf) ;;
+      *) continue ;;
+    esac
+    [ -z "${seen[$oid]+x}" ] || continue
+    [ "$(git cat-file -t "$oid" 2>/dev/null)" = blob ] || continue
+    seen[$oid]=1
+    out="$history_dir/$oid.${path##*.}"
+    git cat-file blob "$oid" > "$out"
+    printf '%s\n' "$out" >> "$list"
+  done < <(git rev-list --objects --all)
+else
+  echo "▶ 현재 추적 파일 개인정보 검사"
+  trap 'rm -f "$list"' EXIT
+  # 남의 저장소를 복사해 둔 참고 자료는 뺀다 — 우리 기록이 아니다.
+  git ls-files '*.md' '*.py' '*.js' '*.mjs' '*.json' '*.yaml' '*.yml' '*.toml' '*.txt' '*.html' '*.sh' '*.ps1' '*.service' '*.conf' \
+    | grep -vE '^(life-trainer/docs/design/refs/|life-trainer/reference/|refs/reference/)' \
+    | grep -v '^operate/tools/fixtures/check-privacy/' > "$list"
+fi
 
 hits=$(scan "$list")
 count=$(printf '%s' "$hits" | grep -c . || true)

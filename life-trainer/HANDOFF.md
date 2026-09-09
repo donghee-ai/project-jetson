@@ -164,7 +164,7 @@ make status     # 기간 · 이벤트 · 문서 · 요약 · GPU 잡 · schema �
 - **계획은 2026-08-24 에 실제 일정으로 교체됐다** (템플릿 3개에서 펼친 인스턴스).
   달성률이 의미를 갖는다 (§6-③).
 - **폰이 08-22 에 합류했다** — `phone-example` 가 5분마다 민다. 슬롯이 기기별로 갈린다.
-  폰 앱은 [donghee-ai/lt-phone](https://github.com/donghee-ai/lt-phone).
+  폰 앱은 별도 비공개 저장소 `donghee-ai/lt-phone`에 있다.
 
 ### ~~★ 야간 배치 실패 203건~~ ✅ 2026-08-28 판정 완료
 
@@ -394,7 +394,7 @@ where llm_category is not null order by seconds_total desc limit 20').fetchall()
   붙었고 `phone-example` 가 5분마다 밀어 넣는다. 젯슨 수신부(`POST /ingest/aw` · `lt import` ·
   롤업 기기 차원과 중재)는 08-19 에 끝났다.
   경위·게이트 판정·빌드 절차는 [android/README.md](android/README.md).
-  앱은 별 저장소 [donghee-ai/lt-phone](https://github.com/donghee-ai/lt-phone) —
+  앱은 별도 비공개 저장소 `donghee-ai/lt-phone`에 있다 —
   **이 저장소에 앱 소스는 없다** (`android/` 는 설계·결정 기록이다).
   남은 것은 웹 페이지 제목(F4·F5) 뿐 → [android/docs/phone-titles.md](android/docs/phone-titles.md)
 - **Phase 4 RAG** — [rag-plan.md](docs/rag-plan.md) 의 **1~4단계 완료**

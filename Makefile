@@ -10,7 +10,7 @@ FIGURES   := measure/figures
 
 .DEFAULT_GOAL := help
 
-.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck lint check-privacy check-fast check test hooks lock smoke smoke-live
+.PHONY: help verify bench figures clean-figures status host-status recovery-bundle links check-docs shellcheck lint check-privacy check-privacy-history check-fast check test hooks lock smoke smoke-live
 
 help:  ## 이 목록
 	@echo "project-jetson"
@@ -83,6 +83,12 @@ lint:  ## 파이썬 정적 검사 (버그에 가까운 규칙만)
 check-privacy:  ## 개인 열람·창 기록이 들어왔는지 (자기시험 포함)
 	@bash operate/tools/check-privacy.sh --self-test
 	@bash operate/tools/check-privacy.sh
+
+# 전체 Git 이력은 공개나 이력 재작성 직전에만 본다. CI의 얕은 clone과 매 push에는
+# 맞지 않고, 현재 트리 검사보다 오래 걸리므로 check-fast에는 넣지 않는다.
+check-privacy-history:  ## 전체 Git 이력의 개인정보 모양 검사 (공개·force push 전)
+	@bash operate/tools/check-privacy.sh --self-test
+	@bash operate/tools/check-privacy.sh --history
 
 shellcheck:  ## 셸 스크립트 정적 검사
 	@# ★ 이 기기에는 apt shellcheck 이 없다. venv 의 shellcheck-py 를 쓴다.

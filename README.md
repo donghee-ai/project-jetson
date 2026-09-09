@@ -271,6 +271,8 @@ python3 -m venv .venv
 - 공개 문서에는 합성 데이터 또는 명시적으로 공개 승인된 화면만 사용한다.
 - 활동 기록은 로컬 SQLite에 저장한다.
 - 외부 검색에는 필요한 질의어만 보내며 전송 직전에 개인정보 패턴을 검사한다.
+  이 검사는 **자기 기록을 묻는 말**을 막는 것이고, 모델이 기록에서 뽑은 낱말을
+  검색어로 쓰는 경로까지 막지는 못한다 ([알려진 한계](life-trainer/docs/issues/0031-the-model-can-put-a-record-in-the-query.md)).
 - 공개 전 `make check-privacy`로 추적 파일과 문서를 다시 검사한다.
 - 이 검사는 알려진 패턴을 찾는 보조 수단이며, 공개 전 사람의 확인도 필요하다.
 
@@ -287,7 +289,7 @@ python3 -m venv .venv
 | 모델·성능 실측 | [Measure](measure/) |
 | Jetson 상시 운영 | [Operate](operate/) |
 | 깨진 가정과 재발 방지 | [HISTORY](life-trainer/HISTORY/) |
-| Android 수집 앱 | [LT Phone](https://github.com/donghee-ai/lt-phone) |
+| Android 수집 앱 | 별도 비공개 저장소 `donghee-ai/lt-phone` |
 
 ---
 

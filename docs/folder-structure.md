@@ -155,7 +155,7 @@ life-trainer/android/     문서 6개뿐 (README · fork-build · phone-titles �
 .apk · .aar · gradle      트리에 없음
 ```
 
-앱 소스는 별 저장소 **[`donghee-ai/lt-phone`](https://github.com/donghee-ai/lt-phone)** 에 있다.
+앱 소스는 별도 비공개 저장소 **`donghee-ai/lt-phone`**에 있다.
 `android/` 는 **젯슨 쪽 수신 설계와 포크 결정 기록**이고, 앱 자체가 아니다.
 목표 구조에서도 `life-trainer/android/` 로 그대로 둔다 — 옮길 이유가 없다.
 

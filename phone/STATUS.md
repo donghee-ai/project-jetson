@@ -41,7 +41,7 @@
 | 터널 | `cloudflared-lt.service` · **`/ingest/` 경로만 공개** |
 | 워처 | 앱세션 · afk · media(알림접근) · web(접근성) — 폰에서 5종 다 돌고 **5종 다 젯슨까지 온다** |
 | 폰 aw-server | `127.0.0.1:5600` 루프백. 젯슨이 직접 못 닿는다 |
-| 폰 저장소 | [`donghee-ai/lt-phone`](https://github.com/donghee-ai/lt-phone) 브랜치 `lifetrainer` · HEAD `6848888` |
+| 폰 저장소 | 별도 비공개 저장소 `donghee-ai/lt-phone` · 브랜치 `lifetrainer` · HEAD `6848888` |
 | 젯슨 저장소 | `main` · 내 커밋 `1006ff0` · 09-05 13:5x 에 origin 까지 `cc51f58` 로 **push 됨** |
 | 젯슨 접속 | `ssh user` → `~/project/project-jetson/life-trainer` (`sqlite3` CLI 는 없다 — `.venv/bin/python` 을 쓴다) |
 | `lt doctor` | 09-04 20:15 기준 **OK 20 / WARN 0 / FAIL 0** |

@@ -71,7 +71,12 @@ p-0004-….md
 
   날짜 파일명으로는 이게 안 된다. **부를 수 없는 이름은 이름이 아니다.**
 - 발견일은 **파일 안**에 적는다 (`- **발견일**:`). 파일명이 들고 있을 이유가 없다
-- 다음 번호: `ls | grep -oE '[0-9]{4}' | sort -n | tail -1` 의 +1
+- 다음 번호: **아래 색인의 마지막 번호 +1.** 고친 이슈는 파일을 지우므로 `ls` 로
+  세면 닫힌 번호를 다시 쓸 수 있다.
+
+  ```bash
+  grep -oE '`0[0-9]{3}`' README.md | grep -oE '[0-9]{4}' | sort -n | tail -1
+  ```
 - 상태가 바뀌면 **접두어만 갈아끼운다** (`git mv`). 번호·슬러그는 절대 안 바꾼다
 - **고치면 파일을 지운다.** git 이 갖고 있고, 닫는 커밋이 `issues/0001` 로 부른다.
   `HISTORY/` 로 **옮기지 않는다** — 아래를 볼 것
@@ -122,6 +127,27 @@ p-0004-….md
 | ~~`0030`~~ | 2026-09-07 | **Python 3.10 이 2026-10 에 지원 종료** — 기한이 있는 유일한 항목 | **해결 (2026-09-07)** — 3.14.6 으로 올렸다. 절차와 **되돌리는 법**은 [runbook](../runbook-python-upgrade.md) |
 | [`0029`](w-0029-two-slots-moved-when-duplicate-rows-were-removed.md) | 2026-09-07 | 중복 행을 지웠더니 칸 2개가 바뀌었다 (하나는 **틀린 쪽으로**) | **`w` (2026-09-07 판정)** — "잘 작동한다"로 종결. `w-0014` 와 같은 함수를 팔 때 재료로 쓴다 |
 | [`0028`](w-0028-the-media-bucket-is-split-by-name-not-type.md) | 2026-09-04 | 미디어 버킷을 **이름**으로 가른다 (`-media` 접미사) | 타입으로 가르는 것이 더 강하다 — **재 보니 타입 분기가 기기 종류를 틀어뜨린다** |
+| [`0031`](0031-the-model-can-put-a-record-in-the-query.md) | 2026-09-08 | **모델이 기록에서 뽑은 낱말을 검색어에 넣을 수 있다** | 게이트가 개인정보를 판정한다 — **판정하는 것은 자기지칭 어형이고, 기록에서 온 문자열에는 그게 없다** |
+
+## 옛 번호 대응표
+
+`0001` 같은 옛 번호는 2026-08-27 분할 전 `known-issues.md`의 번호다.
+당시 기록은 그 번호를 그대로 두고, 이 표에서 현재 문서로 연결한다.
+
+| 옛 번호 | 지금 어디 |
+|---|---|
+| `0001` 검색어가 게이트를 우회 | [HISTORY](../../HISTORY/2026-08-27-the-gate-judged-one-string-and-sent-another.md) |
+| `0002` 나간 것이 흔적을 안 남김 | [HISTORY](../../HISTORY/2026-08-27-what-went-out-left-no-trace-of-its-own.md) |
+| `0003` 스위트가 이 기기에서만 초록 | [HISTORY](../../HISTORY/2026-08-27-the-suite-was-green-on-this-machine-only.md) |
+| `0004` 템플릿이 코드에 뒤처짐 | [HISTORY](../../HISTORY/2026-09-03-the-template-kept-falling-behind-the-code.md) |
+| `0011` 세션 누적 | 해결 2026-09-07 · `operate/systemd/agent-session-prune.timer` |
+| `0016` 내려갈 수 없는 비율 | [HISTORY](../../HISTORY/2026-08-28-a-ratio-that-could-not-fall.md) |
+| `0017` 팔레트 경로가 CWD 기준 | 해결 2026-09-07 · 재발 방지는 `tests/test_palette.py` |
+| `0020` 92°C 라벨·없는 40W 모드 | [HISTORY](../../HISTORY/2026-09-03-our-alarm-value-was-wearing-the-chips-clothes.md) |
+| `0026` 건너뛰기 버튼 | [HISTORY](../../HISTORY/2026-09-07-the-button-that-only-worked-on-days-nobody-had-opened.md) |
+| `0027` 되돌아가는 시계 | [HISTORY](../../HISTORY/2026-09-07-a-clock-that-drifted-backwards-made-one-event-into-many.md) |
+
+> 살아 있는 번호는 각 이슈 파일이 스스로 선언하므로 이 표에 중복하지 않는다.
 
 ## `HISTORY/` 와의 관계 — 생애주기가 아니라 다른 물건이다
 

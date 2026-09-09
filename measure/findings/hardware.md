@@ -400,7 +400,7 @@ $ dkms status
 mt7601u/5.15.185, 5.15.185-tegra, aarch64: installed
 
 $ nmcli device
-wlxEXAMPLEMAC : wifi : connected      ← 이 어댑터가 그 드라이버로 돈다
+wlan0 : wifi : connected                ← 이 어댑터가 그 드라이버로 돈다
 ```
 
 USB WiFi 어댑터(MediaTek MT7601U)가 **DKMS 외부 모듈**로 현재 커널에 묶여 있었고,

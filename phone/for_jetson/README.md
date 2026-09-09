@@ -13,7 +13,7 @@
 | `0027` | 웹 페이지 제목이 슬롯까지 안 온다 | 젯슨 [`b378c27`](https://github.com/donghee-ai/project-jetson/commit/b378c27) — 브라우저 슬롯의 `top_title` 을 페이지 제목으로 (표시용) |
 | `h-0028` | `bucket_type()` 에 `media` 분기 없음 | **취소.** 고치면 폰이 laptop 으로 등록될 수 있고, 그 부재를 지키는 테스트가 이미 둘 있었다 → 젯슨 `docs/issues/w-0028` 로 내렸다 ([`bc02b11`](https://github.com/donghee-ai/project-jetson/commit/bc02b11)) |
 | `0029` | 워처가 죽어도 아무도 모른다 | 젯슨 [`90a2481`](https://github.com/donghee-ai/project-jetson/commit/90a2481) — `lt doctor` 에 "워처 침묵" |
-| `0030` | 업데이트가 워처 권한을 조용히 떨군다 | 폰 [`652b6f8`](https://github.com/donghee-ai/lt-phone/commit/652b6f8) — 앱이 스스로 알아채 상시 알림 문구로 말한다 |
+| `0030` | 업데이트가 워처 권한을 조용히 떨군다 | 비공개 폰 저장소 커밋 `652b6f8` — 앱이 스스로 알아채 상시 알림 문구로 말한다 |
 | `0031` | 프라이빗 토글이 모르는 본문을 켜기로 읽는다 | 젯슨 [`3fc9755`](https://github.com/donghee-ai/project-jetson/commit/3fc9755) |
 | *(없던 것)* | **폰 브라우징 URL 이 슬롯에 하나도 안 붙는다** | 젯슨 [`c2e7495`](https://github.com/donghee-ai/project-jetson/commit/c2e7495) — `browser_apps` 가 데스크톱 전용이었다 |
 
@@ -30,7 +30,7 @@
 ## 새로 적어 둔 것 (09-04)
 
 - ~~**상시 알림이 프라이빗을 모른다**~~ ✅ **고쳤다** — 폰
-  [`6848888`](https://github.com/donghee-ai/lt-phone/commit/6848888). 프라이빗 중에는
+  비공개 폰 저장소 커밋 `6848888`. 프라이빗 중에는
   `프라이빗 — N분 남음 (기록 안 함)`, 아니면 기존 문구. **프라이빗이 워처 침묵 경고보다
   위**다 — 프라이빗 중엔 워처가 멈춘 것이 정상이라 침묵 경고가 뜨면 헛경보다.
 - **프라이빗이 전역이라는 것이 문서에 없다** — `private-mode.md` 에 한 줄 필요하다.

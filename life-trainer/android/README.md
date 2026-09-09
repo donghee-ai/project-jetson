@@ -1,7 +1,7 @@
 # android/ — 폰 사용 기록 수집
 
 **상태: 가동 중.** 포크가 2026-08-22 에 붙었고 폰이 5분마다 밀어 넣는다.
-**앱 코드는 이 폴더가 아니라 별 저장소** [`donghee-ai/lt-phone`](https://github.com/donghee-ai/lt-phone)
+**앱 코드는 이 폴더가 아니라 별도 비공개 저장소** `donghee-ai/lt-phone`
 에 있다 — 여기 있는 것은 설계·조사·운영 문서다.
 
 ### 수집 상태

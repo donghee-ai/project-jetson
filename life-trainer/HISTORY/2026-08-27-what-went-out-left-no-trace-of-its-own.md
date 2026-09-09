@@ -2,7 +2,7 @@
 
 원래 이슈: `docs/issues/0002`
 
-- **발견**: [`0001`](../docs/issues/0001-search-query-bypasses-the-gate.md) 의 유출을
+- **발견**: [`0001`](../docs/issues/README.md#옛-번호-대응표) 의 유출을
   파다가. 유출 30여 건이 **우리 로그에 한 줄도 없었다.** Serper 대시보드로만 보였다.
 
 - **증상**: 나간 것을 우리가 모른다.

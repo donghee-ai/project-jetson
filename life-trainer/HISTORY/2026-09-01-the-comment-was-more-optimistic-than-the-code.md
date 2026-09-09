@@ -49,7 +49,7 @@ failed             204건, 2026-08-20 부터 그대로
 붙이려고 테스트를 쓰다가 **더 큰 것이 나왔다** — 건너뛰기 자체가 동작하지 않는다.
 `plan_skip` 은 전개(materialize) 후보 쿼리에서만 쓰이는데, 사람이 보고 있는 날은
 **이미 전개된 뒤**다. 버튼은 200 을 돌려주고 아무 일도 안 한다
-([issues/0026](../docs/issues/0026-the-skip-button-reports-success-and-does-nothing.md)).
+([issues/0026](../docs/issues/README.md#옛-번호-대응표)).
 
 > 안 불리는 함수를 쫓다가 **불리는 함수의 버그**가 나왔다.
 > 죽은 코드는 그 자체보다, 그 옆이 왜 그런지를 알려준다.

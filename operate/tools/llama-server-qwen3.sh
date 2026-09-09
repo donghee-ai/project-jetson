@@ -10,9 +10,9 @@ BIN="${LLAMA_BIN:-$HOME/llama.cpp/build/bin/llama-server}"
 MODEL="${LLAMA_MODEL:-$HOME/models/Qwen3-8B-Q4_K_M.gguf}"
 PORT="${LLAMA_PORT:-8080}"
 
-# 컨텍스트 40960 = Qwen3-8B 의 학습 컨텍스트(n_ctx_train) 상한.
-# 그 이상을 주면 llama.cpp 가 경고와 함께 40960 으로 잘라낸다.
-CTX="${LLAMA_CTX:-40960}"
+# 운영 기본값은 실측에 맞춘 20480. Qwen3-8B 학습 상한 40960 이 필요하면
+# LLAMA_CTX 로 명시한다 (systemd drop-in 도 같은 운영 기본값을 고정한다).
+CTX="${LLAMA_CTX:-20480}"
 
 exec "$BIN" \
   -m "$MODEL" \
