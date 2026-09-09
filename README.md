@@ -6,7 +6,7 @@
 사양표만 보고 모델을 올리지 않았다. 실제 보드에서 메모리·전력·컨텍스트 깊이·툴 콜링을
 측정해 운영 구성을 정했고, 그 위에 [Life Trainer](life-trainer/)를 만들어 실사용하고 있다.
 
-![Jetson에서 실행 중인 Life Trainer 로컬 에이전트와의 Slack 대화](docs/images/jetson-running-4x.gif)
+![Jetson에서 실행 중인 Life Trainer 로컬 에이전트와의 Slack 대화](docs/images/jetson-running-4x-color.gif)
 
 > **로컬 에이전트 대화 데모 (4× speed)** — Jetson의 Qwen3-8B가 도구로 실제 활동과
 > 계획을 조회해 답한다. 재생 속도는 원본의 4배다.
