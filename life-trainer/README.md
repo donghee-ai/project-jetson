@@ -50,7 +50,7 @@ LLM 은 이미 계산된 숫자를 문장으로 바꾸는 역할만 한다. 결�
 | [docs/research/activitywatch.md](docs/research/activitywatch.md) | AW API 조사 — **겹침 사고의 출처** |
 | [docs/measure/findings/slack.md](docs/research/slack.md) | Slack Bolt·Block Kit 조사 |
 | [docs/design/README.md](docs/design/README.md) | 플래너 UI 개편 — 시안 3종, HTML→PNG 실측, 최종 결정 |
-| [android/README.md](android/README.md) | 폰 사용 기록 수집 — **동작 중** (2026-08-22). 앱 소스는 별도 비공개 저장소 `donghee-ai/lt-phone` |
+| [android/README.md](android/README.md) | 폰 사용 기록 수집 — **동작 중** (2026-08-22). 앱 소스는 공개 저장소 [donghee-ai/LT-Phone](https://github.com/donghee-ai/LT-Phone) |
 
 ### 실행 지시서 (다른 세션에 그대로 넘길 수 있게 쓴 것)
 

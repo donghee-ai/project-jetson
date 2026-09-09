@@ -136,8 +136,7 @@ erDiagram
 `slot`, `plan_instance`, `slot_override`는 같은 하루를 설명하지만 의도적으로 하나의 사실처럼
 합치지 않는다. **측정된 사실, 사람의 의도, 사람의 정정은 서로 다른 데이터다.**
 
-→ [계층별 전체 ERD와 설계 근거](life-trainer/docs/architecture.md#1-erd) ·
-[실제 스키마](life-trainer/lifetrainer/schema.sql)
+→ [실제 스키마](life-trainer/lifetrainer/schema.sql)
 
 ---
 
@@ -289,7 +288,7 @@ python3 -m venv .venv
 | 모델·성능 실측 | [Measure](measure/) |
 | Jetson 상시 운영 | [Operate](operate/) |
 | 깨진 가정과 재발 방지 | [HISTORY](life-trainer/HISTORY/) |
-| Android 수집 앱 | 별도 비공개 저장소 `donghee-ai/lt-phone` |
+| Android 수집 앱 | [LT Phone](https://github.com/donghee-ai/LT-Phone) |
 
 ---
 

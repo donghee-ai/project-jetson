@@ -455,7 +455,7 @@ life-trainer/
 ├── config/         palette.yaml(색 단일 원본) · rules.yaml(분류 규칙 — 수는 `make status`) · sources.yaml(피드 34)
 ├── docs/           handbook · issues/ · progress/ · 이 문서
 ├── HISTORY/        버그 1건 = 파일 1개 (색인은 그 폴더의 README)
-├── android/        폰 수집 설계 (앱은 별 저장소 donghee-ai/lt-phone)
+├── android/        폰 수집 설계 (앱은 별 저장소 donghee-ai/LT-Phone)
 └── data/           DB · PNG · 세션 비밀 (gitignore)
 ```
 

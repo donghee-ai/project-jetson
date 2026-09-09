@@ -12,7 +12,7 @@
 
 | | 폰 | 노트북 |
 |---|---|---|
-| 수집기 | **우리가 만든 앱** (aw-android 포크, `donghee-ai/lt-phone`) | **순정 ActivityWatch** 를 그대로 붙였다 |
+| 수집기 | **우리가 만든 앱** ([LT Phone](https://github.com/donghee-ai/LT-Phone), aw-android 포크) | **순정 ActivityWatch** 를 그대로 붙였다 |
 | 프라이빗을 넣는 법 | 앱 안에 타일·커서 건너뛰기를 **넣으면 된다** | 바깥에서 프로세스를 죽였다 살려야 한다 |
 
 **폰은 고칠 수 있는 물건이고 PC 는 아니다.** 순정 프로그램을 밖에서 조종하는 스크립트는
