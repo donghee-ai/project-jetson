@@ -48,7 +48,7 @@ LLM 은 이미 계산된 숫자를 문장으로 바꾸는 역할만 한다. 결�
 | 문서 | 내용 |
 |---|---|
 | [docs/research/activitywatch.md](docs/research/activitywatch.md) | AW API 조사 — **겹침 사고의 출처** |
-| [docs/measure/findings/slack.md](docs/research/slack.md) | Slack Bolt·Block Kit 조사 |
+| [docs/research/slack.md](docs/research/slack.md) | Slack Bolt·Block Kit 조사 |
 | [docs/design/README.md](docs/design/README.md) | 플래너 UI 개편 — 시안 3종, HTML→PNG 실측, 최종 결정 |
 | [android/README.md](android/README.md) | 폰 사용 기록 수집 — **동작 중** (2026-08-22). 앱 소스는 공개 저장소 [donghee-ai/LT-Phone](https://github.com/donghee-ai/LT-Phone) |
 
@@ -67,7 +67,7 @@ LLM 은 이미 계산된 숫자를 문장으로 바꾸는 역할만 한다. 결�
 
 ```
 ActivityWatch(Windows, Tailscale)   RSS/arXiv        수동 입력(/log)   폰(POST /ingest/aw)
-        │ aw_sync.py                   │ feeds/arxiv      │                │ 미착수
+        │ aw_sync.py                   │ feeds/arxiv      │                │ 5분 주기 HMAC 전송
         ▼                              ▼                  ▼                ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
 │                    SQLite (WAL·FTS5) — data/lifetrainer.db                │
@@ -325,7 +325,7 @@ sudo loginctl enable-linger aisw
 - [x] **폰 사용 기록 수집** ([android/](android/)): aw-android 포크 앱이 배포돼
       **5분마다 젯슨으로 전송 중**이다. 미디어·웹 페이지 제목 보강(F4·F5)은 남아 있다
 
-모듈은 전부 구현·테스트 완료 상태다. 실데이터는 2026-08-17 부터 쌓이고 있다
+핵심 모듈은 구현·테스트 완료 상태다. 실데이터는 2026-08-17 부터 쌓이고 있다
 (현황은 `make status`).
 
 ---
