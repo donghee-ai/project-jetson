@@ -230,13 +230,13 @@ backlog · 만료된 lease ([HISTORY](HISTORY/2026-08-28-a-ratio-that-could-not-
 
 `⚡️ Bolt app is running!` 확인. DM 대화 핸들러(`message.im`·`app_mention`)도 함께 붙였다.
 
-### ~~★ 지금 해야 할 것 ① — Serper 키 넣기~~ ✅ **08-21 넣었다** (남은 것은 확인)
+### ~~★ 지금 해야 할 것 ① — Serper 키 넣기~~ ✅ **08-21 완료**
 
-**Serper 키를 넣었고 `lt doctor` 가 OK 10 / WARN 0 이다.** 검색 계층은 정답을
-물어온다(실측). 다만 그날 실제로 물어보니 **트리거가 안 걸려 검색이 죽는 표현**이
+**Serper 키를 넣었고 `lt doctor` 가 OK 10 / WARN 0 이다.** 검색 계층과 Slack 실제
+질의에서 정상 동작을 확인했다. 초기 실측에서는 **트리거가 안 걸려 검색이 죽는 표현**이
 드러나 패턴을 넓혔다 — 경위는 [progress/2026-08-21](docs/progress/2026-08-21.md).
-**Slack 에서 한 번 더 물어 답이 맞는지 보는 것**이 남았다
-([issues/0006](docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md) — 단일 출처 앵커링).
+단일 출처만 인용하는 경향은 별도의 알려진 한계다
+([issues/0006](docs/issues/h-0006-the-model-cites-one-source-and-stays-there.md)).
 
 > ★ **네이버는 안 쓴다 — 경로를 08-25 에 코드에서 지웠다.** 검색 API 가 NAVER API HUB
 > 로 이관되고 개발자센터 신규 신청이 2026-07-31 에 닫혔다. `naver_client_id` 를 채우면
@@ -250,7 +250,7 @@ backlog · 만료된 lease ([HISTORY](HISTORY/2026-08-28-a-ratio-that-could-not-
 serper_api_key = "..."
 ```
 
-**확인 방법**: Slack DM 에서 `롤체는 무슨게임이야?` · `게임 tft는?` 을 물어본다.
+**재확인 방법**: Slack DM 에서 `롤체는 무슨게임이야?` · `게임 tft는?` 을 물어본다.
 Teamfight Tactics/롤토체스가 출처 URL 과 함께 나와야 한다. 로그에
 `트리거 ['web']` 이 찍히는지 같이 본다 — 안 찍히면 또 패턴 누락이다.
 

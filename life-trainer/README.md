@@ -344,7 +344,7 @@ sudo loginctl enable-linger aisw
 | 2 | `config/lifetrainer.toml` 의 `[slack].default_channel` 지정 | 리포트를 어디로 보낼지 모른다 | ✅ |
 | 3 | `loginctl enable-linger aisw` (sudo 필요) | 재부팅 후 타이머가 안 뜬다 | ✅ |
 | 4 | 전용 Slack 앱 생성 후 `mode="bolt"` 전환 | 슬래시 커맨드·DM 대화 없음. 발송(notify)은 그대로 됨 | ✅ 08-17 |
-| 5 | **Serper 키** (`[search]`) | 대화가 주소를 추측한다 | ✅ 08-21 (Slack 에서 답 확인은 남음) |
+| 5 | **Serper 키** (`[search]`) | 대화가 주소를 추측한다 | ✅ 08-21 |
 | 6 | 실제 계획으로 교체 | 달성률이 의미 없다 | ✅ **실사용 중** |
 | 7 | (선택) 헤드리스 전환(`sudo systemctl set-default multi-user.target`) | GUI 가 계속 ~0.5GB 를 먹는다 | **선택 사항** |
 
