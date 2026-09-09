@@ -6,10 +6,11 @@
 사양표만 보고 모델을 올리지 않았다. 실제 보드에서 메모리·전력·컨텍스트 깊이·툴 콜링을
 측정해 운영 구성을 정했고, 그 위에 [Life Trainer](life-trainer/)를 만들어 실사용하고 있다.
 
-![Life Trainer의 10분 단위 타임테이블과 기기별 활동 기록 예시](life-trainer/docs/images/life-trainer-example.png)
+![Jetson에서 실행 중인 Life Trainer 로컬 에이전트와의 Slack 대화](docs/images/jetson-running-4x.gif)
 
-> **Life Trainer 예시 화면** — 계획, 노트북·폰 활동, 10분 단위 타임테이블을 한 화면에 모은다.
-> 화면에 보이는 기록은 공개용으로 승인된 예시다.
+> **로컬 에이전트 대화 데모 (4× speed)** — Jetson의 Qwen3-8B가 도구로 실제 활동과
+> 계획을 조회해 답한다. 재생 속도는 원본의 4배다.
+> [원본 영상 보기 (MP4, 4분 41초)](docs/images/jetson-running.mp4)
 
 ---
 
@@ -24,6 +25,11 @@
 
 핵심은 네 부분을 따로 만든 것이 아니라, **측정 → 선택 → 구현 → 운영**을 한 시스템으로
 연결했다는 데 있다.
+
+![Life Trainer의 10분 단위 타임테이블과 기기별 활동 기록 예시](life-trainer/docs/images/life-trainer-example.png)
+
+> **Life Trainer 예시 화면** — 계획, 노트북·폰 활동, 10분 단위 타임테이블을 한 화면에 모은다.
+> 화면에 보이는 기록은 공개용으로 승인된 예시다.
 
 ---
 
