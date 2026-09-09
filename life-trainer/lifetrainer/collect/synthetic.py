@@ -142,7 +142,13 @@ def _pick_site(rng: random.Random, pool: list[tuple[str, str, str]]) -> tuple[st
     """사이트 풀에서 하나 골라 (title, url) 을 만든다."""
     _domain, title, url_pattern = rng.choice(pool)
     if "%d" in url_pattern or "%05d" in url_pattern:
-        url = url_pattern % rng.randint(1, 99999)
+        # ★ 제목에도 같은 번호를 넣는다. 예전에는 URL 만 치환해서 제목이
+        #   `[2508.%05d] …` 그대로 화면에 나갔다 (README 히어로에서 드러났다).
+        #   같은 번호를 써야 제목의 논문 id 와 URL 이 서로 맞는다.
+        number = rng.randint(1, 99999)
+        url = url_pattern % number
+        if "%05d" in title or "%d" in title:
+            title = title % number
     else:
         url = url_pattern
     return title, url
