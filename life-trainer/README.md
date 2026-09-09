@@ -101,7 +101,7 @@ ActivityWatch(Windows, Tailscale)   RSS/arXiv        수동 입력(/log)   폰(P
 
 ---
 
-## 빠른 시작 — 합성 데이터로 5분 안에 결과 보기
+## 빠른 시작 — 샘플 활동 데이터로 5분 만에 결과 확인하기
 
 ActivityWatch 없이도 파이프라인 전체(수집 → 롤업 → 통계 → PNG → 리포트)를 검증할 수 있다.
 
@@ -319,10 +319,11 @@ sudo loginctl enable-linger aisw
       `lt import`, 롤업 기기 차원 — **마지막 상호작용이 그 시간을 소유한다**
 - [x] **플래너 UI 리디자인** (08-19): 2/3 타임테이블 + 1/3 사이드바, 연속 활동 병합,
       데스크톱/모바일/다크 ([docs/design/README.md](docs/design/README.md))
-- [ ] **Phase 4 — RAG**: [rag-plan.md](docs/rag-plan.md) 의 **1·3단계 완료**.
-      다음은 2단계(`search_docs` 결과에 요약 첫 문장 싣기). 임베딩은 FTS5 대비 이득을
-      재기 전에는 시작하지 않는다
-- [ ] **폰 쪽** ([android/](android/)): 젯슨 수신부는 끝났고 **앱이 아직 없다**
+- [x] **Phase 4 — RAG**: [rag-plan.md](docs/rag-plan.md) 의 **1~4단계 완료**.
+      야간 요약·대화 우선권·검색 결과 요약·임베딩+하이브리드 검색이 동작한다.
+      본문 활용과 청킹은 범위에서 제외하고 여기서 완료로 닫았다
+- [x] **폰 사용 기록 수집** ([android/](android/)): aw-android 포크 앱이 배포돼
+      **5분마다 젯슨으로 전송 중**이다. 미디어·웹 페이지 제목 보강(F4·F5)은 남아 있다
 
 모듈은 전부 구현·테스트 완료 상태다. 실데이터는 2026-08-17 부터 쌓이고 있다
 (현황은 `make status`).

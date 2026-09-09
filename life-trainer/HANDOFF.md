@@ -380,9 +380,6 @@ where llm_category is not null order by seconds_total desc limit 20').fetchall()
 
 ### C. 그 외 대기 중
 
-- **본문 저장이 0건이다** — RAG 청킹([rag-plan](docs/rag-plan.md) 5단계)의 **재료가 없다.**
-  `doc.body_path` 가 비어 있어 지금 색인은 제목·초록만 본다. 청킹을 시작하려면
-  본문 수집이 먼저다 (2026-08-23 부터 대기)
 - **Cloudflare Access** — 지금 터널의 문지기는 **앱의 서명 링크 세션 하나뿐**이다.
   `/ingest/` 만 공개하고 있어 당장은 좁지만, 플래너를 열기로 하면 그 앞에 한 겹이 필요하다
   (2026-08-23 부터 대기)
@@ -397,9 +394,9 @@ where llm_category is not null order by seconds_total desc limit 20').fetchall()
   앱은 공개 저장소 [`donghee-ai/LT-Phone`](https://github.com/donghee-ai/LT-Phone)에 있다 —
   **이 저장소에 앱 소스는 없다** (`android/` 는 설계·결정 기록이다).
   남은 것은 웹 페이지 제목(F4·F5) 뿐 → [android/docs/phone-titles.md](android/docs/phone-titles.md)
-- **Phase 4 RAG** — [rag-plan.md](docs/rag-plan.md) 의 **1~4단계 완료**
+- ~~**Phase 4 RAG**~~ ✅ — [rag-plan.md](docs/rag-plan.md) 의 **1~4단계 완료**
   (야간 배치 08-19 · 대화 우선권 08-19 · 요약 싣기 08-23 · 임베딩+하이브리드 08-23).
-  5단계(청킹)는 `doc.body_path` 가 전부 NULL 이라 재료가 없다.
+  본문 활용과 5단계(청킹)는 2026-09-09 에 범위에서 제외하고 Phase 4를 닫았다.
   선결 과제였던 **ctx 회수는 08-23 에 완료** (40960 → 20480, 가용 4.5GB,
   OpenClaw `contextWindow` 동시 조정).
   진입 조건이던 20질의 비교는 **08-23 저녁에 갚았다** (`scripts/eval_search.py`).
