@@ -140,8 +140,7 @@ project-jetson/
 ```
 refs/reference/                        타 프로젝트 클론 (URL+커밋만, 실물은 ~/reference/)
 life-trainer/refs/reference/           harugyeol·slackbot 흡수 (README 만 추적)
-life-trainer/docs/refs/reference/      planner_example.png 하나  ← 폴더일 이유가 없다
-life-trainer/docs/design/refs/    타사 제품 캡처 23개
+life-trainer/docs/design/refs/    타사 제품 조사 README (캡처 23개는 2026-10-10 삭제)
 ```
 
 → 소문자로 통일하고, 파일 하나짜리 폴더는 없앤다.

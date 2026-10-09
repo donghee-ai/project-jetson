@@ -4,6 +4,9 @@
 > 각 항목에 **출처 링크**와 **오픈소스 여부·라이선스**를 붙였다. 확인 못 한 건
 > "확인 불가"로 적었지 추측으로 채우지 않았다.
 >
+> 2026-10-10. 타사 저작물 재배포를 피하려고 캡처 이미지는 저장소에서 지웠다.
+> 출처 링크와 캡처 일자(2026-08-19)만 남긴다.
+>
 > 이건 조사 기록이지 결정이 아니다. 시안 선택은 [../../README.md](../../README.md) 에서 한다.
 
 ---
@@ -15,7 +18,7 @@
 > **10MINUTES PLANNER®** / Manufactured by motemote in South Korea / ©motemote. All rights reserved.
 > **\*텐미닛 플래너/10분 플래너는 모트모트의 고유 상표 자산입니다.**
 
-![모트모트 상품 페이지](shots/10-motemote-product.png)
+> (캡처 삭제: 모트모트 상품 페이지 — 원본은 출처 링크에서 본다)
 
 출처: <https://motemote.kr/product/116299997>
 
@@ -69,15 +72,15 @@
 
 **내지 구성** — 하루 지면은 `TASKS` + `TIMETABLE` 두 칼럼이다:
 
-![내지 구성](shots/11-motemote-inner-pages.png)
+> (캡처 삭제: 내지 구성 — 원본은 출처 링크에서 본다)
 
 **데일리 스프레드 (좌: 빈 양식 / 우: 실제 사용 예)**
 
-![데일리 스프레드](shots/12-motemote-daily-spread.png)
+> (캡처 삭제: 데일리 스프레드 — 원본은 출처 링크에서 본다)
 
 **타임테이블 칼럼 확대 — 여기가 핵심이다**
 
-![타임테이블 확대](shots/13-motemote-timetable-zoom.png)
+> (캡처 삭제: 타임테이블 확대 — 원본은 출처 링크에서 본다)
 
 읽어낸 구조:
 
@@ -99,7 +102,7 @@
 
 - 출처: <https://motemote.kr/product/116299997>
 - 상세 이미지 원본: 위 상품 페이지의 상품정보 영역 (스크린샷은 해당 페이지에서 잘라냄)
-- 상용 유통 확인: <https://www.yes24.com/product/goods/76162429> — ![yes24](shots/14-motemote-yes24.png)
+- 상용 유통 확인: <https://www.yes24.com/product/goods/76162429>
 
 ### A2 · 플래너 TENS (안드로이드) — ❌ 비오픈소스
 
@@ -107,11 +110,11 @@
 "**'모트모트 텐미닛 플래너'의 감성을 이제 스마트폰에서 경험하세요**" 라고 쓴다.
 (개발사 BIGROAD, 다운로드 50+, 최종 업데이트 2026-03-12)
 
-![Google Play](shots/20-tens-googleplay.png)
+> (캡처 삭제: Google Play — 원본은 출처 링크에서 본다)
 
 **타임라인 화면 — 우리가 만들려는 것과 가장 가까운 화면이다**
 
-![TENS 타임라인](shots/23-tens-timeline.png)
+> (캡처 삭제: TENS 타임라인 — 원본은 출처 링크에서 본다)
 
 여기서 배울 것:
 
@@ -124,11 +127,7 @@
 | 범례 | 그날 쓴 카테고리만 상단 한 줄 · **6개** | 현행 9개 상시 노출(문제 #6) 대비 |
 | 스크롤 | 12:00~23:00 만 보인다. 빈 새벽은 스크롤 밖 | 시안 B 의 "접기" 보다 단순한 해법 |
 
-기타 화면 (홈 / 타이머 / 월간):
-
-| 홈 | 타이머 | 월간 |
-|---|---|---|
-| ![홈](shots/21-tens-home.png) | ![타이머](shots/22-tens-timer.png) | ![월간](shots/24-tens-monthly.png) |
+> (캡처 삭제: 기타 화면 — 홈 / 타이머 / 월간. 원본은 출처 링크에서 본다)
 
 - 출처: <https://play.google.com/store/apps/details?id=com.bigroad.tens&hl=ko>
 - 스크린샷 출처: 위 스토어 페이지가 게시한 공식 앱 스크린샷
@@ -138,7 +137,7 @@
 "모트모트 스타일 10분 플래너" 로 검색에 잡히는 Vercel 배포 웹앱.
 **로그인 벽이라 플래너 화면을 못 봤다.** 계정을 만들지 않았다.
 
-![로그인 화면](shots/25-web-clone-login.png)
+> (캡처 삭제: 로그인 화면 — 원본은 출처 링크에서 본다)
 
 - 출처: <https://planner-swart-zeta.vercel.app/>
 - **오픈소스 아님(확인 불가)** — 페이지에 저장소 링크·라이선스 표기가 없고,
@@ -157,9 +156,9 @@
 프로젝트지만 **10분 격자를 실제로 구현한 것 중 유일하게 라이선스가 붙은 오픈소스**다.
 저장소에서 `index.html`(100KB) 받아 로컬에서 렌더한 화면이다:
 
-![오픈소스 10분 플래너](shots/30-oss-10min-planner.png)
+> (캡처 삭제: 오픈소스 10분 플래너 — 원본은 출처 링크에서 본다)
 
-![저장소](shots/31-oss-10min-planner-repo.png)
+> (캡처 삭제: 저장소 — 원본은 출처 링크에서 본다)
 
 - 출처: <https://github.com/morogohi/10mPlanerwElec>
 - 라이선스: **MIT** (`LICENSE` 파일 확인 — GitHub 자동인식은 실패하지만 본문은 표준 MIT)
@@ -190,7 +189,7 @@
 
 ### C1 · ActivityWatch — ✅ **MPL-2.0** (우리가 이미 쓰는 수집기)
 
-![ActivityWatch](shots/40-activitywatch.png)
+> (캡처 삭제: ActivityWatch — 원본은 출처 링크에서 본다)
 
 - 출처: <https://activitywatch.net/> · <https://github.com/ActivityWatch/activitywatch> (★18.6k)
 - 라이선스: **MPL-2.0** — 파일 단위 카피레프트. 붙여 쓰는 우리 방식은 안전
@@ -201,7 +200,7 @@
 
 ### C2 · Dayflow — ✅ **MIT** (가장 최근에 뜬 것, ★6.9k)
 
-![Dayflow](shots/41-dayflow.png)
+> (캡처 삭제: Dayflow — 원본은 출처 링크에서 본다)
 
 - 출처: <https://github.com/JerryZLiu/Dayflow> · <https://www.dayflow.so/>
 - 라이선스: **MIT** — 코드 참고·차용 가능
@@ -217,7 +216,7 @@
 
 라이브 데모가 열려 있어 **실제 동작 화면**을 잡았다 (5년치 랜덤 데이터):
 
-![TimeTagger 데모](shots/42-timetagger-demo.png)
+> (캡처 삭제: TimeTagger 데모 — 원본은 출처 링크에서 본다)
 
 - 출처: <https://timetagger.app/demo> · <https://github.com/almarklein/timetagger>
 - 라이선스: **GPL-3.0** — **코드를 가져오면 우리 전체가 GPL 이 된다. 보기만 한다**
@@ -230,7 +229,7 @@
 
 ### C4 · solidtime — ✅ **AGPL-3.0** ⚠️ 코드 차용 금지
 
-![solidtime](shots/43-solidtime.png)
+> (캡처 삭제: solidtime — 원본은 출처 링크에서 본다)
 
 - 출처: <https://solidtime.io/> · <https://github.com/solidtime-io/solidtime> (★8.9k)
 - 라이선스: **AGPL-3.0** — 네트워크 제공만 해도 공개 의무. **참고만**
@@ -238,7 +237,7 @@
 
 ### C5 · Kimai — ✅ **AGPL-3.0** ⚠️ 코드 차용 금지
 
-![Kimai](shots/45-kimai.png)
+> (캡처 삭제: Kimai — 원본은 출처 링크에서 본다)
 
 - 출처: <https://www.kimai.org/> · <https://github.com/kimai/kimai> (★4.9k)
 - 라이선스: **AGPL-3.0**
@@ -246,7 +245,7 @@
 
 ### C6 · Super Productivity — ✅ **MIT**
 
-![Super Productivity](shots/44-super-productivity.png)
+> (캡처 삭제: Super Productivity — 원본은 출처 링크에서 본다)
 
 - 출처: <https://super-productivity.com/> · <https://github.com/super-productivity/super-productivity> (★21.4k)
 - 라이선스: **MIT** — 차용 가능
@@ -264,7 +263,7 @@
 
 2006년부터 20년간 다듬어진 종이 데일리 플래너. 10분이 아니라 **15분 버블**이다.
 
-![ETP](shots/50-emergent-task-planner.png)
+> (캡처 삭제: ETP — 원본은 출처 링크에서 본다)
 
 - 출처: <https://davidseah.com/node/the-emergent-task-planner/>
 - 라이선스: **오픈소스 아님.** 페이지 원문 —
@@ -281,7 +280,7 @@
 
 ### D2 · reMarkable Daily Planner Generator — ✅ **MIT**
 
-![reMarkable 생성기](shots/51-remarkable-planner-gen.png)
+> (캡처 삭제: reMarkable 생성기 — 원본은 출처 링크에서 본다)
 
 - 출처: <https://github.com/alexgorbatchev/remarkable-daily-planner-generator>
 - 라이선스: **MIT**
@@ -292,7 +291,7 @@
 
 ### D3 · digital-planner-generator — ✅ **MIT**
 
-![digital-planner-generator](shots/52-digital-planner-gen.png)
+> (캡처 삭제: digital-planner-generator — 원본은 출처 링크에서 본다)
 
 - 출처: <https://github.com/mohanrex/digital-planner-generator>
 - 라이선스: **MIT** (`LICENSE` 파일 직접 확인. GitHub 자동인식만 실패한 상태)
@@ -334,11 +333,5 @@
 Playwright(번들 Chromium, headless, 1280px, ko-KR)로 직접 접속해 캡처했다.
 스크립트는 남기지 않았다 — 일회성 조사다.
 
-- `shots/1x-*` 모트모트 (상품 페이지 + 상세 이미지에서 잘라냄)
-- `shots/2x-*` TENS (스토어 페이지 + 스토어가 게시한 공식 앱 스크린샷)
-- `shots/3x-*` 오픈소스 10분 플래너 (저장소 `index.html` 을 받아 로컬 렌더)
-- `shots/4x-*` 자동 수집형 (공식 사이트 / GitHub / 라이브 데모)
-- `shots/5x-*` 종이 플래너 생성기
-
-**모든 스크린샷은 내부 설계 참고용이다.** 각 이미지의 저작권은 원 출처에 있고
-우리 산출물에 재배포하지 않는다.
+캡처 이미지(22장)는 2026-10-10 에 저장소에서 지웠다. 각 이미지의 저작권은 원 출처에 있고
+우리 산출물에 재배포하지 않는다. 다시 봐야 하면 위 출처 링크에서 직접 연다.

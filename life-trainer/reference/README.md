@@ -25,7 +25,7 @@
 ## 디자인 레퍼런스
 
 `harugyeol/docs/references/ref1~3.png` 는 종이 스터디 플래너(motemote) 실물과 사용례다.
-`../docs/refs/reference/planner_example.png` 와 같은 계열. 여기서 확인한 것:
+여기서 확인한 것:
 
 - **TIMETABLE 은 24행 × 6칸 = 144칸, 06:00 시작** — 우리 10분 슬롯과 정확히 같다
 - 체크 기호 3종: 완료 `v` · 진행 중 `/` · 내일로 연기 `>`

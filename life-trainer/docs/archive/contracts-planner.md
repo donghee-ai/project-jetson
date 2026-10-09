@@ -2,7 +2,7 @@
 
 > [contracts.md](../contracts.md) 의 §0 공통 규칙은 그대로 유효하다. 이 문서는 그 위에 얹는다.
 > 그 위에 다시 [contracts-v2.md](contracts-v2.md) 가 얹힌다 — **충돌하면 나중 것이 이긴다.**
-> 근거: [refs/reference/planner_example.png](../design/refs/planner_example.png) (24행 × 6칸 = 144, 06:00 시작)
+> 근거: 모트모트 10분 플래너 양식 (24행 × 6칸 = 144, 06:00 시작) — [10min_design](../design/refs/10min_design/README.md) §A1
 
 ---
 

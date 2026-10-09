@@ -195,5 +195,5 @@ mockups/c-calm.html    시안 C
 mockups/data.js        2026-08-19 합성 데이터 + 팔레트 CSS 변수
 mockups/common.js      셋이 공유하는 계산(런 병합·시각 포맷) — 디자인은 안 들어 있다
 shots/                 위 시안들을 헤드리스 크로미움으로 찍은 PNG (라이트/다크/모바일)
-refs/10min_design/     외부 레퍼런스 조사 — 캡처 22장 + 출처 링크 + 오픈소스 여부
+refs/10min_design/     외부 레퍼런스 조사 — 출처 링크 + 오픈소스 여부 (캡처는 저작권 때문에 삭제)
 ```

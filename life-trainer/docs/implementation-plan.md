@@ -299,7 +299,7 @@ arXiv     cs.CL 50건 (robots 예외 적용 후, HTTPS 직행)
 
 ## 7-B. 플래너 (2차 구현) — 설계서에 없던 것
 
-사용자가 남긴 레퍼런스([refs/reference/planner_example.png](design/refs/planner_example.png))가
+사용자가 남긴 레퍼런스(모트모트 10분 플래너 양식 — [10min_design](design/refs/10min_design/README.md) §A1)가
 **24행 × 6칸 = 144칸, 06:00 시작**이었다. 우리 10분 슬롯과 정확히 같은 격자다.
 설계서 §8.2 는 "144칸 가로 띠 하나 = 하루"였는데, 종이 플래너 양식이 더 낫다는 판단으로 바꿨다.
 
